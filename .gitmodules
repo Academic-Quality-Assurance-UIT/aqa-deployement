@@ -1,0 +1,3 @@
+[submodule "aqa-client"]
+	path = aqa-client
+	url = https://github.com/aqaproject/aqa-client
