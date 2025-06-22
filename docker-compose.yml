@@ -1,0 +1,37 @@
+services:
+   jenkins:
+      image: jenkins/jenkins:lts
+      container_name: jenkins
+      restart: unless-stopped
+      ports:
+         - "8080:8080"
+         - "50000:50000"
+      volumes:
+         - jenkins_home:/var/jenkins_home
+         - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+         - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+         - TZ=UTC
+      networks:
+         - default
+
+   # db:
+   #    image: postgres:latest
+   #    restart: always
+   #    environment:
+   #       POSTGRES_PASSWORD: jnhbgvfc
+   #       POSTGRES_DB: aqa
+   #       POSTGRES_USER: postgres
+   #    ports:
+   #       - 5432:5432
+   #    volumes:
+   #       - postgresql-volume:/var/lib/postgresql/data
+   #    networks:
+   #       - default
+
+volumes:
+   jenkins_home:
+
+networks:
+   default:
+      driver: bridge
