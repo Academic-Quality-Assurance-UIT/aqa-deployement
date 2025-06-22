@@ -1,37 +1,85 @@
-services:
-   jenkins:
-      image: jenkins/jenkins:lts
-      container_name: jenkins
-      restart: unless-stopped
-      ports:
-         - "8080:8080"
-         - "50000:50000"
-      volumes:
-         - jenkins_home:/var/jenkins_home
-         - /var/run/docker.sock:/var/run/docker.sock
-      environment:
-         - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
-         - TZ=UTC
-      networks:
-         - default
+# docker-compose.yml - updated to use a local PostgreSQL database
+version: '3.9'
 
-   # db:
-   #    image: postgres:latest
-   #    restart: always
-   #    environment:
-   #       POSTGRES_PASSWORD: jnhbgvfc
-   #       POSTGRES_DB: aqa
-   #       POSTGRES_USER: postgres
-   #    ports:
-   #       - 5432:5432
-   #    volumes:
-   #       - postgresql-volume:/var/lib/postgresql/data
-   #    networks:
-   #       - default
+services:
+  frontend:
+    build: ./aqa-client
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+  backend:
+    build: ./aqa-backend-nestjs
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: jnhbgvfc
+      DB_DATABASE: aqa
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: jnhbgvfc
+      POSTGRES_DB: aqa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+
+  cadvisor:
+    image: google/cadvisor:latest
+    ports:
+      - "8081:8080"
+    volumes:
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "81:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
 
 volumes:
-   jenkins_home:
-
-networks:
-   default:
-      driver: bridge
+  postgres_data: {}
