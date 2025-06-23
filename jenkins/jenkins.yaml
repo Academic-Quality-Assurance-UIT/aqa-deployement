@@ -1,0 +1,31 @@
+jobs:
+  - script: >
+      multibranchPipelineJob('aqa-backend-nestjs') {
+        branchSources {
+          git {
+            id('backend-git')
+            remote('https://github.com/aqaproject/aqa-backend-nestjs')
+            traits { }        
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile') 
+          }
+        }
+      }
+
+      multibranchPipelineJob('aqa-client') {
+        branchSources {
+          git {
+            id('frontend-git')
+            remote('https://github.com/aqaproject/aqa-client')
+            traits { }
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
