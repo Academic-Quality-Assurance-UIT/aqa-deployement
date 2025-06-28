@@ -1,6 +1,6 @@
 [submodule "aqa-client"]
 	path = aqa-client
-	url = https://github.com/aqaproject/aqa-client
+	url = https://github.com/Academic-Quality-Assurance-UIT/aqa-web.git
 [submodule "aqa-backend-nestjs"]
 	path = aqa-backend-nestjs
-	url = git@github.com:aqaproject/aqa-backend-nestjs.git
+	url = https://github.com/Academic-Quality-Assurance-UIT/aqa-backend.git
