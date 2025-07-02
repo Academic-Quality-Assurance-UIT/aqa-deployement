@@ -4,3 +4,6 @@
 [submodule "aqa-backend-nestjs"]
 	path = aqa-backend-nestjs
 	url = https://github.com/Academic-Quality-Assurance-UIT/aqa-backend.git
+[submodule "aqa-llm"]
+	path = aqa-llm
+	url = https://github.com/Academic-Quality-Assurance-UIT/aqa-llm.git
