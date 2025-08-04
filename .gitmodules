@@ -7,3 +7,6 @@
 [submodule "aqa-llm"]
 	path = aqa-llm
 	url = https://github.com/Academic-Quality-Assurance-UIT/aqa-llm.git
+[submodule "aqa-crawl-data"]
+	path = aqa-crawl-data
+	url = https://github.com/hoanghy0112/aqa-crawl-data.git
