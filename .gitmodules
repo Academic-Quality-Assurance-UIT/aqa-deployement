@@ -13,3 +13,4 @@
 [submodule "aqa-ai-agents"]
 	path = aqa-ai-agents
 	url = git@github.com:Academic-Quality-Assurance-UIT/aqa-ai-agents.git
+	branch = main
