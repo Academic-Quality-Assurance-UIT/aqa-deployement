@@ -10,3 +10,6 @@
 [submodule "aqa-crawl-data"]
 	path = aqa-crawl-data
 	url = https://github.com/hoanghy0112/aqa-crawl-data.git
+[submodule "aqa-ai-agents"]
+	path = aqa-ai-agents
+	url = git@github.com:Academic-Quality-Assurance-UIT/aqa-ai-agents.git
