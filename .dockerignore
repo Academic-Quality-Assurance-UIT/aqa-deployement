@@ -1,0 +1,27 @@
+# Dependencies (host-side, not needed in Docker)
+node_modules/
+
+# Turborepo cache
+.turbo/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Git artifacts
+.git
+.github
+.gitignore
+.gitmodules
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & Coverage
+logs/
+*.log
+coverage/

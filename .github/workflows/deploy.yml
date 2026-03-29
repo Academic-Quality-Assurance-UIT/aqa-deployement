@@ -1,0 +1,163 @@
+name: Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: docker.io
+  BACKEND_IMAGE: hoanghy/aqa-backend-nestjs
+  FRONTEND_IMAGE: hoanghy/aqa-client
+
+jobs:
+  detect-changes:
+    name: Detect changed apps
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -Eq '^(aqa-backend-nestjs/|docker-compose\.yml|pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml|turbo\.json|\.github/workflows/deploy\.yml)'; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+          if git diff --name-only HEAD~1 HEAD | grep -Eq '^(aqa-client/|docker-compose\.yml|pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml|turbo\.json|\.github/workflows/deploy\.yml)'; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-backend:
+    name: Build & Push Backend
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: aqa-backend-nestjs/Dockerfile
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+  build-frontend:
+    name: Build & Push Frontend
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: aqa-client/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL_V2=${{ secrets.NEXT_PUBLIC_API_URL_V2 }}
+            BACKEND_URL=${{ secrets.BACKEND_URL }}
+            BACKEND_API_URL=${{ secrets.BACKEND_API_URL }}
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-backend.result == 'skipped' || needs.build-frontend.result == 'skipped') && !(needs.build-backend.result == 'failure' || needs.build-frontend.result == 'failure')
+    steps:
+      - name: Install OpenVPN
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openvpn
+
+      - name: Connect to VPN
+        run: |
+          # Write CA certificate
+          echo "${{ secrets.OVPN_CA_CERT }}" > /tmp/ca.pem
+
+          # Write credentials file
+          echo "${{ secrets.VPN_USERNAME }}" > /tmp/vpn-auth.txt
+          echo "${{ secrets.VPN_PASSWORD }}" >> /tmp/vpn-auth.txt
+
+          # Connect to OpenVPN
+          sudo openvpn \
+            --client \
+            --remote vpn.uit.edu.vn 1195 udp \
+            --dev tun \
+            --ca /tmp/ca.pem \
+            --auth-user-pass /tmp/vpn-auth.txt \
+            --auth-nocache \
+            --persist-tun \
+            --persist-key \
+            --daemon \
+            --log /tmp/openvpn.log \
+            --verb 3
+
+          # Wait for VPN to establish connection
+          echo "Waiting for VPN connection..."
+          for i in $(seq 1 30); do
+            if ip a show tun0 &>/dev/null; then
+              echo "VPN connected!"
+              ip a show tun0
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "VPN connection timed out"
+              cat /tmp/openvpn.log
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /opt/aqa-deployment
+            docker compose pull
+            docker compose up -d --no-deps --force-recreate backend frontend
+            docker image prune -f
+
+      - name: Disconnect VPN
+        if: always()
+        run: |
+          sudo killall openvpn || true
+          rm -f /tmp/ca.pem /tmp/vpn-auth.txt

@@ -1,0 +1,5 @@
+packages:
+  - 'aqa-backend-nestjs'
+  - 'aqa-client'
+  - 'aqa-crawl-data'
+  - 'aqa-llm'
