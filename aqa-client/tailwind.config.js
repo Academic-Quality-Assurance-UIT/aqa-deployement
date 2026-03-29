@@ -9,6 +9,8 @@ module.exports = {
 		"./node_modules/@heroui/**/*.{js,ts,jsx,tsx}",
 		"./node_modules/@tremor/**/*.{js,ts,jsx,tsx}", // Tremor module
 		"./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+		"../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+		"../node_modules/.pnpm/@heroui+theme@*/node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
 	],
 	theme: {
 		transparent: "transparent",
@@ -98,9 +100,6 @@ module.exports = {
 					},
 				},
 			},
-			borderRadius: {
-				large: "16px",
-			},
 			boxShadow: {
 				// light
 				"tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -116,6 +115,7 @@ module.exports = {
 					"0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
 			},
 			borderRadius: {
+				large: "16px",
 				"tremor-small": "0.375rem",
 				"tremor-default": "0.5rem",
 				"tremor-full": "9999px",

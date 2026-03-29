@@ -60,8 +60,8 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 	const items = useRememberValue(dataList);
 
 	return (
-		<>
-			<OptionButton
+        <>
+            <OptionButton
 				tooltip="Chọn các môn để hiển thị trên biểu đồ"
 				onPress={onOpen}
 				hasValue={hasValue}
@@ -69,7 +69,7 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 			>
 				{buttonText}
 			</OptionButton>
-			<Modal
+            <Modal
 				isOpen={isOpen}
 				className="h-full"
 				backdrop="blur"
@@ -222,7 +222,7 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 								<Button
 									color="danger"
 									variant="light"
-									onClick={onClose}
+									onPress={onClose}
 								>
 									Close
 								</Button>
@@ -240,7 +240,7 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 					)}
 				</ModalContent>
 			</Modal>
-			<Modal size="xl" isOpen={isOpenDetail} onOpenChange={onOpenChangeDetail}>
+            <Modal size="xl" isOpen={isOpenDetail} onOpenChange={onOpenChangeDetail}>
 				<ModalContent>
 					{(onClose) => (
 						<>
@@ -285,8 +285,8 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 					)}
 				</ModalContent>
 			</Modal>
-		</>
-	);
+        </>
+    );
 }
 
 type SubjectSelectorPropTypes = {

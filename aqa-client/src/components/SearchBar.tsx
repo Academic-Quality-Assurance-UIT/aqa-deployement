@@ -31,15 +31,15 @@ export default function SearchBar() {
 	}, [isOpen]);
 
 	return (
-		<div className={``}>
-			<Button
+        <div className={``}>
+            <Button
 				className=" w-[500px] rounded-xl z-10 shadow-xl absolute left-1/2 -translate-x-1/2 top-8 bg-foreground-100"
-				onClick={() => onOpen()}
+				onPress={() => onOpen()}
 				startContent={<BsSearch size={16} />}
 			>
 				<p className=" w-full text-start">Tìm kiếm chức năng</p>
 			</Button>
-			<Modal
+            <Modal
 				size="xl"
 				isOpen={isOpen}
 				onOpenChange={onOpenChange}
@@ -100,6 +100,6 @@ export default function SearchBar() {
 					)}
 				</ModalContent>
 			</Modal>
-		</div>
-	);
+        </div>
+    );
 }

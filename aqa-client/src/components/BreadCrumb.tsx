@@ -161,8 +161,8 @@ export default function BreadCrumb() {
 	);
 
 	return (
-		<div className=" w-full mt-5 mb-2 lg:mb-5 pb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 overflow-auto">
-			<div className=" w-fit flex flex-row gap-1">
+        <div className=" w-full mt-5 mb-2 lg:mb-5 pb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 overflow-auto">
+            <div className=" w-fit flex flex-row gap-1">
 				{paths.map(
 					(
 						{
@@ -229,11 +229,11 @@ export default function BreadCrumb() {
 					)
 				)}
 			</div>
-			<Button
+            <Button
 				variant="flat"
 				color="danger"
 				className={twMerge(" w-fit h-fit")}
-				onClick={() => {
+				onPress={() => {
 					const currentPage = pathname.split("/").at(1);
 					const currentPageKey =
 						currentPage !== "subject" ? `${currentPage}_id` : "subjects";
@@ -257,6 +257,6 @@ export default function BreadCrumb() {
 					</p>
 				</div>
 			</Button>
-		</div>
-	);
+        </div>
+    );
 }

@@ -27,11 +27,11 @@ export default function SpecificCriteriaChart({ criteria }: { criteria: Criteria
 	}, []);
 
 	return (
-		<div ref={containerRef} className="mt-10">
-			<Button
+        <div ref={containerRef} className="mt-10">
+            <Button
 				variant="light"
 				className=" p-4 mb-6 h-fit"
-				onClick={() => {
+				onPress={() => {
 					console.log({ criteria });
 					setUrlQuery(`/criteria/${criteria.criteria_id}`, {
 						criteria_id: criteria.criteria_id,
@@ -45,7 +45,7 @@ export default function SpecificCriteriaChart({ criteria }: { criteria: Criteria
 					<p className="">{criteria.display_name}</p>
 				</div>
 			</Button>
-			<div className=" h-fit">
+            <div className=" h-fit">
 				<PointEachSemester
 					title="Điểm đánh giá trung bình qua từng học kỳ"
 					legend="Điểm đánh giá"
@@ -53,8 +53,8 @@ export default function SpecificCriteriaChart({ criteria }: { criteria: Criteria
 					selectors={<></>}
 				/>
 			</div>
-		</div>
-	);
+        </div>
+    );
 }
 
 const LEGEND_NAME = "Độ hài lòng";

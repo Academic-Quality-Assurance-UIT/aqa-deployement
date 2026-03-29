@@ -25,7 +25,7 @@ export default function OptionButton({
 	return (
 		<Tooltip
 			isDisabled={!Boolean(tooltip)}
-			content={<p className=" max-w-md h-auto">{tooltip}</p>}
+			content={<div className=" max-w-md h-auto">{tooltip}</div>}
 		>
 			<Button
 				onPress={onPress}

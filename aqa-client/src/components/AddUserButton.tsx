@@ -104,11 +104,11 @@ function AddUserButtonInner({ refetch }: Props) {
 	}, [isOpen]);
 
 	return (
-		<div>
-			<Button onClick={onOpen} variant={"flat"} color="primary">
+        <div>
+            <Button onPress={onOpen} variant={"flat"} color="primary">
 				<p className=" font-semibold">Thêm tài khoản</p>
 			</Button>
-			<Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
 				<ModalContent>
 					{(onClose) => (
 						<form
@@ -244,8 +244,8 @@ function AddUserButtonInner({ refetch }: Props) {
 					)}
 				</ModalContent>
 			</Modal>
-		</div>
-	);
+        </div>
+    );
 }
 
 export default function AddUserButton(props: Props) {

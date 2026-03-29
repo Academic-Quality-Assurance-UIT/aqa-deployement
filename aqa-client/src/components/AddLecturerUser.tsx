@@ -97,11 +97,11 @@ export default function AddLecturerUser() {
 	}, [data?.lecturers.data, handleAddUser, selectedKeys]);
 
 	return (
-		<div>
-			<Button onClick={onOpen} variant={"flat"} color="primary">
+        <div>
+            <Button onPress={onOpen} variant={"flat"} color="primary">
 				<p className=" font-semibold">Thêm tài khoản giảng viên</p>
 			</Button>
-			<Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
 				<ModalContent>
 					{(onClose) => (
 						<>
@@ -194,6 +194,6 @@ export default function AddLecturerUser() {
 					)}
 				</ModalContent>
 			</Modal>
-		</div>
-	);
+        </div>
+    );
 }
