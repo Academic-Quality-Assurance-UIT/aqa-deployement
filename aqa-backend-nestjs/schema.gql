@@ -1,0 +1,374 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthDto {
+  access_token: String!
+  user: UserEntity!
+}
+
+type Class {
+  class_id: String!
+  class_type: String!
+  display_name: String!
+  lecturer: Lecturer!
+  lecturer_1: Lecturer
+  lecturer_2: Lecturer
+  participating_student: Int
+  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): [GroupedPoint!]!
+  program: String!
+  semester: Semester!
+  subject: Subject!
+  total_student: Int
+}
+
+type Comment {
+  class: Class
+  comment_id: String!
+  display_name: String!
+  topic: String!
+  type: String!
+  type_list: [String!]!
+}
+
+type CommentQuantity {
+  quantity: Int!
+  type: String!
+}
+
+type Criteria {
+  criteria_id: String!
+  display_name: String!
+  index: Int
+  semester: [Semester!]!
+  type: [CriteriaProperty!]!
+}
+
+type CriteriaProperty {
+  class_type: String!
+  num: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Faculty {
+  display_name: String!
+  faculty_id: String!
+  full_name: String
+  is_displayed: Boolean
+  lecturers(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedLecturer
+  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): PaginatedGroupedPoint
+  subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject
+  total_point(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): GroupedPoint
+}
+
+input FilterArgs {
+  class_id: String
+  class_type: String
+  criteria_id: String
+  faculty_id: String
+  keyword: String = ""
+  lecturer_id: String
+  program: String
+  semester_id: String
+  subjects: [String!]
+}
+
+type GroupedPoint {
+  average_point: Float!
+  class_num: Int!
+  display_name: String
+  id: String!
+  max_point: Float
+  median_point: Float
+  point: Float
+  trimmed_mean_point: Float
+}
+
+type Lecturer {
+  birth_date: DateTime
+  classes(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedClass!
+  display_name: String
+  email: String
+  faculty: Faculty!
+  faculty_id: String
+  gender: Boolean
+  learning: String
+  learning_position: String
+  lecturer_id: String!
+  mscb: Int
+  ngach: String
+  phone: String
+  points(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): [GroupedPoint!]!
+  position: String
+  total_point: Float
+  username: String
+}
+
+type Mutation {
+  """Add new staff survey data"""
+  addListStaffSurveyData(data: [StaffSurveySheetDTO!]!): [StaffSurveySheet!]!
+
+  """Add new staff survey data"""
+  addNewStaffSurveyData(data: StaffSurveySheetDTO!): StaffSurveySheet!
+  login(password: String!, username: String!): AuthDto!
+  loginIntegration(token: String!): AuthDto!
+  registerUser(user: UserDto!): UserEntity!
+  removeUser(id: String!): Boolean!
+  updateUser(user: UpdateUserDto!): UserEntity!
+}
+
+type PaginatedClass {
+  data: [Class!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedComment {
+  data: [Comment!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedCriteria {
+  data: [Criteria!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedFaculty {
+  data: [Faculty!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedGroupedPoint {
+  data: [GroupedPoint!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedLecturer {
+  data: [Lecturer!]!
+  meta: PaginatedMetaData!
+}
+
+type PaginatedMetaData {
+  hasNext: Boolean!
+  hasPrev: Boolean!
+  page: Int!
+  size: Int!
+  total_item: Int!
+  total_page: Int!
+}
+
+type PaginatedSubject {
+  data: [Subject!]!
+  meta: PaginatedMetaData!
+}
+
+input PaginationArgs {
+  page: Int = 0
+  size: Int = 10
+}
+
+type PointByCategoryDTO {
+  avg_point: Float!
+  category: String!
+}
+
+type PointByCriteriaDTO {
+  avg_point: Float!
+  criteria: String!
+  index: Float!
+}
+
+type Program {
+  program: String!
+}
+
+type Query {
+  """View particular class information"""
+  class(id: String!): Class
+
+  """List all classes"""
+  classes(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedClass!
+
+  """View particular comment information"""
+  comment(id: String!): Comment
+  commentQuantity(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: String, type: String): CommentQuantity!
+
+  """List all comments"""
+  comments(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: [String!], type: [String!]): PaginatedComment!
+  criteria(id: String!): Criteria
+  criterias(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedCriteria!
+  currentUser: UserEntity!
+
+  """List all faculty available"""
+  faculties(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedFaculty!
+
+  """Get detail information of a faculty and its lecturer list"""
+  faculty(id: String!): Faculty
+  getAdditionalComments(semester: String): [StaffSurveyAdditionalCommentDTO!]!
+  getAllComments(filter: FilterArgs = {}, keyword: String, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
+  getAllCommentsCount(keyword: String, semester: String): Int!
+  getBatchList: [StaffSurveyBatch!]!
+  getCriteriaList: [StaffSurveyCriteria!]!
+  getPointWithCommentByCriteria(category: String, displayName: String, filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
+  getPointsByCategory(semester: String): [PointByCategoryDTO!]!
+  getPointsByCategoryDonVi(semester: String): [PointByCategoryDTO!]!
+  getPointsByCriteria(category: String, displayName: String, semester: String): [PointByCriteriaDTO!]!
+  getStaffSurveyCommentCount(category: String, displayName: String, semester: String): Int!
+  getSurveySemesterList: [String!]!
+
+  """List all points, group by a specific entity"""
+  groupedPoints(class_id: String, class_type: String, criteria_id: String, faculty_id: String, groupEntity: String = "Subject", keyword: String = "", lecturer_id: String, page: Int = 0, program: String, semester_id: String, size: Int = 10, subjects: [String!]): PaginatedGroupedPoint!
+
+  """View detail information of a specific lecturer"""
+  lecturer(id: String!): Lecturer
+
+  """List all lecturer"""
+  lecturers(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedLecturer!
+  profile: UserEntity!
+  programs: [Program!]!
+
+  """List all semester"""
+  semesters: [Semester!]
+  subject(id: String!): Subject
+  subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject!
+  users(name: String): [UserEntity!]!
+}
+
+enum Role {
+  ADMIN
+  FACULTY
+  FULL_ACCESS
+  LECTURER
+}
+
+type Semester {
+  display_name: String!
+  search_string: String
+  semester_id: String!
+  type: String
+  year: String
+}
+
+input SortArgs {
+  isAscending: Boolean = true
+  sortField: SortFieldArgs = {}
+}
+
+input SortFieldArgs {
+  name: String
+  type: String! = "name"
+}
+
+type StaffSurveyAdditionalCommentDTO {
+  additional_comment: String
+  display_name: String
+  faculty: String
+}
+
+type StaffSurveyBatch {
+  display_name: String
+  semester: String
+  staff_survey_batch_id: String!
+  updated_at: DateTime
+}
+
+type StaffSurveyCriteria {
+  category: String!
+  display_name: String!
+  index: Int
+  is_point_aggregated: Boolean!
+  semesters: [String!]!
+  staff_survey_criteria_id: String!
+}
+
+input StaffSurveyPointDTO {
+  comment: String
+  criteria_category: String
+  criteria_index: Int
+  criteria_name: String
+  max_point: Int!
+  point: Int!
+}
+
+type StaffSurveyPointResponseDTO {
+  data: [StaffSurveyPointResponseItemDTO!]!
+  meta: PaginatedMetaData!
+}
+
+type StaffSurveyPointResponseItemDTO {
+  comment: String
+  criteria: String!
+  index: Float!
+  point: Int!
+}
+
+type StaffSurveySheet {
+  academic_degree: String
+  academic_title: String
+  additional_comment: String
+  batch: StaffSurveyBatch
+  birth: String
+  display_name: String
+  faculty: String
+  gender: Boolean
+  mscb: String
+  staff_survey_sheet_id: String!
+}
+
+input StaffSurveySheetDTO {
+  academic_degree: String
+  academic_title: String
+  additional_comment: String
+  birth: String
+  display_name: String
+  faculty: String
+  gender: Boolean
+  mscb: String
+  points: [StaffSurveyPointDTO!]!
+  semester: String
+  survey_name: String
+}
+
+type Subject {
+  display_name: String
+  faculty: Faculty
+  faculty_id: String
+  points(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): [GroupedPoint!]
+  subject_id: String!
+  total_point: Float
+}
+
+input UpdateUserDto {
+  displayName: String = ""
+  facultyId: String
+  id: String!
+  lastAccess: DateTime
+  lecturerId: String
+  password: String
+  role: Role
+  username: String
+}
+
+input UserDto {
+  displayName: String = ""
+  facultyId: String
+  lecturerId: String
+  password: String!
+  role: Role!
+  username: String!
+}
+
+type UserEntity {
+  displayName: String!
+  faculty: Faculty
+  id: String!
+  lastAccess: DateTime
+  lastSendEmail: DateTime
+  lecturer: Lecturer
+  password: String
+  role: Role!
+  username: String!
+}

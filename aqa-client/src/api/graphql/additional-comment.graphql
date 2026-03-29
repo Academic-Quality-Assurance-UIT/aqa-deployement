@@ -1,0 +1,7 @@
+query GetAdditionalComments($semester: String) {
+	getAdditionalComments(semester: $semester) {
+		additional_comment
+		display_name
+		faculty
+	}
+}

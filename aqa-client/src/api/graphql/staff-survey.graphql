@@ -1,0 +1,109 @@
+mutation AddStaffSurveyData($data: StaffSurveySheetDTO!) {
+	addNewStaffSurveyData(data: $data) {
+		batch {
+			display_name
+			staff_survey_batch_id
+			updated_at
+		}
+	}
+}
+
+mutation AddListStaffSurveyData($data: [StaffSurveySheetDTO!]!) {
+	addListStaffSurveyData(data: $data) {
+		batch {
+			display_name
+			staff_survey_batch_id
+			updated_at
+		}
+	}
+}
+
+query GetStaffSurveyCriteriaList {
+	getCriteriaList {
+		category
+		display_name
+		index
+		semesters
+		staff_survey_criteria_id
+	}
+}
+
+query GetStaffSurveyBatchList {
+	getBatchList {
+		display_name
+		staff_survey_batch_id
+		updated_at
+	}
+}
+
+query GetSurveySemesterList {
+	getSurveySemesterList
+}
+
+query GetPointsByCategory($semester: String) {
+	getPointsByCategory(semester: $semester) {
+		avg_point
+		category
+	}
+}
+
+query GetPointsByCategoryDonVi($semester: String) {
+	getPointsByCategoryDonVi(semester: $semester) {
+		avg_point
+		category
+	}
+}
+
+query GetPointsByCriteria($category: String!, $semester: String, $displayName: String) {
+	getPointsByCriteria(category: $category, semester: $semester, displayName: $displayName) {
+		avg_point
+		criteria
+		index
+	}
+}
+
+query GetPointWithCommentByCriteria($category: String, $page: Int, $semester: String, $displayName: String) {
+	getPointWithCommentByCriteria(category: $category, pagination: { page: $page }, semester: $semester, displayName: $displayName) {
+		data {
+			criteria
+			index
+			point
+			comment
+		}
+		meta {
+			hasNext
+			hasPrev
+			page
+			size
+			total_item
+			total_page
+		}
+	}
+}
+
+query GetStaffSurveyCommentCount($category: String, $semester: String, $displayName: String) {
+	getStaffSurveyCommentCount(category: $category, semester: $semester, displayName: $displayName)
+}
+
+query GetAllComments($page: Int, $semester: String, $keyword: String) {
+	getAllComments(pagination: { page: $page }, semester: $semester, keyword: $keyword) {
+		data {
+			criteria
+			index
+			point
+			comment
+		}
+		meta {
+			hasNext
+			hasPrev
+			page
+			size
+			total_item
+			total_page
+		}
+	}
+}
+
+query GetAllCommentsCount($semester: String, $keyword: String) {
+	getAllCommentsCount(semester: $semester, keyword: $keyword)
+}

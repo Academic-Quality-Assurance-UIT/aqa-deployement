@@ -1,0 +1,113 @@
+query CommentQuantity(
+    $filter: FilterArgs
+) {
+    positive: commentQuantity(type: "positive", filter: $filter) {
+        quantity
+        type
+    }
+    negative: commentQuantity(type: "negative", filter: $filter) {
+        quantity
+        type
+    }
+    neutral: commentQuantity(type: "neutral", filter: $filter) {
+        quantity
+        type
+    }
+    all: commentQuantity(filter: $filter) {
+        quantity
+        type
+    }
+}
+
+query CommentQuantityEachTopic(
+    $filter: FilterArgs
+    $type: String!
+) {
+    lecturer: commentQuantity(type: $type, topic: "lecturer", filter: $filter) {
+        quantity
+        type
+    }
+    training_program: commentQuantity(type: $type, topic: "training_program", filter: $filter) {
+        quantity
+        type
+    }
+    facility: commentQuantity(type: $type, topic: "facility", filter: $filter) {
+        quantity
+        type
+    }
+    others: commentQuantity(type: $type, topic: "others", filter: $filter) {
+        quantity
+        type
+    }
+    all: commentQuantity(filter: $filter) {
+        quantity
+        type
+    }
+}
+
+query CommentList($filter: FilterArgs, $page: Int, $sort: SortArgs, $type: [String!], $topic: [String!]) {
+	comments(
+		filter: $filter
+		pagination: { page: $page }
+		sort: $sort
+		type: $type
+		topic: $topic
+	) {
+		data {
+			comment_id
+			display_name
+			type
+			type_list
+			topic
+			class {
+				class_id
+				class_type
+				display_name
+				participating_student
+				program
+				total_student
+				lecturer {
+					birth_date
+					display_name
+					email
+					faculty_id
+					gender
+					learning
+					learning_position
+					lecturer_id
+					mscb
+					ngach
+					phone
+					position
+					total_point
+					username
+				}
+				subject {
+					display_name
+					faculty_id
+					subject_id
+					total_point
+					faculty {
+						display_name
+						faculty_id
+						full_name
+					}
+				}
+				semester {
+					display_name
+					semester_id
+					type
+					year
+				}
+			}
+		}
+		meta {
+			hasNext
+			hasPrev
+			page
+			size
+			total_item
+			total_page
+		}
+	}
+}
