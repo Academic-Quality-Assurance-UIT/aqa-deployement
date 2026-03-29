@@ -2,6 +2,7 @@
 
 import {
 	useGetAllCommentsLazyQuery,
+	useGetPointsByCategoryDonViQuery,
 } from "@/gql/graphql";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useRememberValue } from "@/hooks/useRememberValue";
@@ -9,8 +10,9 @@ import { Card, Input, Button, Spinner } from "@heroui/react";
 import Loading from "../Loading";
 import CommentItem from "./CommentItem";
 import { useState, useEffect } from "react";
-import { AiOutlineSearch } from "react-icons/ai";
+import { AiOutlineSearch, AiOutlineDownload } from "react-icons/ai";
 import { IoIosSearch } from "react-icons/io";
+import * as XLSX from "xlsx";
 
 export default function StaffSurveyAllCommentsPage({
 	semester,
@@ -35,13 +37,84 @@ export default function StaffSurveyAllCommentsPage({
 
 	const metadata = useRememberValue(data?.getAllComments.meta);
 
+	const [isExporting, setIsExporting] = useState(false);
+
+	const { data: unitPoints } = useGetPointsByCategoryDonViQuery({
+		variables: { semester },
+		fetchPolicy: "network-only",
+	});
+
+	const [getExportCommentList] = useGetAllCommentsLazyQuery({
+		fetchPolicy: "no-cache",
+	});
+
+	const handleExportExcel = async () => {
+		setIsExporting(true);
+		try {
+			let allData: any[] = [];
+			let page = 0;
+			let hasNext = true;
+
+			const units = unitPoints?.getPointsByCategoryDonVi.map(u => u.category) || [];
+
+			while (hasNext) {
+				const res = await getExportCommentList({
+					variables: { semester, keyword: searchKeyword, page },
+				});
+				const resData = res.data?.getAllComments.data || [];
+				const meta = res.data?.getAllComments.meta;
+				
+				allData = [...allData, ...resData];
+				
+				if (meta && meta.hasNext) {
+					hasNext = true;
+					page++;
+				} else {
+					hasNext = false;
+				}
+			}
+
+			const excelData = allData.map(item => {
+				const isUnit = units.includes(item.criteria || "");
+				return {
+					"Nhận xét": item.comment || "",
+					"Tiêu chí": isUnit ? "" : (item.criteria || ""),
+					"Đơn vị": isUnit ? (item.criteria || "") : "",
+				};
+			});
+
+			const worksheet = XLSX.utils.json_to_sheet(excelData);
+			const workbook = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(workbook, worksheet, "Tất cả nhận xét");
+
+			const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+			const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+			
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+            
+            const safeSemester = semester ? semester.replace(/[<>:"\/\\|?*]/g, "-") : "";
+			link.download = `Tat_ca_nhan_xet${safeSemester ? `_${safeSemester}` : ""}.xlsx`;
+			
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error("Export failed", error);
+		} finally {
+			setIsExporting(false);
+		}
+	};
+
 	return (
 		<div className="">
 			<div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
 				<p className="text-xl font-bold text-gray-800">
 					Tổng số nhận xét: {data?.getAllComments.meta.total_item ?? 0}
 				</p>
-				<div className="flex flex-row items-center gap-2 lg:gap-4 w-full md:max-w-xl">
+				<div className="flex flex-row items-center gap-2 lg:gap-4 w-full md:max-w-2xl">
 					<Input
 						value={keyword}
 						onValueChange={setKeyword}
@@ -79,6 +152,23 @@ export default function StaffSurveyAllCommentsPage({
 							<div className="flex gap-2 items-center">
 								<AiOutlineSearch size={20} />
 								<p className="font-medium">Tìm kiếm</p>
+							</div>
+						)}
+					</Button>
+					<Button
+						onPress={handleExportExcel}
+						disabled={isExporting}
+						variant="shadow"
+						color="success"
+						size="md"
+						className="min-w-[140px] text-white"
+					>
+						{isExporting ? (
+							<Spinner color="white" size="sm" />
+						) : (
+							<div className="flex gap-2 items-center">
+								<AiOutlineDownload size={20} />
+								<p className="font-medium">Xuất Excel</p>
 							</div>
 						)}
 					</Button>
