@@ -87,12 +87,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 						/>
 						<NavItem
 							title="Các khoa/ bộ môn"
-							link="/staff-survey/units"
+							link="/staff-survey-units"
 							icon={AiOutlineSolution}
 						/>
 						<NavItem
 							title="Tất cả nhận xét"
-							link="/staff-survey/comments"
+							link="/staff-survey-comments"
 							icon={AiOutlineSolution}
 						/>
 					</>

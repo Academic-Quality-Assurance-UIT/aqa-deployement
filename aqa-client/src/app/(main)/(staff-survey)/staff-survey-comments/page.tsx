@@ -18,12 +18,12 @@ export default function Page() {
 						semester={semester}
 						setSemester={setSemester}
 					/>
-					<Link href="/staff-survey/add">
+					<Link href="/staff-survey-add">
 						<Button color="primary" variant="flat">
 							<p className="font-bold">Thêm dữ liệu mới</p>
 						</Button>
 					</Link>
-					<Link href="/staff-survey/upload">
+					<Link href="/staff-survey-upload">
 						<Button color="primary" variant="flat">
 							<p className="font-bold">Tải dữ liệu lên</p>
 						</Button>
