@@ -28,6 +28,14 @@ export default function PageTabs({
 					setUrlQuery(`/${defaultPath}/${tab}`, {});
 				}}
 				className={className}
+				variant="underlined"
+				color="primary"
+				classNames={{
+					tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
+					cursor: "w-full bg-primary",
+					tab: "max-w-fit px-0 h-10",
+					tabContent: "group-data-[selected=true]:text-primary group-data-[selected=true]:font-bold"
+				}}
 				aria-label="Page tabs"
 			>
 				{tabs.map(({ title, link }) => (

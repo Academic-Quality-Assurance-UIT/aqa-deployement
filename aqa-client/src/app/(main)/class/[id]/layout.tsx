@@ -26,10 +26,10 @@ export default function DetailClassPage({
 
 	return (
 		<div>
-			<h1 className="font-extrabold text-2xl">
+			<h1 className="page-title mb-1">
 				{classInfo?.display_name} - {classInfo?.subject.display_name}
 			</h1>
-			<div className="flex gap-4 items-end">
+			<div className="flex gap-4 items-end mb-4">
 				<h2 className="mt-3 text-gray-600 dark:text-gray-300">
 					<>
 						Giảng viên{" "}
@@ -50,7 +50,9 @@ export default function DetailClassPage({
 				</h2>
 				<LecturerShowToggle />
 			</div>
-			<BreadCrumb />
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`class/${id}`}
@@ -65,7 +67,7 @@ export default function DetailClassPage({
 					},
 				]}
 			/>
-			<div className=" mt-10">{children}</div>
+			<div className=" mt-6">{children}</div>
 		</div>
 	);
 }

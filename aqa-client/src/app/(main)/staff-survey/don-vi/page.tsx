@@ -32,7 +32,7 @@ export default function DonViPage() {
 	return (
 		<div>
 			<div className=" flex items-center justify-between mb-8">
-				<h1 className=" text-2xl font-bold">Điểm đánh giá các khoa/bộ môn (Đơn vị)</h1>
+				<h1 className="page-title mb-8">Điểm đánh giá các khoa/bộ môn (Đơn vị)</h1>
 				<div className="flex gap-4">
 					<StaffSurveySemesterSelector
 						semester={semester}

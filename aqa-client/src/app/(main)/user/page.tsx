@@ -66,10 +66,10 @@ export default function Page() {
 	}, [data, loading, router]);
 
 	return (
-		<div className=" flex-1 flex flex-col gap-8">
-			<div className=" flex flex-col lg:flex-row gap-3 justify-between lg:items-center">
-				<h1 className="text-2xl font-bold">Quản lý tài khoản</h1>
-				<div className=" flex gap-4">
+		<div className="flex-1 flex flex-col gap-8">
+			<div className="page-header">
+				<h1 className="page-title">Quản lý tài khoản</h1>
+				<div className="flex gap-3">
 					<AddLecturerUser />
 					<AddUserButton refetch={refetch} />
 				</div>

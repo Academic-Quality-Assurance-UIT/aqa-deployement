@@ -14,8 +14,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 	return (
 		<FilterProvider>
-			<h1 className="font-extrabold text-3xl">Tiêu chí</h1>
-			<BreadCrumb />
+			<h1 className="page-title mb-4">Tiêu chí</h1>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs
 				defaultPath="criteria"
 				tabs={[
@@ -32,6 +34,13 @@ export default function Layout({ children }: { children: ReactNode }) {
 			<div className=" mt-4">
 				<Tabs
 					variant={"underlined"}
+					color="primary"
+					classNames={{
+						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
+						cursor: "w-full bg-primary",
+						tab: "max-w-fit px-0 h-10",
+						tabContent: "group-data-[selected=true]:text-primary group-data-[selected=true]:font-bold"
+					}}
 					aria-label="Criteria class type"
 					selectedKey={query.class_type || ""}
 					onSelectionChange={(key) => {
@@ -45,7 +54,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 					<Tab key="Online" className=" font-medium" title="Học online" />
 				</Tabs>
 			</div>
-			<div className=" w-full mt-4 p-0 h-[420px]">{children}</div>
+			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
 		</FilterProvider>
 	);
 }

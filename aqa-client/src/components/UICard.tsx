@@ -8,9 +8,9 @@ export function UICard({
 	...props
 }: { children: ReactNode; title?: string } & React.ComponentPropsWithoutRef<"div">) {
 	return (
-		<div className={twMerge("bg-card rounded-2xl", className)} {...props}>
+		<div className={twMerge("ui-card p-6", className)} {...props}>
 			{title && (
-				<h2 className="text-lg font-semibold">{title}</h2>
+				<h2 className="text-xl font-bold text-[var(--sidebar-green-dark)] mb-4">{title}</h2>
 			)}
 			{children}
 		</div>

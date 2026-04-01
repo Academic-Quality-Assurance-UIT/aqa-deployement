@@ -12,16 +12,18 @@ const FeatureCard = dynamic(() => import("@/components/FeatureCard"));
 export default async function Home() {
 	return (
 		<FilterProvider>
-			<div className=" pt-2 lg:pt-20">
-				{/* <Suspense fallback={<p>Loading searchbar...</p>}>
-					<SearchBar />
-				</Suspense> */}
+			<div className="pt-2 lg:pt-4">
+				{/* Page Header */}
+				<div className="page-header">
+					<h1 className="page-title">Trang chủ</h1>
+				</div>
+
 				<UserProfileHome />
 				<CurrentLecturerOverallChart />
-				<div className=" shadow-2xl rounded-2xl mt-4">
+				<div className="mt-4">
 					<CriteriaOverallChart />
 				</div>
-				<div className="text-gray-400 lg:columns-2 lg:gap-14 mt-16 lg:px-20">
+				<div className="lg:columns-2 lg:gap-6 mt-10 ">
 					{HOME_INTRODUCTION.map((introduction) => (
 						<Suspense
 							key={introduction.title.link}

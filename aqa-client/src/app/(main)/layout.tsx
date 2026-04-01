@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthenticationNavigating } from "@/components/AuthenticationNavigating";
-import NavigationDrawer, { NavItem } from "@/components/NavigationDrawer";
+import NavigationDrawer, { NavItem, NavSectionHeader } from "@/components/NavigationDrawer";
 import { useProfileQuery } from "@/gql/graphql";
 import { useIsAdmin, useIsFullAccess, useIsLecturer } from "@/hooks/useIsAdmin";
 import { useIsFaculty } from "@/hooks/useIsFaculty";
@@ -24,11 +24,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 	const { isLecturer } = useIsLecturer();
 
 	return (
-		<div className=" w-screen h-screen flex flex-col-reverse lg:flex-row">
+		<div className="w-screen h-screen flex flex-col-reverse lg:flex-row bg-page-bg">
 			<Suspense fallback={<div></div>}>
 				<AuthenticationNavigating data={data} loading={loading} />
 			</Suspense>
 			<NavigationDrawer>
+				<NavSectionHeader label="Dữ liệu" />
 				<NavItem
 					title="Trang chủ"
 					description="Tổng quan về dữ liệu"
@@ -75,6 +76,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 						icon={AiOutlinePieChart}
 					/>
 				) : null}
+
+				<NavSectionHeader label="Khảo sát" />
 				{isFullAcess || isAdmin || true ? (
 					<NavItem
 						title="Khảo sát giảng viên"
@@ -82,15 +85,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 						icon={AiOutlineSolution}
 					/>
 				) : null}
-				{/* {isFullAcess || isAdmin ? (
-					<NavItem
-						title="Tạo biểu đồ bằng AI"
-						link="/ai-generate"
-						icon={AiOutlineCodepen}
-					/>
-				) : null} */}
+
 				{isAdmin ? (
 					<>
+						<NavSectionHeader label="Hệ thống" />
 						<NavItem
 							title="Quản lý tài khoản"
 							link="/user"
@@ -104,7 +102,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 					</>
 				) : null}
 			</NavigationDrawer>
-			<main className="w-full h-screen overflow-y-auto xl:px-20 px-4 lg:px-16 lg:pl-12 pt-6 pb-24 lg:pt-12 lg:pb-10 overflow-x-hidden">
+			<main className="w-full h-screen overflow-y-auto px-6 lg:px-12 xl:px-16 pt-8 pb-24 lg:pt-10 lg:pb-16 overflow-x-hidden">
 				<Suspense fallback={<p>Loading</p>}>{children}</Suspense>
 			</main>
 		</div>

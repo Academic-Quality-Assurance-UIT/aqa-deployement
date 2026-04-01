@@ -45,21 +45,21 @@ export default function Page() {
 
 	return (
 		<div>
-			<div className=" flex items-center justify-between mb-8">
-				<h1 className=" text-2xl font-bold">Dữ liệu khảo sát giảng viên</h1>
-				<div className="flex gap-4">
+			<div className="page-header">
+				<h1 className="page-title">Dữ liệu khảo sát giảng viên</h1>
+				<div className="flex gap-3">
 					<StaffSurveySemesterSelector
 						semester={semester}
 						setSemester={setSemester}
 					/>
 					<Link href="/staff-survey/add">
-						<Button color="primary">
-							<p className=" font-semibold">Thêm dữ liệu mới</p>
+						<Button color="primary" variant="flat">
+							<p className="font-bold">Thêm dữ liệu mới</p>
 						</Button>
 					</Link>
 					<Link href="/staff-survey/upload">
-						<Button>
-							<p className=" font-semibold">Tải dữ liệu lên</p>
+						<Button color="primary" variant="flat">
+							<p className="font-bold">Tải dữ liệu lên</p>
 						</Button>
 					</Link>
 				</div>

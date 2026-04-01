@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,21 +6,37 @@
 
 * {
 	box-sizing: border-box;
-	font-family: "Montserrat", sans-serif;
+	font-family: 'Montserrat', sans-serif;
 
-	/* outline: 1px solid red; */
-
-	--foreground-rgb: #000;
+	--foreground-rgb: #1a1a2e;
 }
 
 :root {
 	font-size: 16px;
+	--sidebar-text-width: 260px;
+	/* Base Primary Color */
+	--sidebar-green: #19a772; 
+	/* Very Light Primary for backgrounds */
+	--sidebar-green-light: #e6f6f0; 
+	/* Dark Primary for text */
+	--sidebar-green-dark: #117852;
+	/* Dark Color (900) Nearly Black for Page Titles */
+	--primary-900: #064e3b;
+	
+	--sidebar-hover: #f3f4f6;
+	--sidebar-section-text: #9ca3af;
+	
+	/* Refined Page Background */
+	--page-bg: #f7f8fa;
+	--card-bg: #ffffff;
+	--card-border: transparent;
+	/* Very subtle expansive shadow */
+	--card-shadow: 0px 4px 24px rgba(0, 0, 0, 0.02);
 }
 
 body {
-	color: var(--foreground-rgb);
-	background: #e9eaec;
-	/* background: linear-gradient(130deg, #e4e5e7 40%, #eddc98ee 80%, #e4e5e7 94%); */
+	color: #374151; /* Dark gray */
+	background: var(--page-bg);
 }
 
 @media (max-width: 640px) {
@@ -33,21 +49,105 @@ body {
 	background-color: white !important;
 }
 
+/* Sidebar styles */
+.sidebar-text-panel {
+	width: var(--sidebar-text-width);
+	background: var(--card-bg);
+	border-right: 1px solid #f1f2f4;
+}
+
+.sidebar-section-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--sidebar-section-text);
+	padding: 1rem 1rem 0.25rem 1rem;
+}
+
+.sidebar-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.625rem 0.875rem;
+	border-radius: 0.625rem;
+	margin: 0.125rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #6b7280; /* medium-dark gray */
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.sidebar-nav-item:hover {
+	background: var(--sidebar-hover);
+	color: #1f2937;
+}
+
+.sidebar-nav-item.active {
+	background: var(--sidebar-green-light);
+	color: var(--sidebar-green-dark);
+}
+
+.sidebar-nav-item.active svg,
+.sidebar-nav-item.active .nav-icon {
+	color: var(--sidebar-green-dark) !important;
+}
+
+/* Page header pattern */
+.page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 2rem;
+}
+
+.page-title {
+	font-size: 1.625rem;
+	font-weight: 700;
+	color: var(--primary-900); /* Dark primary color 900 that is nearly black */
+	letter-spacing: -0.01em;
+}
+
+/* Button overrides for "flat" primary buttons */
+button[data-variant="flat"][data-color="primary"] {
+	background-color: var(--sidebar-green-light) !important;
+	color: var(--sidebar-green-dark) !important;
+}
+button[data-variant="flat"][data-color="primary"]:hover {
+	background-color: #d6f0e4 !important;
+}
+
+/* Card styles */
+.ui-card {
+	background: var(--card-bg);
+	border: none;
+	border-radius: 1rem;
+	box-shadow: var(--card-shadow);
+}
+
+/* Custom scrollbar */
 .custom-scrollbar {
 	scrollbar-width: thin !important;
 }
 .custom-scrollbar::-webkit-scrollbar {
 	height: 6px !important;
 	display: block !important;
+	width: 6px !important;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-	background: #f1f1f1 !important;
+	background: transparent !important;
 	border-radius: 10px !important;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-	background: #ccc !important;
+	background: #e5e7eb !important;
 	border-radius: 10px !important;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-	background: #bbb !important;
+	background: #d1d5db !important;
+}
+
+/* Smooth transitions */
+.transition-sidebar {
+	transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
 }

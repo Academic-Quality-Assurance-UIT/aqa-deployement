@@ -20,10 +20,10 @@ export default function Layout({
 		<div>
 			{data?.subject ? (
 				<>
-					<h1 className="font-extrabold text-2xl">
+					<h1 className="page-title mb-1">
 						{data.subject.display_name}
 					</h1>
-					<h2 className="mt-2 text-gray-600 dark:text-gray-300">
+					<h2 className="mb-4 text-gray-600 dark:text-gray-300">
 						Khoa{" "}
 						<Link href={`/faculty/${data.subject.faculty?.faculty_id}`}>
 							<span className=" font-semibold hover:text-sky-600 hover:dark:text-sky-500">
@@ -33,13 +33,15 @@ export default function Layout({
 					</h2>
 				</>
 			) : null}
-			<BreadCrumb />
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`subject/${subject_id}`}
 				tabs={tabs}
 			/>
-			<div className="mt-4">
+			<div className="mt-6">
 				<FilterProvider>{children}</FilterProvider>
 			</div>
 		</div>

@@ -24,10 +24,12 @@ export default function Layout({
 
 	return (
 		<FilterProvider>
-			<h1 className="font-extrabold text-3xl text-slate-500">
+			<h1 className="page-title mb-4">
 				{semester?.display_name}
 			</h1>
-			<BreadCrumb />
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`semester/${query.semester_id}`}
@@ -42,7 +44,7 @@ export default function Layout({
 					},
 				]}
 			/>
-			<div className=" w-full mt-5 p-0 h-[420px]">{children}</div>
+			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
 		</FilterProvider>
 	);
 }

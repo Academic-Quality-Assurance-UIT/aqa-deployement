@@ -30,13 +30,15 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 	return (
 		<>
-			<div className="flex gap-4">
-				<h1 className="font-extrabold text-3xl">Giảng viên</h1>
+			<div className="flex gap-4 items-end mb-4">
+				<h1 className="page-title">Giảng viên</h1>
 				<LecturerShowToggle />
 			</div>
-			<BreadCrumb />
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs defaultPath="lecturer" tabs={tabs} />
-			<div className=" w-full mt-5 p-0 h-[420px]">{children}</div>
+			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
 		</>
 	);
 }

@@ -23,22 +23,23 @@ module.exports = {
 				grid: "url('/src/assets/grid.svg')",
 			},
 			colors: {
-				card: "#f7f7f7cc",
+				card: "#ffffff",
 				navbar: {
 					normal: "white",
-					hover: "oklch(92.2% 0 0)",
-					"hover-foreground": "oklch(96.8% 0.007 247.896)",
-					selected: "oklch(12.9% 0.042 264.695)",
+					hover: "#f3f4f6",
+					"hover-foreground": "#f9fafb",
+					selected: "#19a772",
 				},
-				"primary-normal": "#ffd85f",
-				"primary-hover": "#fae296cc",
+				"primary-normal": "#19a772",
+				"primary-hover": "#22c55e",
 				secondary: {
 					normal: "#fff",
-					hover: "oklch(96.8% 0.007 247.896)",
-					active: "oklch(92.9% 0.013 255.508)",
-					foreground: "oklch(55.4% 0.046 257.417)",
-					ui: "#148d82",
+					hover: "#f9fafb",
+					active: "#f3f4f6",
+					foreground: "#6b7280",
+					ui: "#19a772",
 				},
+				"page-bg": "#f5f6f8",
 				// light mode
 				tremor: {
 					brand: {
@@ -62,11 +63,11 @@ module.exports = {
 						DEFAULT: "#e5e7eb", // gray-200
 					},
 					content: {
-						subtle: "#000", // gray-400
-						DEFAULT: "#000", // gray-500
-						emphasis: "#000", // gray-700
-						strong: "#000", // gray-900
-						inverted: "#000", // white
+						subtle: "#9ca3af", // gray-400
+						DEFAULT: "#6b7280", // gray-500
+						emphasis: "#374151", // gray-700
+						strong: "#111827", // gray-900
+						inverted: "#ffffff", // white
 					},
 				},
 				// dark mode
@@ -92,11 +93,11 @@ module.exports = {
 						DEFAULT: "#e5e7eb", // gray-200
 					},
 					content: {
-						subtle: "#000", // gray-400
-						DEFAULT: "#000", // gray-500
-						emphasis: "#000", // gray-700
-						strong: "#000", // gray-900
-						inverted: "#000", // white
+						subtle: "#9ca3af", // gray-400
+						DEFAULT: "#6b7280", // gray-500
+						emphasis: "#374151", // gray-700
+						strong: "#111827", // gray-900
+						inverted: "#ffffff", // white
 					},
 				},
 			},
@@ -104,15 +105,16 @@ module.exports = {
 				// light
 				"tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
 				"tremor-card":
-					"0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+					"0px 4px 20px rgba(0, 0, 0, 0.03)",
 				"tremor-dropdown":
 					"0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
 				// dark
 				"dark-tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
 				"dark-tremor-card":
-					"0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+					"0px 4px 20px rgba(0, 0, 0, 0.03)",
 				"dark-tremor-dropdown":
 					"0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+				"card-sm": "0px 4px 20px rgba(0, 0, 0, 0.03)",
 			},
 			borderRadius: {
 				large: "16px",
@@ -166,17 +168,69 @@ module.exports = {
 			themes: {
 				light: {
 					colors: {
-						primary: "#ffd85f", // Your custom primary color for light theme
-						secondary: "#148d82",
-						foreground: "#000",
+						primary: {
+							DEFAULT: "#19a772",
+							50: "#eaf9f2",
+							100: "#ccece0",
+							200: "#a9dfcd",
+							300: "#86d2b9",
+							400: "#63c5a6",
+							500: "#19a772",
+							600: "#14865b",
+							700: "#0f6444",
+							800: "#0a432e",
+							900: "#064e3b",
+							950: "#022c22",
+						},
+						secondary: {
+							DEFAULT: "#117852",
+							50: "#e6f4ef",
+							100: "#bfe3d5",
+							200: "#99d3bb",
+							300: "#73c2a1",
+							400: "#4cb187",
+							500: "#26a16d",
+							600: "#1e8057",
+							700: "#117852",
+							800: "#0d5c3e",
+							900: "#093e29",
+							950: "#041f14",
+						},
+						foreground: "#374151",
 						default: "#fff",
 					},
 				},
 				dark: {
 					colors: {
-						primary: "#ffd85f", // Your custom primary color for light theme
-						secondary: "#148d82",
-						foreground: "#000",
+						primary: {
+							DEFAULT: "#19a772",
+							50: "#eaf9f2",
+							100: "#ccece0",
+							200: "#a9dfcd",
+							300: "#86d2b9",
+							400: "#63c5a6",
+							500: "#19a772",
+							600: "#14865b",
+							700: "#0f6444",
+							800: "#0a432e",
+							900: "#064e3b",
+							950: "#022c22",
+						},
+						secondary: {
+							DEFAULT: "#117852",
+							50: "#e6f4ef",
+							100: "#bfe3d5",
+							200: "#99d3bb",
+							300: "#73c2a1",
+							400: "#4cb187",
+							500: "#26a16d",
+							600: "#1e8057",
+							700: "#117852",
+							800: "#0d5c3e",
+							900: "#093e29",
+							950: "#041f14",
+						},
+						foreground: "#374151",
 						default: "#fff",
 					},
 				},

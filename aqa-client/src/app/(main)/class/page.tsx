@@ -13,7 +13,7 @@ export default function Page({ params }: { params: any }) {
 
 	return (
 		<FilterProvider>
-			<h1 className="font-extrabold text-3xl text-slate-500">Lớp</h1>
+			<h1 className="page-title mb-6">Lớp</h1>
 			<BreadCrumb />
 			<ChildrenItems
 				loading={loading}

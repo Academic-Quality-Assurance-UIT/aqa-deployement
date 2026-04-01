@@ -111,13 +111,13 @@ export default function ChartLayout({
 							<div className="w-fit flex flex-row flex-nowrap gap-4 pr-5 pl-6 lg:pl-0">
 								<MediaQuery maxWidth={1280}>
 									<Button
-										variant="solid"
+										variant="flat"
 										color="primary"
 										onPress={onOpen}
 										size={"sm"}
 									>
 										<AiOutlineSetting size={16} />
-										<p className=" font-semibold">Tùy chọn</p>
+										<p className="font-bold">Tùy chọn</p>
 									</Button>
 									<Modal isOpen={open} onOpenChange={onOpenChange}>
 										<ModalContent>
@@ -151,15 +151,14 @@ export default function ChartLayout({
 											color="primary"
 											className="w-fit px-3"
 											size={isMobile ? "sm" : "md"}
-											variant={isMobile ? "flat" : "solid"}
+											variant="flat"
 										>
 											<div className="flex gap-1 items-center">
 												<AiOutlineCloudDownload
-													size={isMobile ? 18 : 24}
-													color="black"
+													size={isMobile ? 18 : 20}
 												/>
 												{isMobile ? (
-													<p className="text-xs font-semibold text-black">
+													<p className="text-xs font-bold">
 														Tải xuống
 													</p>
 												) : null}

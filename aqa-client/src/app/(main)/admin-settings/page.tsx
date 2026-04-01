@@ -59,10 +59,10 @@ export default function Page() {
 
 	return (
 		<div className=" flex-1 flex flex-col gap-8">
-			<div className=" flex flex-col lg:flex-row gap-3 justify-between lg:items-center">
+			<div className="page-header">
 				<div className="flex gap-3 items-center">
-					<AiOutlineSetting size={28} />
-					<h1 className="text-2xl font-bold">
+					<AiOutlineSetting size={24} className="text-gray-600" />
+					<h1 className="page-title">
 						Cài đặt hệ thống
 					</h1>
 				</div>
@@ -98,11 +98,11 @@ export default function Page() {
 					<div className="flex justify-end pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
 						<Button
 							color="primary"
-							variant="shadow"
+							variant="flat"
 							onPress={handleSave}
 							isLoading={updating}
 							isDisabled={!filterYear || filterYear === settingData?.getSetting?.value}
-							className="px-8 font-medium"
+							className="px-8 font-bold"
 						>
 							Lưu thay đổi
 						</Button>

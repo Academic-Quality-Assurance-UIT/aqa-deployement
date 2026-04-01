@@ -42,7 +42,7 @@ export function CurrentLecturerOverallChart() {
 	const { currentLecturerId, role } = useFilterUrlQuery();
 
 	return role === Role.Lecturer ? null : (
-		<div className=" shadow-2xl rounded-2xl">
+		<div className="rounded-xl">
 			<PointEachSemester
 				overrideQueries={{
 					lecturer_id: currentLecturerId,

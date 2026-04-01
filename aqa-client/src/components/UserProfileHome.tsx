@@ -13,46 +13,35 @@ export default function UserProfileHome() {
 	const { isLecturer } = useIsLecturer();
 
 	return (
-		<div className="flex flex-col gap-4 mt-2 mb-16 px-2 lg:px-20">
-			<div className=" my-8 lg:my-16 flex flex-col gap-4 ">
-				<h1 className=" w-full text-center text-3xl font-extrabold">
-					Chào mừng bạn đến với hệ thống AQA!
-				</h1>
-				<h2 className=" w-full text-center text-base font-base">
-					Hệ thống AQA cung cấp chức năng xem điểm đánh giá và ý kiến phản
-					hồi của sinh viên đối với giảng viên, hỗ trợ cải thiện chất lượng
-					giảng dạy
-				</h2>
-			</div>
-			<UICard className="w-full p-5 mt-6 flex flex-col gap-2">
-				{/* <p className=" text-base font-normal mb-0">Thông tin giảng viên:</p> */}
-				<p className=" text-lg lg:text-xl font-extrabold flex gap-4 items-center mb-0">
+		<div className="flex flex-col gap-4 mb-8">
+			<UICard className="w-full p-5 flex flex-col gap-2">
+				<p className="text-lg lg:text-xl font-bold flex gap-4 items-center mb-0 text-gray-900">
 					{data?.profile.lecturer?.display_name}
-					<span className=" text-base font-normal">
+					<span className="text-sm font-normal text-gray-500">
 						{" "}
 						{data?.profile.lecturer?.email}
 					</span>
 				</p>
 				{isLecturer && (
-					<p className=" text-base font-base italic flex gap-2 items-center">
+					<p className="text-sm font-normal italic flex gap-2 items-center text-gray-500">
 						Giảng viên
 					</p>
 				)}
 				{isFaculty && (
-					<p className=" text-base font-base italic flex gap-2 items-center">
+					<p className="text-sm font-normal italic flex gap-2 items-center text-gray-500">
 						Cán bộ quản lý khoa
-						<span className=" font-semibold">
+						<span className="font-semibold text-gray-700">
 							{data?.profile.faculty?.display_name}
 						</span>
 					</p>
 				)}
 				{isFullAcess && !isAdmin && (
-					<p className=" text-base font-base italic flex gap-4 items-center">
+					<p className="text-sm font-normal italic flex gap-4 items-center text-gray-500">
 						Cán bộ quản lý nhà trường
 					</p>
 				)}
 				{isAdmin && (
-					<p className=" text-base font-base italic flex gap-4 items-center">
+					<p className="text-sm font-normal italic flex gap-4 items-center text-gray-500">
 						Admin
 					</p>
 				)}

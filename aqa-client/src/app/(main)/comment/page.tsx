@@ -6,9 +6,11 @@ type Props = { searchParams: { [key: string]: string | undefined } };
 export default function Page({ searchParams: { type } }: Props) {
 	return (
 		<>
-			<h1 className="mb-14 font-extrabold text-2xl">
-				{generateTitle(type).title}
-			</h1>
+			<div className="page-header mb-6">
+				<h1 className="page-title">
+					{generateTitle(type).title}
+				</h1>
+			</div>
 			<CommentPage
 				selectors={["faculty", "program", "semester", "single-subject"]}
 			/>

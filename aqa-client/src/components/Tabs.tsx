@@ -21,7 +21,15 @@ export default function PageTabs({
 			onSelectionChange={(tab) => {
 				router.push(`/${baseTab}/${tab}`);
 			}}
-			className="mt-12"
+			className="mt-6 w-full"
+			variant="underlined"
+			color="primary"
+			classNames={{
+				tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
+				cursor: "w-full bg-primary",
+				tab: "max-w-fit px-0 h-10",
+				tabContent: "group-data-[selected=true]:text-primary group-data-[selected=true]:font-bold"
+			}}
 			aria-label="Options"
 		>
 			{tabs.map(({ title, link }) => (

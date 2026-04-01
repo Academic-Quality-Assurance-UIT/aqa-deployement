@@ -26,8 +26,8 @@ export default function Layout({
 
 	return (
 		<div>
-			<div className="flex gap-4">
-				<h1 className="font-extrabold text-2xl">
+			<div className="flex gap-4 items-end mb-4">
+				<h1 className="page-title">
 					{isShowedName ? (
 						lecturer.display_name
 					) : (
@@ -38,13 +38,17 @@ export default function Layout({
 				</h1>
 				<LecturerShowToggle />
 			</div>
-			{isLecturer ? null : <BreadCrumb />}
+			{isLecturer ? null : (
+				<div className="mb-6">
+					<BreadCrumb />
+				</div>
+			)}
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`lecturer/${lecturer_id}`}
 				tabs={tabs}
 			/>
-			<div className="mt-4"> {children}</div>
+			<div className="mt-6"> {children}</div>
 		</div>
 	);
 }

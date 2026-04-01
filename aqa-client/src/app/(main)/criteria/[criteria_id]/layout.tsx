@@ -20,10 +20,12 @@ export default function Layout({
 	return (
 		<FilterProvider>
 			<p className="font-medium text-slate-500">{`Tiêu chí`}</p>
-			<h1 className="mt-1 font-extrabold text-2xl ">
+			<h1 className="page-title mt-1 mb-4">
 				{data?.criteria?.display_name || ""}
 			</h1>
-			<BreadCrumb />
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs
 				defaultPath={`criteria/${criteria_id}`}
 				lastIndex={3}
@@ -38,7 +40,7 @@ export default function Layout({
 					},
 				]}
 			/>
-			<div className=" w-full mt-5 p-0 h-[420px]">{children}</div>
+			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
 		</FilterProvider>
 	);
 }

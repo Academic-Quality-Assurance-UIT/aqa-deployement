@@ -231,7 +231,7 @@ export default function BreadCrumb() {
 			</div>
             <Button
 				variant="flat"
-				color="danger"
+				color="primary"
 				className={twMerge(" w-fit h-fit")}
 				onPress={() => {
 					const currentPage = pathname.split("/").at(1);

@@ -30,10 +30,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 	return (
 		<>
-			<h1 className="font-extrabold text-3xl">Khoa/Bộ môn</h1>
-			<BreadCrumb />
+			<h1 className="page-title mb-4">Khoa/Bộ môn</h1>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<PageTabs defaultPath="faculty" tabs={tabs} />
-			<div className=" w-full mt-5 p-0 h-auto">
+			<div className="mt-6 w-full p-0 h-auto">
 				<FilterProvider>{children}</FilterProvider>
 			</div>
 		</>

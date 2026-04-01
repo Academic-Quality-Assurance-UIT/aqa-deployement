@@ -12,19 +12,19 @@ export default function FeatureCard({
 	introduction: IFeatureIntroduction;
 }) {
 	return (
-		<UICard className="  rounded-3xl">
-			<Card className="w-full h-fit px-5 py-3 pt-5 mb-4 lg:mb-14 bg-transparent shadow-sm">
-				<CardHeader className=" flex flex-row items-center gap-5 pt-4">
+		<UICard className="mb-4 lg:mb-6 overflow-hidden break-inside-avoid">
+			<Card className="w-full h-fit px-5 py-3 pt-5 bg-transparent shadow-none">
+				<CardHeader className="flex flex-row items-center gap-5 pt-4">
 					<Image
 						src={icon}
-						width={64}
-						height={64}
+						width={56}
+						height={56}
 						alt="feature card illustration"
 					/>
 					<div>
-						<h1 className="text-xl font-semibold mb-3">
+						<h2 className="text-lg font-semibold mb-2 text-gray-900">
 							{title.displayName}
-						</h1>
+						</h2>
 						<p className="text-gray-500 -mt-1 text-sm">{description}</p>
 					</div>
 				</CardHeader>
@@ -34,7 +34,7 @@ export default function FeatureCard({
 							{navigation_links.map(({ displayName, link }) => (
 								<li
 									key={link}
-									className="hover:underline cursor-pointer py-1"
+									className="hover:underline cursor-pointer py-1 text-gray-700"
 								>
 									<Link href={link}>{displayName}</Link>
 								</li>
@@ -45,9 +45,9 @@ export default function FeatureCard({
 				<CardFooter>
 					<Link
 						href={title.link}
-						className=" hover:font-semibold hover:text-foreground-900 duration-200"
+						className="text-sm font-medium text-navbar-selected hover:underline duration-200"
 					>
-						Xem chi tiết
+						Xem chi tiết →
 					</Link>
 				</CardFooter>
 			</Card>

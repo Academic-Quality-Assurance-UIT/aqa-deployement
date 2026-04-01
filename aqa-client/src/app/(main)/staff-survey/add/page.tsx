@@ -160,9 +160,11 @@ export default function Page() {
 
 	return (
 		<div className="flex flex-col">
-			<h1 className="text-2xl font-bold mb-8">
-				Thêm dữ liệu khảo sát giảng viên
-			</h1>
+			<div className="page-header mb-6">
+				<h1 className="page-title">
+					Thêm dữ liệu khảo sát giảng viên
+				</h1>
+			</div>
 			<div className="flex flex-col gap-8">
 				<UICard
 					title="Thông tin giảng viên"
@@ -295,8 +297,10 @@ export default function Page() {
 				<div className="flex justify-end">
 					<Button
 						color="primary"
+						variant="flat"
 						onPress={handleAddData}
 						isLoading={isAdding}
+						className="font-bold"
 					>
 						Thêm dữ liệu
 					</Button>

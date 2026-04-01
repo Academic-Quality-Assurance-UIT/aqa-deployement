@@ -68,7 +68,7 @@ export default function Page() {
 				{isInitial ? (
 					<>
 						<div className=" flex flex-col items-center gap-1">
-							<h1 className="flex items-center gap-2 text-4xl font-bold mb-4">
+							<h1 className="page-title flex items-center gap-2 mb-4">
 								AQA -{" "}
 								<span className=" text-pink-500">Assistant</span>
 								<span className=" mx-2">
