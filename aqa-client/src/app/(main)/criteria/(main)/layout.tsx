@@ -2,9 +2,10 @@
 
 import BreadCrumb from "@/components/BreadCrumb";
 import PageTabs from "@/components/PageTabs";
+import ClassTypeSelector from "@/components/selectors/ClassTypeSelector";
+import { SemesterSelectorWithFilterUrlQuery } from "@/components/selectors/SemesterSelector";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
-import { Tab, Tabs } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -31,28 +32,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 					},
 				]}
 			/>
-			<div className=" mt-4">
-				<Tabs
-					variant={"underlined"}
-					color="primary"
-					classNames={{
-						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
-						cursor: "w-full bg-primary",
-						tab: "max-w-fit px-0 h-10",
-						tabContent: "group-data-[selected=true]:text-primary group-data-[selected=true]:font-bold"
-					}}
-					aria-label="Criteria class type"
-					selectedKey={query.class_type || ""}
-					onSelectionChange={(key) => {
-						setUrlQuery(pathname, { class_type: key.toString() });
-					}}
-				>
-					<Tab key="" className=" font-medium" title="Tất cả" />
-					<Tab key="LT" className=" font-medium" title="Lý thuyết" />
-					<Tab key="TH1" className=" font-medium" title="Thực hành 1" />
-					<Tab key="TH2" className=" font-medium" title="Thực hành 2" />
-					<Tab key="Online" className=" font-medium" title="Học online" />
-				</Tabs>
+			<div className="mt-4 flex flex-row items-center gap-2 p-1 bg-white dark:bg-zinc-900 border-1 border-divider rounded-xl w-fit shadow-sm">
+				<ClassTypeSelector isNoBorder />
+				<div className=" w-[2px] h-5 bg-zinc-200" />
+				<SemesterSelectorWithFilterUrlQuery isNoBorder />
 			</div>
 			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
 		</FilterProvider>

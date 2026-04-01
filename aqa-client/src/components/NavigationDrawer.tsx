@@ -143,8 +143,8 @@ export function NavItem({
 
 	const isSelected =
 		pathname === link ||
-		pathname.split("/")[1] === link.split("/")[1] ||
-		selectedLinks.includes(pathname.split("/")[1]);
+		pathname.split("/").slice(1).join("/") === link.split("/").slice(1).join("/") ||
+		selectedLinks.includes(pathname.split("/").slice(1).join("/"));
 
 	useEffect(() => {
 		router.prefetch(link);

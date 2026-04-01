@@ -14,7 +14,8 @@ import {
 	Spinner,
 	useDisclosure,
 } from "@heroui/react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import OptionButton from "../OptionButton";
 
@@ -37,7 +38,7 @@ function SemesterSelector_({
 	const currentSelectedRef = useRef<any>();
 
 	const hasValue = Boolean(semester?.display_name);
-	const buttonText = semester?.display_name || "Tất cả học kỳ";
+	const buttonText = semester?.display_name || "Chọn học kỳ";
 
 	useEffect(() => {
 		if (currentSelectedRef.current) {
@@ -184,3 +185,38 @@ export function SemesterSelectorWithSearchParam({
 type SemesterPropType = {
 	isNoBorder?: boolean;
 };
+
+export function SemesterSelectorWithFilterUrlQuery({
+	lecturer_id,
+	...props
+}: SemesterPropType & FilterType) {
+	const { query, setUrlQuery } = useFilterUrlQuery();
+	const pathname = usePathname();
+
+	const { data: semestersData } = useSemestersQuery();
+
+	const semester = useMemo<Semester | undefined>(() => {
+		const semesterList = semestersData?.semesters;
+		if (semesterList && semesterList.length > 0) {
+			if (query.semester_id)
+				return semesterList.find((v) => v.semester_id === query.semester_id);
+		}
+	}, [semestersData?.semesters, query.semester_id]);
+
+	const setSemester = useCallback(
+		(semester: Semester | undefined) => {
+			setUrlQuery(pathname, { semester_id: semester?.semester_id || "" });
+		},
+		[setUrlQuery, pathname]
+	);
+
+	return (
+		<SemesterSelector_
+			semester={semester}
+			setSemester={setSemester}
+			semesters={semestersData?.semesters || []}
+			{...props}
+		/>
+	);
+}
+

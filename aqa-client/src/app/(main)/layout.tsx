@@ -29,13 +29,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 				<AuthenticationNavigating data={data} loading={loading} />
 			</Suspense>
 			<NavigationDrawer>
-				<NavSectionHeader label="Dữ liệu" />
 				<NavItem
 					title="Trang chủ"
 					description="Tổng quan về dữ liệu"
 					link="/"
 					icon={AiOutlineHome}
 				/>
+				<NavSectionHeader label="Khảo sát môn học" />
 				<NavItem
 					title="Ý kiến"
 					description="Ý kiến của sinh viên về giảng viên"
@@ -77,13 +77,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 					/>
 				) : null}
 
-				<NavSectionHeader label="Khảo sát" />
 				{isFullAcess || isAdmin || true ? (
-					<NavItem
-						title="Khảo sát giảng viên"
-						link="/staff-survey"
-						icon={AiOutlineSolution}
-					/>
+					<>
+						<NavSectionHeader label="Khảo sát CBNV" />
+						<NavItem
+							title="Điểm các tiêu chí"
+							link="/staff-survey"
+							icon={AiOutlineSolution}
+						/>
+						<NavItem
+							title="Các khoa/ bộ môn"
+							link="/staff-survey/units"
+							icon={AiOutlineSolution}
+						/>
+						<NavItem
+							title="Tất cả nhận xét"
+							link="/staff-survey/comments"
+							icon={AiOutlineSolution}
+						/>
+					</>
 				) : null}
 
 				{isAdmin ? (
