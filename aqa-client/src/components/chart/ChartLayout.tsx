@@ -7,6 +7,7 @@ import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { AiOutlineCloudDownload, AiOutlineSetting } from "react-icons/ai";
 import MediaQuery, { useMediaQuery } from "react-responsive";
 import Extensible from "../Extensible";
+import { useGetSettingQuery } from "@/gql/graphql";
 
 import { FcComboChart } from "react-icons/fc";
 
@@ -87,6 +88,8 @@ export default function ChartLayout({
 		}
 		return "100%";
 	}, [columnNum, columnSize, isFullWidth, containerWidth]);
+
+	const { data: settingData } = useGetSettingQuery({ variables: { key: "filter_year" } });
 
 	return (
 		<BaseChart height={height}>
@@ -243,13 +246,21 @@ export default function ChartLayout({
 						ref={containerRef}
 						className=" relative h-full w-full overflow-x-auto overflow-y-hidden flex flex-col justify-stretch flex-grow"
 					>
-						{showLegend ? (
-							<Legend
-								className=" w-full px-10"
-								categories={legends}
-								colors={colors}
-							/>
-						) : null}
+						<div className="flex items-center justify-between px-10 w-[calc(100%-2.5rem)] mt-2 mb-2 min-h-[2rem]">
+							<div>
+								{showLegend ? (
+									<Legend
+										categories={legends}
+										colors={colors}
+									/>
+								) : null}
+							</div>
+							{settingData?.getSetting?.value && (
+								<p className="text-xs text-gray-500 italic opacity-80 whitespace-nowrap overflow-hidden">
+									* Biểu đồ đang lọc dữ liệu trong {settingData.getSetting.value} năm học gần nhất
+								</p>
+							)}
+						</div>
 						<div className=" relative pb-5 h-full w-full overflow-x-auto flex flex-col justify-stretch flex-grow">
 							<div
 								id="chart"

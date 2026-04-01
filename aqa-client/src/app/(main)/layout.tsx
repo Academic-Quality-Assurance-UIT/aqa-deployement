@@ -13,6 +13,7 @@ import {
 	AiOutlinePieChart,
 	AiOutlineSolution,
 	AiOutlineUser,
+	AiOutlineSetting,
 } from "react-icons/ai";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -89,11 +90,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 					/>
 				) : null} */}
 				{isAdmin ? (
-					<NavItem
-						title="Quản lý tài khoản"
-						link="/user"
-						icon={AiOutlineUser}
-					/>
+					<>
+						<NavItem
+							title="Quản lý tài khoản"
+							link="/user"
+							icon={AiOutlineUser}
+						/>
+						<NavItem
+							title="Cài đặt chung"
+							link="/admin-settings"
+							icon={AiOutlineSetting}
+						/>
+					</>
 				) : null}
 			</NavigationDrawer>
 			<main className="w-full h-screen overflow-y-auto xl:px-20 px-4 lg:px-16 lg:pl-12 pt-6 pb-24 lg:pt-12 lg:pb-10 overflow-x-hidden">
