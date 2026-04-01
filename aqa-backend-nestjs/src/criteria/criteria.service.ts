@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryArgs } from 'src/common/args/query.arg';
 import { BaseService } from 'src/common/services/BaseService';
-import { filterQuery } from 'src/common/utils/filterQuery';
+import { FilterQueryService } from 'src/common/services/filter-query.service';
 import { paginateByQuery } from 'src/common/utils/paginate';
 import { Repository } from 'typeorm';
 import { Criteria } from './entities/criteria.entity';
@@ -13,7 +13,7 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 export class CriteriaService extends BaseService<Criteria> {
   private readonly logger = new Logger(CriteriaService.name);
 
-  constructor(
+  constructor(private filterQueryService: FilterQueryService, 
     @InjectRepository(Criteria) private repo: Repository<Criteria>,
     @InjectRepository(Class) private classRepo: Repository<Class>,
   ) {
@@ -24,7 +24,7 @@ export class CriteriaService extends BaseService<Criteria> {
 
   async findAll({ filter, pagination, sort }: QueryArgs) {
     return paginateByQuery(
-      filterQuery<Criteria>(
+      this.filterQueryService.filterQuery<Criteria>(
         Criteria,
         this.repo
           .createQueryBuilder()

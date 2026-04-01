@@ -23,6 +23,8 @@ import { MailModule } from './mail/mail.module';
 import { StaffSurveyModule } from './staff-survey/staff-survey.module';
 import { FileLogger } from './common/logger/typeorm-logger';
 import { AiGenerateModule } from './ai-generate/ai-generate.module';
+import { AdminSettingModule } from './admin-setting/admin-setting.module';
+import { FilterQueryModule } from './common/services/filter-query.module';
 
 @Module({
   imports: [
@@ -67,6 +69,8 @@ import { AiGenerateModule } from './ai-generate/ai-generate.module';
     MailModule,
     StaffSurveyModule,
     AiGenerateModule,
+    AdminSettingModule,
+    FilterQueryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

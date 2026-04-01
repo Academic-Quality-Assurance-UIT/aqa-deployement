@@ -1,0 +1,13 @@
+query GetSetting($key: String!) {
+  getSetting(key: $key) {
+    key
+    value
+  }
+}
+
+mutation UpdateSetting($key: String!, $value: String!) {
+  updateSetting(key: $key, value: $value) {
+    key
+    value
+  }
+}

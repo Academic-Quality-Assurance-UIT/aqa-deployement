@@ -4,7 +4,7 @@ import { FilterArgs } from 'src/common/args/filter.arg';
 import { PaginationArgs } from 'src/common/args/pagination.arg';
 import { SortArgs } from 'src/common/args/sort.arg';
 import { BaseService } from 'src/common/services/BaseService';
-import { filterQuery } from 'src/common/utils/filterQuery';
+import { FilterQueryService } from 'src/common/services/filter-query.service';
 import { paginateByQuery } from 'src/common/utils/paginate';
 import { FindOptionsRelations, Repository } from 'typeorm';
 import { Faculty } from './entities/faculty.entity';
@@ -12,7 +12,7 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class FacultyService extends BaseService<Faculty> {
-  constructor(@InjectRepository(Faculty) private repo: Repository<Faculty>) {
+  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Faculty) private repo: Repository<Faculty>) {
     super();
   }
 
@@ -24,7 +24,7 @@ export class FacultyService extends BaseService<Faculty> {
     sort?: SortArgs,
   ) {
     return paginateByQuery(
-      filterQuery<Faculty>(
+      this.filterQueryService.filterQuery<Faculty>(
         Faculty,
         this.repo
           .createQueryBuilder()
@@ -37,7 +37,7 @@ export class FacultyService extends BaseService<Faculty> {
           )
           .leftJoin('Class.points', 'Point')
           .leftJoin('Point.criteria', 'Criteria')
-          .leftJoin('Criteria.semester', 'Semester'),
+          .leftJoin('Class.semester', 'Semester'),
         filter,
         sort,
       )

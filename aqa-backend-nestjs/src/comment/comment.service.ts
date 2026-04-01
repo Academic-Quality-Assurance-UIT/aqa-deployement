@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FilterArgs } from 'src/common/args/filter.arg';
 import { PaginationArgs } from 'src/common/args/pagination.arg';
-import { filterQuery } from 'src/common/utils/filterQuery';
+import { FilterQueryService } from 'src/common/services/filter-query.service';
 import { paginateByQuery } from 'src/common/utils/paginate';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
@@ -10,7 +10,7 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class CommentService {
-  constructor(@InjectRepository(Comment) private repo: Repository<Comment>) {}
+  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Comment) private repo: Repository<Comment>) {}
 
   findAll(
     filter: FilterArgs,
@@ -19,7 +19,7 @@ export class CommentService {
     topic: string[],
   ) {
     return paginateByQuery(
-      filterQuery<Comment>(
+      this.filterQueryService.filterQuery<Comment>(
         'Comment',
         this.repo
           .createQueryBuilder()
@@ -65,7 +65,7 @@ export class CommentService {
     return {
       type: type ?? 'all',
       quantity:
-        (await filterQuery<Comment>(
+        (await this.filterQueryService.filterQuery<Comment>(
           'Comment',
           this.repo
             .createQueryBuilder()

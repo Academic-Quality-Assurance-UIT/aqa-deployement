@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AdminSetting {
+  key: String!
+  value: String!
+}
+
 type AuthDto {
   access_token: String!
   user: UserEntity!
@@ -118,6 +123,7 @@ type Mutation {
   loginIntegration(token: String!): AuthDto!
   registerUser(user: UserDto!): UserEntity!
   removeUser(id: String!): Boolean!
+  updateSetting(key: String!, value: String!): AdminSetting!
   updateUser(user: UpdateUserDto!): UserEntity!
 }
 
@@ -216,6 +222,7 @@ type Query {
   getPointsByCategory(semester: String): [PointByCategoryDTO!]!
   getPointsByCategoryDonVi(semester: String): [PointByCategoryDTO!]!
   getPointsByCriteria(category: String, displayName: String, semester: String): [PointByCriteriaDTO!]!
+  getSetting(key: String!): AdminSetting!
   getStaffSurveyCommentCount(category: String, displayName: String, semester: String): Int!
   getSurveySemesterList: [String!]!
 

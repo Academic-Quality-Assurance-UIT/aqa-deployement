@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FilterArgs } from 'src/common/args/filter.arg';
 import { PaginationArgs } from 'src/common/args/pagination.arg';
-import { filterQuery } from 'src/common/utils/filterQuery';
+import { FilterQueryService } from 'src/common/services/filter-query.service';
 import { paginateByQuery } from 'src/common/utils/paginate';
 import { Repository } from 'typeorm';
 import { Point } from './entities/point.entity';
@@ -10,7 +10,7 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class PointService {
-  constructor(@InjectRepository(Point) private repo: Repository<Point>) {}
+  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Point) private repo: Repository<Point>) {}
 
   findAll(
     filter: FilterArgs,
@@ -18,13 +18,13 @@ export class PointService {
     groupEntity: 'Subject' | 'Lecturer' | 'Faculty' | 'Criteria',
   ) {
     return paginateByQuery(
-      filterQuery<Point>(
+      this.filterQueryService.filterQuery<Point>(
         'Point',
         this.repo
           .createQueryBuilder()
           .innerJoin('Point.class', 'Class')
           .innerJoin('Class.subject', 'Subject')
-          .innerJoin('Class.semester', 'Semester')
+          .leftJoin('Class.semester', 'Semester')
           .innerJoin('Point.criteria', 'Criteria')
           .innerJoin('Subject.faculty', 'Faculty')
           .innerJoin(
