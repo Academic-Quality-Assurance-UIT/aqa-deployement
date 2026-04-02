@@ -52,12 +52,6 @@ export default function NavigationDrawer({ children }: { children?: ReactNode })
 								</div>
 								<span className="font-semibold text-sm text-gray-800">AQA System</span>
 							</div>
-							<button
-								onClick={toggleDrawer}
-								className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 transition-colors"
-							>
-								<IoChevronBackOutline size={14} />
-							</button>
 						</div>
 
 						{/* Navigation items */}

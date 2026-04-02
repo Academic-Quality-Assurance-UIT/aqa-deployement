@@ -24,15 +24,16 @@ export default function Layout({ children }: { children: ReactNode }) {
 				tabs={[
 					{
 						link: "",
-						title: "Trang chủ",
+						title: "Tất cả tiêu chí",
 					},
 					{
 						link: "detail",
-						title: "Chi tiết",
+						title: "Chi tiết các tiêu chí",
 					},
 				]}
 			/>
 			<div className="mt-4 flex flex-row items-center gap-2 p-1 bg-white dark:bg-zinc-900 border-1 border-divider rounded-xl w-fit shadow-sm">
+				<p className="font-bold text-sm pl-4">Các bộ lọc: </p>
 				<ClassTypeSelector isNoBorder />
 				<div className=" w-[2px] h-5 bg-zinc-200" />
 				<SemesterSelectorWithFilterUrlQuery isNoBorder />

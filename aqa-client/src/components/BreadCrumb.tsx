@@ -161,7 +161,7 @@ export default function BreadCrumb() {
 	);
 
 	return (
-        <div className=" w-full mt-5 mb-2 lg:mb-5 pb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4 overflow-auto">
+        <div className=" w-full mt-5 mb-2 lg:mb-5 pb-2 flex flex-col lg:flex-col lg:items-start justify-start gap-4 overflow-auto">
             <div className=" w-fit flex flex-row gap-1">
 				{paths.map(
 					(
@@ -207,23 +207,24 @@ export default function BreadCrumb() {
 								</Button>
 							</Tooltip>
 							{index !== paths.length - 1 ? (
-								<div
-									className=" rounded-xl grid place-items-center h-full px-1 lg:px-2 cursor-pointer bg-transparent hover:bg-card active:bg-foreground-200 duration-200"
-									onClick={() => {
-										if (value)
-											setUrlQuery(
-												`/${link}/${value}`,
-												onClickValue
-											);
-										else
-											setUrlQuery(`/${link}`, {
-												...onClickValue,
-												...defaultValue,
-											});
-									}}
-								>
-									<IoChevronForwardOutline size={20} />
-								</div>
+								// <div
+								// 	className=" rounded-xl grid place-items-center h-full px-1 lg:px-2 cursor-pointer bg-transparent hover:bg-card active:bg-foreground-200 duration-200"
+								// 	onClick={() => {
+								// 		if (value)
+								// 			setUrlQuery(
+								// 				`/${link}/${value}`,
+								// 				onClickValue
+								// 			);
+								// 		else
+								// 			setUrlQuery(`/${link}`, {
+								// 				...onClickValue,
+								// 				...defaultValue,
+								// 			});
+								// 	}}
+								// >
+								// 	<IoChevronForwardOutline size={20} />
+								// </div>
+								<div className=" mx-2 w-[6px] h-full rounded-md bg-primary-200" />
 							) : null}
 						</div>
 					)
