@@ -41,6 +41,43 @@ type CommentQuantity {
   type: String!
 }
 
+type CrawlJob {
+  completed_at: DateTime
+  crawl_job_id: String!
+  created_at: DateTime!
+  created_by: String
+  error_message: String
+  parameters: JSON
+  started_at: DateTime
+  status: CrawlJobStatus!
+  summary: JSON
+  type: CrawlJobType!
+}
+
+"""Status of a crawl job"""
+enum CrawlJobStatus {
+  ABANDONED
+  COMPLETED
+  CONFIRMED
+  FAILED
+  PENDING
+  RUNNING
+}
+
+"""Type of crawl job"""
+enum CrawlJobType {
+  AGGREGATE_POINTS
+  LECTURER_SURVEY
+  STAFF_SURVEY
+  SUBJECT_SURVEY
+  TRANSFER_DATA
+}
+
+type CrawlStagingDataSummary {
+  byType: [StagingDataTypeCount!]!
+  totalRecords: Int!
+}
+
 type Criteria {
   criteria_id: String!
   display_name: String!
@@ -93,6 +130,11 @@ type GroupedPoint {
   trimmed_mean_point: Float
 }
 
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
 type Lecturer {
   birth_date: DateTime
   classes(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedClass!
@@ -114,16 +156,46 @@ type Lecturer {
 }
 
 type Mutation {
+  """Hủy bỏ dữ liệu tạm"""
+  abandonCrawlJob(jobId: String!): CrawlJob!
+
   """Add new staff survey data"""
   addListStaffSurveyData(data: [StaffSurveySheetDTO!]!): [StaffSurveySheet!]!
 
   """Add new staff survey data"""
   addNewStaffSurveyData(data: StaffSurveySheetDTO!): StaffSurveySheet!
+
+  """Thêm cấu hình khảo sát mới"""
+  addSurveyListConfig(input: SurveyListConfigInput!): SurveyListConfig!
+
+  """Xác nhận dữ liệu → đưa vào database chính"""
+  confirmCrawlJob(jobId: String!): CrawlJob!
+
+  """Xóa cấu hình khảo sát"""
+  deleteSurveyListConfig(id: String!): Boolean!
   login(password: String!, username: String!): AuthDto!
   loginIntegration(token: String!): AuthDto!
   registerUser(user: UserDto!): UserEntity!
   removeUser(id: String!): Boolean!
+
+  """Chạy tổng hợp điểm"""
+  runAggregatePoints: CrawlJob!
+
+  """Chạy thu thập KS Giảng viên"""
+  runCrawlLecturerSurvey(semester: String): CrawlJob!
+
+  """Chạy thu thập KS CBNV"""
+  runCrawlStaffSurvey(year: String): CrawlJob!
+
+  """Chạy thu thập KS Môn học"""
+  runCrawlSubjectSurvey(semester: String): CrawlJob!
+
+  """Chạy chuyển dữ liệu giữa các database"""
+  runTransferData: CrawlJob!
   updateSetting(key: String!, value: String!): AdminSetting!
+
+  """Cập nhật cấu hình khảo sát"""
+  updateSurveyListConfig(id: String!, input: SurveyListConfigInput!): SurveyListConfig!
   updateUser(user: UpdateUserDto!): UserEntity!
 }
 
@@ -204,6 +276,15 @@ type Query {
 
   """List all comments"""
   comments(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: [String!], type: [String!]): PaginatedComment!
+
+  """Lấy thông tin chi tiết một job"""
+  crawlJob(id: String!): CrawlJob
+
+  """Lấy danh sách các job thu thập dữ liệu"""
+  crawlJobs(type: CrawlJobType): [CrawlJob!]!
+
+  """Thông tin tổng hợp dữ liệu tạm"""
+  crawlStagingDataSummary(jobId: String!): CrawlStagingDataSummary!
   criteria(id: String!): Criteria
   criterias(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedCriteria!
   currentUser: UserEntity!
@@ -241,6 +322,9 @@ type Query {
   semesters: [Semester!]
   subject(id: String!): Subject
   subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject!
+
+  """Lấy danh sách cấu hình khảo sát"""
+  surveyListConfigs(type: CrawlJobType): [SurveyListConfig!]!
   users(name: String): [UserEntity!]!
 }
 
@@ -339,6 +423,11 @@ input StaffSurveySheetDTO {
   survey_name: String
 }
 
+type StagingDataTypeCount {
+  count: Int!
+  type: String!
+}
+
 type Subject {
   display_name: String
   faculty: Faculty
@@ -346,6 +435,32 @@ type Subject {
   points(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): [GroupedPoint!]
   subject_id: String!
   total_point: Float
+}
+
+type SurveyListConfig {
+  created_at: DateTime!
+  id: String!
+  is_active: Boolean!
+  semester_name: String
+  semester_type: String
+  sid: String!
+  survey_type: CrawlJobType!
+  title: String
+  type: String
+  updated_at: DateTime!
+  year: String
+}
+
+input SurveyListConfigInput {
+  id: String
+  is_active: Boolean
+  semester_name: String
+  semester_type: String
+  sid: String!
+  survey_type: CrawlJobType!
+  title: String
+  type: String
+  year: String
 }
 
 input UpdateUserDto {

@@ -12,15 +12,15 @@ export class Semester {
   @Field()
   display_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Field({ nullable: true })
   type: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Field({ nullable: true })
   year: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Field({ nullable: true })
   search_string: string;
 }

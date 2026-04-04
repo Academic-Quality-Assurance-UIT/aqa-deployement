@@ -3,7 +3,7 @@
 import ChooseFileMapping, {
 	MappingItem,
 } from "@/components/staff-survey/ChooseFileMapping";
-import UploadingFilePreview from "@/components/staff-survey-uploadingFilePreview";
+import UploadingFilePreview from "@/components/staff-survey/UploadingFilePreview";
 import { UICard } from "@/components/UICard";
 import {
 	useAddListStaffSurveyDataMutation,

@@ -16,6 +16,7 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   DateTime: { input: any; output: any; }
+  JSON: { input: any; output: any; }
 };
 
 export type AdminSetting = {
@@ -73,6 +74,45 @@ export type CommentQuantity = {
   __typename?: 'CommentQuantity';
   quantity: Scalars['Int']['output'];
   type: Scalars['String']['output'];
+};
+
+export type CrawlJob = {
+  __typename?: 'CrawlJob';
+  completed_at?: Maybe<Scalars['DateTime']['output']>;
+  crawl_job_id: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by?: Maybe<Scalars['String']['output']>;
+  error_message?: Maybe<Scalars['String']['output']>;
+  parameters?: Maybe<Scalars['JSON']['output']>;
+  started_at?: Maybe<Scalars['DateTime']['output']>;
+  status: CrawlJobStatus;
+  summary?: Maybe<Scalars['JSON']['output']>;
+  type: CrawlJobType;
+};
+
+/** Status of a crawl job */
+export enum CrawlJobStatus {
+  Abandoned = 'ABANDONED',
+  Completed = 'COMPLETED',
+  Confirmed = 'CONFIRMED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Running = 'RUNNING'
+}
+
+/** Type of crawl job */
+export enum CrawlJobType {
+  AggregatePoints = 'AGGREGATE_POINTS',
+  LecturerSurvey = 'LECTURER_SURVEY',
+  StaffSurvey = 'STAFF_SURVEY',
+  SubjectSurvey = 'SUBJECT_SURVEY',
+  TransferData = 'TRANSFER_DATA'
+}
+
+export type CrawlStagingDataSummary = {
+  __typename?: 'CrawlStagingDataSummary';
+  byType: Array<StagingDataTypeCount>;
+  totalRecords: Scalars['Int']['output'];
 };
 
 export type Criteria = {
@@ -203,16 +243,41 @@ export type LecturerPointsArgs = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Hủy bỏ dữ liệu tạm */
+  abandonCrawlJob: CrawlJob;
   /** Add new staff survey data */
   addListStaffSurveyData: Array<StaffSurveySheet>;
   /** Add new staff survey data */
   addNewStaffSurveyData: StaffSurveySheet;
+  /** Thêm cấu hình khảo sát mới */
+  addSurveyListConfig: SurveyListConfig;
+  /** Xác nhận dữ liệu → đưa vào database chính */
+  confirmCrawlJob: CrawlJob;
+  /** Xóa cấu hình khảo sát */
+  deleteSurveyListConfig: Scalars['Boolean']['output'];
   login: AuthDto;
   loginIntegration: AuthDto;
   registerUser: UserEntity;
   removeUser: Scalars['Boolean']['output'];
+  /** Chạy tổng hợp điểm */
+  runAggregatePoints: CrawlJob;
+  /** Chạy thu thập KS Giảng viên */
+  runCrawlLecturerSurvey: CrawlJob;
+  /** Chạy thu thập KS CBNV */
+  runCrawlStaffSurvey: CrawlJob;
+  /** Chạy thu thập KS Môn học */
+  runCrawlSubjectSurvey: CrawlJob;
+  /** Chạy chuyển dữ liệu giữa các database */
+  runTransferData: CrawlJob;
   updateSetting: AdminSetting;
+  /** Cập nhật cấu hình khảo sát */
+  updateSurveyListConfig: SurveyListConfig;
   updateUser: UserEntity;
+};
+
+
+export type MutationAbandonCrawlJobArgs = {
+  jobId: Scalars['String']['input'];
 };
 
 
@@ -223,6 +288,21 @@ export type MutationAddListStaffSurveyDataArgs = {
 
 export type MutationAddNewStaffSurveyDataArgs = {
   data: StaffSurveySheetDto;
+};
+
+
+export type MutationAddSurveyListConfigArgs = {
+  input: SurveyListConfigInput;
+};
+
+
+export type MutationConfirmCrawlJobArgs = {
+  jobId: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteSurveyListConfigArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -247,9 +327,30 @@ export type MutationRemoveUserArgs = {
 };
 
 
+export type MutationRunCrawlLecturerSurveyArgs = {
+  semester?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationRunCrawlStaffSurveyArgs = {
+  year?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationRunCrawlSubjectSurveyArgs = {
+  semester?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type MutationUpdateSettingArgs = {
   key: Scalars['String']['input'];
   value: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateSurveyListConfigArgs = {
+  id: Scalars['String']['input'];
+  input: SurveyListConfigInput;
 };
 
 
@@ -343,6 +444,12 @@ export type Query = {
   commentQuantity: CommentQuantity;
   /** List all comments */
   comments: PaginatedComment;
+  /** Lấy thông tin chi tiết một job */
+  crawlJob?: Maybe<CrawlJob>;
+  /** Lấy danh sách các job thu thập dữ liệu */
+  crawlJobs: Array<CrawlJob>;
+  /** Thông tin tổng hợp dữ liệu tạm */
+  crawlStagingDataSummary: CrawlStagingDataSummary;
   criteria?: Maybe<Criteria>;
   criterias: PaginatedCriteria;
   currentUser: UserEntity;
@@ -374,6 +481,8 @@ export type Query = {
   semesters?: Maybe<Array<Semester>>;
   subject?: Maybe<Subject>;
   subjects: PaginatedSubject;
+  /** Lấy danh sách cấu hình khảo sát */
+  surveyListConfigs: Array<SurveyListConfig>;
   users: Array<UserEntity>;
 };
 
@@ -410,6 +519,21 @@ export type QueryCommentsArgs = {
   sort?: InputMaybe<SortArgs>;
   topic?: InputMaybe<Array<Scalars['String']['input']>>;
   type?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type QueryCrawlJobArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryCrawlJobsArgs = {
+  type?: InputMaybe<CrawlJobType>;
+};
+
+
+export type QueryCrawlStagingDataSummaryArgs = {
+  jobId: Scalars['String']['input'];
 };
 
 
@@ -536,6 +660,11 @@ export type QuerySubjectsArgs = {
 };
 
 
+export type QuerySurveyListConfigsArgs = {
+  type?: InputMaybe<CrawlJobType>;
+};
+
+
 export type QueryUsersArgs = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
@@ -642,6 +771,12 @@ export type StaffSurveySheetDto = {
   survey_name?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type StagingDataTypeCount = {
+  __typename?: 'StagingDataTypeCount';
+  count: Scalars['Int']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type Subject = {
   __typename?: 'Subject';
   display_name?: Maybe<Scalars['String']['output']>;
@@ -657,6 +792,33 @@ export type SubjectPointsArgs = {
   filter?: InputMaybe<FilterArgs>;
   pagination?: InputMaybe<PaginationArgs>;
   sort?: InputMaybe<SortArgs>;
+};
+
+export type SurveyListConfig = {
+  __typename?: 'SurveyListConfig';
+  created_at: Scalars['DateTime']['output'];
+  id: Scalars['String']['output'];
+  is_active: Scalars['Boolean']['output'];
+  semester_name?: Maybe<Scalars['String']['output']>;
+  semester_type?: Maybe<Scalars['String']['output']>;
+  sid: Scalars['String']['output'];
+  survey_type: CrawlJobType;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updated_at: Scalars['DateTime']['output'];
+  year?: Maybe<Scalars['String']['output']>;
+};
+
+export type SurveyListConfigInput = {
+  id?: InputMaybe<Scalars['String']['input']>;
+  is_active?: InputMaybe<Scalars['Boolean']['input']>;
+  semester_name?: InputMaybe<Scalars['String']['input']>;
+  semester_type?: InputMaybe<Scalars['String']['input']>;
+  sid: Scalars['String']['input'];
+  survey_type: CrawlJobType;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  year?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateUserDto = {
@@ -754,6 +916,101 @@ export type CommentListQueryVariables = Exact<{
 
 
 export type CommentListQuery = { __typename?: 'Query', comments: { __typename?: 'PaginatedComment', data: Array<{ __typename?: 'Comment', comment_id: string, display_name: string, type: string, type_list: Array<string>, topic: string, class?: { __typename?: 'Class', class_id: string, class_type: string, display_name: string, participating_student?: number | null, program: string, total_student?: number | null, lecturer: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null }, subject: { __typename?: 'Subject', display_name?: string | null, faculty_id?: string | null, subject_id: string, total_point?: number | null, faculty?: { __typename?: 'Faculty', display_name: string, faculty_id: string, full_name?: string | null } | null }, semester: { __typename?: 'Semester', display_name: string, semester_id: string, type?: string | null, year?: string | null } } | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+
+export type GetCrawlJobsQueryVariables = Exact<{
+  type?: InputMaybe<CrawlJobType>;
+}>;
+
+
+export type GetCrawlJobsQuery = { __typename?: 'Query', crawlJobs: Array<{ __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null, completed_at?: any | null, error_message?: string | null, summary?: any | null, parameters?: any | null, created_by?: string | null, created_at: any }> };
+
+export type GetCrawlJobQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type GetCrawlJobQuery = { __typename?: 'Query', crawlJob?: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null, completed_at?: any | null, error_message?: string | null, summary?: any | null, parameters?: any | null, created_by?: string | null, created_at: any } | null };
+
+export type GetCrawlStagingDataSummaryQueryVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+
+export type GetCrawlStagingDataSummaryQuery = { __typename?: 'Query', crawlStagingDataSummary: { __typename?: 'CrawlStagingDataSummary', totalRecords: number, byType: Array<{ __typename?: 'StagingDataTypeCount', type: string, count: number }> } };
+
+export type GetSurveyListConfigsQueryVariables = Exact<{
+  type?: InputMaybe<CrawlJobType>;
+}>;
+
+
+export type GetSurveyListConfigsQuery = { __typename?: 'Query', surveyListConfigs: Array<{ __typename?: 'SurveyListConfig', id: string, survey_type: CrawlJobType, sid: string, title?: string | null, type?: string | null, year?: string | null, semester_type?: string | null, semester_name?: string | null, is_active: boolean, created_at: any, updated_at: any }> };
+
+export type RunCrawlSubjectSurveyMutationVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RunCrawlSubjectSurveyMutation = { __typename?: 'Mutation', runCrawlSubjectSurvey: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null } };
+
+export type RunCrawlLecturerSurveyMutationVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RunCrawlLecturerSurveyMutation = { __typename?: 'Mutation', runCrawlLecturerSurvey: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null } };
+
+export type RunCrawlStaffSurveyMutationVariables = Exact<{
+  year?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type RunCrawlStaffSurveyMutation = { __typename?: 'Mutation', runCrawlStaffSurvey: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null } };
+
+export type RunAggregatePointsMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RunAggregatePointsMutation = { __typename?: 'Mutation', runAggregatePoints: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null } };
+
+export type RunTransferDataMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RunTransferDataMutation = { __typename?: 'Mutation', runTransferData: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null } };
+
+export type ConfirmCrawlJobMutationVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+
+export type ConfirmCrawlJobMutation = { __typename?: 'Mutation', confirmCrawlJob: { __typename?: 'CrawlJob', crawl_job_id: string, status: CrawlJobStatus } };
+
+export type AbandonCrawlJobMutationVariables = Exact<{
+  jobId: Scalars['String']['input'];
+}>;
+
+
+export type AbandonCrawlJobMutation = { __typename?: 'Mutation', abandonCrawlJob: { __typename?: 'CrawlJob', crawl_job_id: string, status: CrawlJobStatus } };
+
+export type AddSurveyListConfigMutationVariables = Exact<{
+  input: SurveyListConfigInput;
+}>;
+
+
+export type AddSurveyListConfigMutation = { __typename?: 'Mutation', addSurveyListConfig: { __typename?: 'SurveyListConfig', id: string, survey_type: CrawlJobType, sid: string, title?: string | null, year?: string | null, is_active: boolean } };
+
+export type UpdateSurveyListConfigMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  input: SurveyListConfigInput;
+}>;
+
+
+export type UpdateSurveyListConfigMutation = { __typename?: 'Mutation', updateSurveyListConfig: { __typename?: 'SurveyListConfig', id: string, survey_type: CrawlJobType, sid: string, title?: string | null, year?: string | null, is_active: boolean } };
+
+export type DeleteSurveyListConfigMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type DeleteSurveyListConfigMutation = { __typename?: 'Mutation', deleteSurveyListConfig: boolean };
 
 export type DetailCriteriaQueryVariables = Exact<{
   id: Scalars['String']['input'];
@@ -1549,6 +1806,576 @@ export type CommentListQueryResult = Apollo.QueryResult<CommentListQuery, Commen
 export function refetchCommentListQuery(variables?: CommentListQueryVariables) {
       return { query: CommentListDocument, variables: variables }
     }
+export const GetCrawlJobsDocument = gql`
+    query GetCrawlJobs($type: CrawlJobType) {
+  crawlJobs(type: $type) {
+    crawl_job_id
+    type
+    status
+    started_at
+    completed_at
+    error_message
+    summary
+    parameters
+    created_by
+    created_at
+  }
+}
+    `;
+
+/**
+ * __useGetCrawlJobsQuery__
+ *
+ * To run a query within a React component, call `useGetCrawlJobsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCrawlJobsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCrawlJobsQuery({
+ *   variables: {
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useGetCrawlJobsQuery(baseOptions?: Apollo.QueryHookOptions<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>(GetCrawlJobsDocument, options);
+      }
+export function useGetCrawlJobsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>(GetCrawlJobsDocument, options);
+        }
+// @ts-ignore
+export function useGetCrawlJobsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>;
+export function useGetCrawlJobsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlJobsQuery | undefined, GetCrawlJobsQueryVariables>;
+export function useGetCrawlJobsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>(GetCrawlJobsDocument, options);
+        }
+export type GetCrawlJobsQueryHookResult = ReturnType<typeof useGetCrawlJobsQuery>;
+export type GetCrawlJobsLazyQueryHookResult = ReturnType<typeof useGetCrawlJobsLazyQuery>;
+export type GetCrawlJobsSuspenseQueryHookResult = ReturnType<typeof useGetCrawlJobsSuspenseQuery>;
+export type GetCrawlJobsQueryResult = Apollo.QueryResult<GetCrawlJobsQuery, GetCrawlJobsQueryVariables>;
+export function refetchGetCrawlJobsQuery(variables?: GetCrawlJobsQueryVariables) {
+      return { query: GetCrawlJobsDocument, variables: variables }
+    }
+export const GetCrawlJobDocument = gql`
+    query GetCrawlJob($id: String!) {
+  crawlJob(id: $id) {
+    crawl_job_id
+    type
+    status
+    started_at
+    completed_at
+    error_message
+    summary
+    parameters
+    created_by
+    created_at
+  }
+}
+    `;
+
+/**
+ * __useGetCrawlJobQuery__
+ *
+ * To run a query within a React component, call `useGetCrawlJobQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCrawlJobQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCrawlJobQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetCrawlJobQuery(baseOptions: Apollo.QueryHookOptions<GetCrawlJobQuery, GetCrawlJobQueryVariables> & ({ variables: GetCrawlJobQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCrawlJobQuery, GetCrawlJobQueryVariables>(GetCrawlJobDocument, options);
+      }
+export function useGetCrawlJobLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCrawlJobQuery, GetCrawlJobQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCrawlJobQuery, GetCrawlJobQueryVariables>(GetCrawlJobDocument, options);
+        }
+// @ts-ignore
+export function useGetCrawlJobSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetCrawlJobQuery, GetCrawlJobQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlJobQuery, GetCrawlJobQueryVariables>;
+export function useGetCrawlJobSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlJobQuery, GetCrawlJobQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlJobQuery | undefined, GetCrawlJobQueryVariables>;
+export function useGetCrawlJobSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlJobQuery, GetCrawlJobQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCrawlJobQuery, GetCrawlJobQueryVariables>(GetCrawlJobDocument, options);
+        }
+export type GetCrawlJobQueryHookResult = ReturnType<typeof useGetCrawlJobQuery>;
+export type GetCrawlJobLazyQueryHookResult = ReturnType<typeof useGetCrawlJobLazyQuery>;
+export type GetCrawlJobSuspenseQueryHookResult = ReturnType<typeof useGetCrawlJobSuspenseQuery>;
+export type GetCrawlJobQueryResult = Apollo.QueryResult<GetCrawlJobQuery, GetCrawlJobQueryVariables>;
+export function refetchGetCrawlJobQuery(variables: GetCrawlJobQueryVariables) {
+      return { query: GetCrawlJobDocument, variables: variables }
+    }
+export const GetCrawlStagingDataSummaryDocument = gql`
+    query GetCrawlStagingDataSummary($jobId: String!) {
+  crawlStagingDataSummary(jobId: $jobId) {
+    totalRecords
+    byType {
+      type
+      count
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetCrawlStagingDataSummaryQuery__
+ *
+ * To run a query within a React component, call `useGetCrawlStagingDataSummaryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCrawlStagingDataSummaryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCrawlStagingDataSummaryQuery({
+ *   variables: {
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useGetCrawlStagingDataSummaryQuery(baseOptions: Apollo.QueryHookOptions<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables> & ({ variables: GetCrawlStagingDataSummaryQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>(GetCrawlStagingDataSummaryDocument, options);
+      }
+export function useGetCrawlStagingDataSummaryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>(GetCrawlStagingDataSummaryDocument, options);
+        }
+// @ts-ignore
+export function useGetCrawlStagingDataSummarySuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>;
+export function useGetCrawlStagingDataSummarySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>): Apollo.UseSuspenseQueryResult<GetCrawlStagingDataSummaryQuery | undefined, GetCrawlStagingDataSummaryQueryVariables>;
+export function useGetCrawlStagingDataSummarySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>(GetCrawlStagingDataSummaryDocument, options);
+        }
+export type GetCrawlStagingDataSummaryQueryHookResult = ReturnType<typeof useGetCrawlStagingDataSummaryQuery>;
+export type GetCrawlStagingDataSummaryLazyQueryHookResult = ReturnType<typeof useGetCrawlStagingDataSummaryLazyQuery>;
+export type GetCrawlStagingDataSummarySuspenseQueryHookResult = ReturnType<typeof useGetCrawlStagingDataSummarySuspenseQuery>;
+export type GetCrawlStagingDataSummaryQueryResult = Apollo.QueryResult<GetCrawlStagingDataSummaryQuery, GetCrawlStagingDataSummaryQueryVariables>;
+export function refetchGetCrawlStagingDataSummaryQuery(variables: GetCrawlStagingDataSummaryQueryVariables) {
+      return { query: GetCrawlStagingDataSummaryDocument, variables: variables }
+    }
+export const GetSurveyListConfigsDocument = gql`
+    query GetSurveyListConfigs($type: CrawlJobType) {
+  surveyListConfigs(type: $type) {
+    id
+    survey_type
+    sid
+    title
+    type
+    year
+    semester_type
+    semester_name
+    is_active
+    created_at
+    updated_at
+  }
+}
+    `;
+
+/**
+ * __useGetSurveyListConfigsQuery__
+ *
+ * To run a query within a React component, call `useGetSurveyListConfigsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetSurveyListConfigsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetSurveyListConfigsQuery({
+ *   variables: {
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useGetSurveyListConfigsQuery(baseOptions?: Apollo.QueryHookOptions<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>(GetSurveyListConfigsDocument, options);
+      }
+export function useGetSurveyListConfigsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>(GetSurveyListConfigsDocument, options);
+        }
+// @ts-ignore
+export function useGetSurveyListConfigsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>): Apollo.UseSuspenseQueryResult<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>;
+export function useGetSurveyListConfigsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>): Apollo.UseSuspenseQueryResult<GetSurveyListConfigsQuery | undefined, GetSurveyListConfigsQueryVariables>;
+export function useGetSurveyListConfigsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>(GetSurveyListConfigsDocument, options);
+        }
+export type GetSurveyListConfigsQueryHookResult = ReturnType<typeof useGetSurveyListConfigsQuery>;
+export type GetSurveyListConfigsLazyQueryHookResult = ReturnType<typeof useGetSurveyListConfigsLazyQuery>;
+export type GetSurveyListConfigsSuspenseQueryHookResult = ReturnType<typeof useGetSurveyListConfigsSuspenseQuery>;
+export type GetSurveyListConfigsQueryResult = Apollo.QueryResult<GetSurveyListConfigsQuery, GetSurveyListConfigsQueryVariables>;
+export function refetchGetSurveyListConfigsQuery(variables?: GetSurveyListConfigsQueryVariables) {
+      return { query: GetSurveyListConfigsDocument, variables: variables }
+    }
+export const RunCrawlSubjectSurveyDocument = gql`
+    mutation RunCrawlSubjectSurvey($semester: String) {
+  runCrawlSubjectSurvey(semester: $semester) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+    `;
+export type RunCrawlSubjectSurveyMutationFn = Apollo.MutationFunction<RunCrawlSubjectSurveyMutation, RunCrawlSubjectSurveyMutationVariables>;
+
+/**
+ * __useRunCrawlSubjectSurveyMutation__
+ *
+ * To run a mutation, you first call `useRunCrawlSubjectSurveyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunCrawlSubjectSurveyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runCrawlSubjectSurveyMutation, { data, loading, error }] = useRunCrawlSubjectSurveyMutation({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *   },
+ * });
+ */
+export function useRunCrawlSubjectSurveyMutation(baseOptions?: Apollo.MutationHookOptions<RunCrawlSubjectSurveyMutation, RunCrawlSubjectSurveyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunCrawlSubjectSurveyMutation, RunCrawlSubjectSurveyMutationVariables>(RunCrawlSubjectSurveyDocument, options);
+      }
+export type RunCrawlSubjectSurveyMutationHookResult = ReturnType<typeof useRunCrawlSubjectSurveyMutation>;
+export type RunCrawlSubjectSurveyMutationResult = Apollo.MutationResult<RunCrawlSubjectSurveyMutation>;
+export type RunCrawlSubjectSurveyMutationOptions = Apollo.BaseMutationOptions<RunCrawlSubjectSurveyMutation, RunCrawlSubjectSurveyMutationVariables>;
+export const RunCrawlLecturerSurveyDocument = gql`
+    mutation RunCrawlLecturerSurvey($semester: String) {
+  runCrawlLecturerSurvey(semester: $semester) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+    `;
+export type RunCrawlLecturerSurveyMutationFn = Apollo.MutationFunction<RunCrawlLecturerSurveyMutation, RunCrawlLecturerSurveyMutationVariables>;
+
+/**
+ * __useRunCrawlLecturerSurveyMutation__
+ *
+ * To run a mutation, you first call `useRunCrawlLecturerSurveyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunCrawlLecturerSurveyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runCrawlLecturerSurveyMutation, { data, loading, error }] = useRunCrawlLecturerSurveyMutation({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *   },
+ * });
+ */
+export function useRunCrawlLecturerSurveyMutation(baseOptions?: Apollo.MutationHookOptions<RunCrawlLecturerSurveyMutation, RunCrawlLecturerSurveyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunCrawlLecturerSurveyMutation, RunCrawlLecturerSurveyMutationVariables>(RunCrawlLecturerSurveyDocument, options);
+      }
+export type RunCrawlLecturerSurveyMutationHookResult = ReturnType<typeof useRunCrawlLecturerSurveyMutation>;
+export type RunCrawlLecturerSurveyMutationResult = Apollo.MutationResult<RunCrawlLecturerSurveyMutation>;
+export type RunCrawlLecturerSurveyMutationOptions = Apollo.BaseMutationOptions<RunCrawlLecturerSurveyMutation, RunCrawlLecturerSurveyMutationVariables>;
+export const RunCrawlStaffSurveyDocument = gql`
+    mutation RunCrawlStaffSurvey($year: String) {
+  runCrawlStaffSurvey(year: $year) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+    `;
+export type RunCrawlStaffSurveyMutationFn = Apollo.MutationFunction<RunCrawlStaffSurveyMutation, RunCrawlStaffSurveyMutationVariables>;
+
+/**
+ * __useRunCrawlStaffSurveyMutation__
+ *
+ * To run a mutation, you first call `useRunCrawlStaffSurveyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunCrawlStaffSurveyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runCrawlStaffSurveyMutation, { data, loading, error }] = useRunCrawlStaffSurveyMutation({
+ *   variables: {
+ *      year: // value for 'year'
+ *   },
+ * });
+ */
+export function useRunCrawlStaffSurveyMutation(baseOptions?: Apollo.MutationHookOptions<RunCrawlStaffSurveyMutation, RunCrawlStaffSurveyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunCrawlStaffSurveyMutation, RunCrawlStaffSurveyMutationVariables>(RunCrawlStaffSurveyDocument, options);
+      }
+export type RunCrawlStaffSurveyMutationHookResult = ReturnType<typeof useRunCrawlStaffSurveyMutation>;
+export type RunCrawlStaffSurveyMutationResult = Apollo.MutationResult<RunCrawlStaffSurveyMutation>;
+export type RunCrawlStaffSurveyMutationOptions = Apollo.BaseMutationOptions<RunCrawlStaffSurveyMutation, RunCrawlStaffSurveyMutationVariables>;
+export const RunAggregatePointsDocument = gql`
+    mutation RunAggregatePoints {
+  runAggregatePoints {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+    `;
+export type RunAggregatePointsMutationFn = Apollo.MutationFunction<RunAggregatePointsMutation, RunAggregatePointsMutationVariables>;
+
+/**
+ * __useRunAggregatePointsMutation__
+ *
+ * To run a mutation, you first call `useRunAggregatePointsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunAggregatePointsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runAggregatePointsMutation, { data, loading, error }] = useRunAggregatePointsMutation({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useRunAggregatePointsMutation(baseOptions?: Apollo.MutationHookOptions<RunAggregatePointsMutation, RunAggregatePointsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunAggregatePointsMutation, RunAggregatePointsMutationVariables>(RunAggregatePointsDocument, options);
+      }
+export type RunAggregatePointsMutationHookResult = ReturnType<typeof useRunAggregatePointsMutation>;
+export type RunAggregatePointsMutationResult = Apollo.MutationResult<RunAggregatePointsMutation>;
+export type RunAggregatePointsMutationOptions = Apollo.BaseMutationOptions<RunAggregatePointsMutation, RunAggregatePointsMutationVariables>;
+export const RunTransferDataDocument = gql`
+    mutation RunTransferData {
+  runTransferData {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+    `;
+export type RunTransferDataMutationFn = Apollo.MutationFunction<RunTransferDataMutation, RunTransferDataMutationVariables>;
+
+/**
+ * __useRunTransferDataMutation__
+ *
+ * To run a mutation, you first call `useRunTransferDataMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunTransferDataMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runTransferDataMutation, { data, loading, error }] = useRunTransferDataMutation({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useRunTransferDataMutation(baseOptions?: Apollo.MutationHookOptions<RunTransferDataMutation, RunTransferDataMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunTransferDataMutation, RunTransferDataMutationVariables>(RunTransferDataDocument, options);
+      }
+export type RunTransferDataMutationHookResult = ReturnType<typeof useRunTransferDataMutation>;
+export type RunTransferDataMutationResult = Apollo.MutationResult<RunTransferDataMutation>;
+export type RunTransferDataMutationOptions = Apollo.BaseMutationOptions<RunTransferDataMutation, RunTransferDataMutationVariables>;
+export const ConfirmCrawlJobDocument = gql`
+    mutation ConfirmCrawlJob($jobId: String!) {
+  confirmCrawlJob(jobId: $jobId) {
+    crawl_job_id
+    status
+  }
+}
+    `;
+export type ConfirmCrawlJobMutationFn = Apollo.MutationFunction<ConfirmCrawlJobMutation, ConfirmCrawlJobMutationVariables>;
+
+/**
+ * __useConfirmCrawlJobMutation__
+ *
+ * To run a mutation, you first call `useConfirmCrawlJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useConfirmCrawlJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [confirmCrawlJobMutation, { data, loading, error }] = useConfirmCrawlJobMutation({
+ *   variables: {
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useConfirmCrawlJobMutation(baseOptions?: Apollo.MutationHookOptions<ConfirmCrawlJobMutation, ConfirmCrawlJobMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ConfirmCrawlJobMutation, ConfirmCrawlJobMutationVariables>(ConfirmCrawlJobDocument, options);
+      }
+export type ConfirmCrawlJobMutationHookResult = ReturnType<typeof useConfirmCrawlJobMutation>;
+export type ConfirmCrawlJobMutationResult = Apollo.MutationResult<ConfirmCrawlJobMutation>;
+export type ConfirmCrawlJobMutationOptions = Apollo.BaseMutationOptions<ConfirmCrawlJobMutation, ConfirmCrawlJobMutationVariables>;
+export const AbandonCrawlJobDocument = gql`
+    mutation AbandonCrawlJob($jobId: String!) {
+  abandonCrawlJob(jobId: $jobId) {
+    crawl_job_id
+    status
+  }
+}
+    `;
+export type AbandonCrawlJobMutationFn = Apollo.MutationFunction<AbandonCrawlJobMutation, AbandonCrawlJobMutationVariables>;
+
+/**
+ * __useAbandonCrawlJobMutation__
+ *
+ * To run a mutation, you first call `useAbandonCrawlJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAbandonCrawlJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [abandonCrawlJobMutation, { data, loading, error }] = useAbandonCrawlJobMutation({
+ *   variables: {
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useAbandonCrawlJobMutation(baseOptions?: Apollo.MutationHookOptions<AbandonCrawlJobMutation, AbandonCrawlJobMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AbandonCrawlJobMutation, AbandonCrawlJobMutationVariables>(AbandonCrawlJobDocument, options);
+      }
+export type AbandonCrawlJobMutationHookResult = ReturnType<typeof useAbandonCrawlJobMutation>;
+export type AbandonCrawlJobMutationResult = Apollo.MutationResult<AbandonCrawlJobMutation>;
+export type AbandonCrawlJobMutationOptions = Apollo.BaseMutationOptions<AbandonCrawlJobMutation, AbandonCrawlJobMutationVariables>;
+export const AddSurveyListConfigDocument = gql`
+    mutation AddSurveyListConfig($input: SurveyListConfigInput!) {
+  addSurveyListConfig(input: $input) {
+    id
+    survey_type
+    sid
+    title
+    year
+    is_active
+  }
+}
+    `;
+export type AddSurveyListConfigMutationFn = Apollo.MutationFunction<AddSurveyListConfigMutation, AddSurveyListConfigMutationVariables>;
+
+/**
+ * __useAddSurveyListConfigMutation__
+ *
+ * To run a mutation, you first call `useAddSurveyListConfigMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddSurveyListConfigMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addSurveyListConfigMutation, { data, loading, error }] = useAddSurveyListConfigMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAddSurveyListConfigMutation(baseOptions?: Apollo.MutationHookOptions<AddSurveyListConfigMutation, AddSurveyListConfigMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AddSurveyListConfigMutation, AddSurveyListConfigMutationVariables>(AddSurveyListConfigDocument, options);
+      }
+export type AddSurveyListConfigMutationHookResult = ReturnType<typeof useAddSurveyListConfigMutation>;
+export type AddSurveyListConfigMutationResult = Apollo.MutationResult<AddSurveyListConfigMutation>;
+export type AddSurveyListConfigMutationOptions = Apollo.BaseMutationOptions<AddSurveyListConfigMutation, AddSurveyListConfigMutationVariables>;
+export const UpdateSurveyListConfigDocument = gql`
+    mutation UpdateSurveyListConfig($id: String!, $input: SurveyListConfigInput!) {
+  updateSurveyListConfig(id: $id, input: $input) {
+    id
+    survey_type
+    sid
+    title
+    year
+    is_active
+  }
+}
+    `;
+export type UpdateSurveyListConfigMutationFn = Apollo.MutationFunction<UpdateSurveyListConfigMutation, UpdateSurveyListConfigMutationVariables>;
+
+/**
+ * __useUpdateSurveyListConfigMutation__
+ *
+ * To run a mutation, you first call `useUpdateSurveyListConfigMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateSurveyListConfigMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateSurveyListConfigMutation, { data, loading, error }] = useUpdateSurveyListConfigMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateSurveyListConfigMutation(baseOptions?: Apollo.MutationHookOptions<UpdateSurveyListConfigMutation, UpdateSurveyListConfigMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateSurveyListConfigMutation, UpdateSurveyListConfigMutationVariables>(UpdateSurveyListConfigDocument, options);
+      }
+export type UpdateSurveyListConfigMutationHookResult = ReturnType<typeof useUpdateSurveyListConfigMutation>;
+export type UpdateSurveyListConfigMutationResult = Apollo.MutationResult<UpdateSurveyListConfigMutation>;
+export type UpdateSurveyListConfigMutationOptions = Apollo.BaseMutationOptions<UpdateSurveyListConfigMutation, UpdateSurveyListConfigMutationVariables>;
+export const DeleteSurveyListConfigDocument = gql`
+    mutation DeleteSurveyListConfig($id: String!) {
+  deleteSurveyListConfig(id: $id)
+}
+    `;
+export type DeleteSurveyListConfigMutationFn = Apollo.MutationFunction<DeleteSurveyListConfigMutation, DeleteSurveyListConfigMutationVariables>;
+
+/**
+ * __useDeleteSurveyListConfigMutation__
+ *
+ * To run a mutation, you first call `useDeleteSurveyListConfigMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteSurveyListConfigMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteSurveyListConfigMutation, { data, loading, error }] = useDeleteSurveyListConfigMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDeleteSurveyListConfigMutation(baseOptions?: Apollo.MutationHookOptions<DeleteSurveyListConfigMutation, DeleteSurveyListConfigMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteSurveyListConfigMutation, DeleteSurveyListConfigMutationVariables>(DeleteSurveyListConfigDocument, options);
+      }
+export type DeleteSurveyListConfigMutationHookResult = ReturnType<typeof useDeleteSurveyListConfigMutation>;
+export type DeleteSurveyListConfigMutationResult = Apollo.MutationResult<DeleteSurveyListConfigMutation>;
+export type DeleteSurveyListConfigMutationOptions = Apollo.BaseMutationOptions<DeleteSurveyListConfigMutation, DeleteSurveyListConfigMutationVariables>;
 export const DetailCriteriaDocument = gql`
     query DetailCriteria($id: String!) {
   criteria(id: $id) {

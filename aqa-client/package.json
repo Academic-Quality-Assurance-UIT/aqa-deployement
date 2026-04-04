@@ -30,6 +30,7 @@
     "chart.js": "^4.4.4",
     "clsx": "^2.1.1",
     "cookies-next": "^4.2.1",
+    "date-fns": "^4.1.0",
     "dom-to-image": "^2.6.0",
     "dom-to-pdf": "^0.3.2",
     "dotenv": "^16.5.0",

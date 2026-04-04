@@ -1,0 +1,156 @@
+# ========================
+# Queries
+# ========================
+
+query GetCrawlJobs($type: CrawlJobType) {
+  crawlJobs(type: $type) {
+    crawl_job_id
+    type
+    status
+    started_at
+    completed_at
+    error_message
+    summary
+    parameters
+    created_by
+    created_at
+  }
+}
+
+query GetCrawlJob($id: String!) {
+  crawlJob(id: $id) {
+    crawl_job_id
+    type
+    status
+    started_at
+    completed_at
+    error_message
+    summary
+    parameters
+    created_by
+    created_at
+  }
+}
+
+query GetCrawlStagingDataSummary($jobId: String!) {
+  crawlStagingDataSummary(jobId: $jobId) {
+    totalRecords
+    byType {
+      type
+      count
+    }
+  }
+}
+
+query GetSurveyListConfigs($type: CrawlJobType) {
+  surveyListConfigs(type: $type) {
+    id
+    survey_type
+    sid
+    title
+    type
+    year
+    semester_type
+    semester_name
+    is_active
+    created_at
+    updated_at
+  }
+}
+
+# ========================
+# Mutations - Run Jobs
+# ========================
+
+mutation RunCrawlSubjectSurvey($semester: String) {
+  runCrawlSubjectSurvey(semester: $semester) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+
+mutation RunCrawlLecturerSurvey($semester: String) {
+  runCrawlLecturerSurvey(semester: $semester) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+
+mutation RunCrawlStaffSurvey($year: String) {
+  runCrawlStaffSurvey(year: $year) {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+
+mutation RunAggregatePoints {
+  runAggregatePoints {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+
+mutation RunTransferData {
+  runTransferData {
+    crawl_job_id
+    type
+    status
+    started_at
+  }
+}
+
+# ========================
+# Mutations - Confirm / Abandon
+# ========================
+
+mutation ConfirmCrawlJob($jobId: String!) {
+  confirmCrawlJob(jobId: $jobId) {
+    crawl_job_id
+    status
+  }
+}
+
+mutation AbandonCrawlJob($jobId: String!) {
+  abandonCrawlJob(jobId: $jobId) {
+    crawl_job_id
+    status
+  }
+}
+
+# ========================
+# Mutations - Survey List Config
+# ========================
+
+mutation AddSurveyListConfig($input: SurveyListConfigInput!) {
+  addSurveyListConfig(input: $input) {
+    id
+    survey_type
+    sid
+    title
+    year
+    is_active
+  }
+}
+
+mutation UpdateSurveyListConfig($id: String!, $input: SurveyListConfigInput!) {
+  updateSurveyListConfig(id: $id, input: $input) {
+    id
+    survey_type
+    sid
+    title
+    year
+    is_active
+  }
+}
+
+mutation DeleteSurveyListConfig($id: String!) {
+  deleteSurveyListConfig(id: $id)
+}

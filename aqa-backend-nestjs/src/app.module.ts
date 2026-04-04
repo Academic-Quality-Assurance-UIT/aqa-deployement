@@ -25,6 +25,7 @@ import { FileLogger } from './common/logger/typeorm-logger';
 import { AiGenerateModule } from './ai-generate/ai-generate.module';
 import { AdminSettingModule } from './admin-setting/admin-setting.module';
 import { FilterQueryModule } from './common/services/filter-query.module';
+import { CrawlDataModule } from './crawl-data/crawl-data.module';
 
 @Module({
   imports: [
@@ -52,6 +53,11 @@ import { FilterQueryModule } from './common/services/filter-query.module';
         autoLoadEntities: true,
         logging: false,
         logger: new FileLogger(),
+        extra: {
+          connectionTimeoutMillis: 5000, // Timeout after 5s if DB doesn't respond
+          query_timeout: 5000,
+          statement_timeout: 5000,
+        },
       }),
     }),
     PermissionModule,
@@ -71,6 +77,7 @@ import { FilterQueryModule } from './common/services/filter-query.module';
     AiGenerateModule,
     AdminSettingModule,
     FilterQueryModule,
+    CrawlDataModule,
   ],
   controllers: [AppController],
   providers: [AppService],

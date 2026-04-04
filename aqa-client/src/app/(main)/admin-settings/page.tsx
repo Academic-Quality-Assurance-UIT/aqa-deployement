@@ -4,7 +4,8 @@ import { Role, useProfileQuery, useGetSettingQuery, useUpdateSettingMutation } f
 import { Button, Input, Skeleton, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AiOutlineSetting } from "react-icons/ai";
+import { AiOutlineSetting, AiOutlineDatabase } from "react-icons/ai";
+import { CrawlManager } from "@/components/admin/CrawlManager";
 
 export default function Page() {
 	const router = useRouter();
@@ -109,6 +110,14 @@ export default function Page() {
 					</div>
 				</div>
 			</Skeleton>
+
+			<div className="flex flex-col gap-8 w-full p-6 bg-white dark:bg-black rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+				<div className="flex items-center gap-3 mb-2">
+					<AiOutlineDatabase size={24} className="text-gray-600" />
+					<h2 className="text-xl font-bold">Quản lý dữ liệu</h2>
+				</div>
+				<CrawlManager />
+			</div>
 
 			<Modal isOpen={isOpen} onOpenChange={onOpenChange}>
 				<ModalContent>
