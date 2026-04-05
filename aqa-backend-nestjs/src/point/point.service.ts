@@ -10,30 +10,32 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class PointService {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Point) private repo: Repository<Point>) {}
+  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Point) private repo: Repository<Point>) { }
 
-  findAll(
+  async findAll(
     filter: FilterArgs,
     paginationOptions: PaginationArgs,
-    groupEntity: 'Subject' | 'Lecturer' | 'Faculty' | 'Criteria',
+    groupEntity: 'Subject' | 'Lecturer' | 'Faculty' | 'Criteria' | 'Semester',
   ) {
+    const query = await this.filterQueryService.filterQuery<Point>(
+      'Point',
+      this.repo
+        .createQueryBuilder()
+        .innerJoin('Point.class', 'Class')
+        .innerJoin('Class.subject', 'Subject')
+        .leftJoin('Class.semester', 'Semester')
+        .innerJoin('Point.criteria', 'Criteria')
+        .innerJoin('Subject.faculty', 'Faculty')
+        .innerJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        ),
+      { ...filter, keyword: '' },
+    )
+
     return paginateByQuery(
-      this.filterQueryService.filterQuery<Point>(
-        'Point',
-        this.repo
-          .createQueryBuilder()
-          .innerJoin('Point.class', 'Class')
-          .innerJoin('Class.subject', 'Subject')
-          .leftJoin('Class.semester', 'Semester')
-          .innerJoin('Point.criteria', 'Criteria')
-          .innerJoin('Subject.faculty', 'Faculty')
-          .innerJoin(
-            Lecturer,
-            'Lecturer',
-            'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
-          ),
-        { ...filter, keyword: '' },
-      )
+      query
         .select('AVG(Point.point / Point.max_point)', 'average_point')
         .addSelect(
           '(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY point)) / 4',
