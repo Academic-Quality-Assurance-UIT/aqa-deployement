@@ -46,6 +46,7 @@ export async function paginateByQuery<T>(
       .take(undefined)
       .skip(undefined)
       .setFindOptions({})
+      .orderBy() // Clear order for counting optimization and avoid SQL errors
       .select('1');
     const [sql, params] = subQuery.getQueryAndParameters();
     const totalRes = await querySql.connection.query(

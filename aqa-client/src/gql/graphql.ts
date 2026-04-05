@@ -31,6 +31,20 @@ export type AuthDto = {
   user: UserEntity;
 };
 
+export type AutoMappingSuggestion = {
+  __typename?: 'AutoMappingSuggestion';
+  criteriaIds: Array<Scalars['ID']['output']>;
+  display_name: Scalars['String']['output'];
+  semesters: Array<Scalars['String']['output']>;
+  staffSurveyCriteriaIds: Array<Scalars['ID']['output']>;
+};
+
+export type AutoMappingSuggestionInput = {
+  criteriaIds: Array<Scalars['ID']['input']>;
+  display_name: Scalars['String']['input'];
+  staffSurveyCriteriaIds: Array<Scalars['ID']['input']>;
+};
+
 export type Class = {
   __typename?: 'Class';
   class_id: Scalars['String']['output'];
@@ -121,8 +135,20 @@ export type Criteria = {
   display_name: Scalars['String']['output'];
   index?: Maybe<Scalars['Int']['output']>;
   is_shown: Scalars['Boolean']['output'];
+  mapping?: Maybe<CriteriaMapping>;
+  mapping_id?: Maybe<Scalars['String']['output']>;
   semester: Array<Semester>;
+  semester_id?: Maybe<Scalars['String']['output']>;
   type: Array<CriteriaProperty>;
+};
+
+export type CriteriaMapping = {
+  __typename?: 'CriteriaMapping';
+  criteria?: Maybe<Array<Criteria>>;
+  display_name: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  raw_display_names: Array<Scalars['String']['output']>;
+  staffSurveyCriteria?: Maybe<Array<StaffSurveyCriteria>>;
 };
 
 export type CriteriaProperty = {
@@ -252,12 +278,16 @@ export type Mutation = {
   addNewStaffSurveyData: StaffSurveySheet;
   /** Thêm cấu hình khảo sát mới */
   addSurveyListConfig: SurveyListConfig;
+  confirmAutoMapping: Scalars['Boolean']['output'];
   /** Xác nhận dữ liệu → đưa vào database chính */
   confirmCrawlJob: CrawlJob;
+  createCriteriaMapping: CriteriaMapping;
+  deleteCriteriaMapping: Scalars['Boolean']['output'];
   /** Xóa cấu hình khảo sát */
   deleteSurveyListConfig: Scalars['Boolean']['output'];
   login: AuthDto;
   loginIntegration: AuthDto;
+  mapCriteriaToGroup: CriteriaMapping;
   registerUser: UserEntity;
   removeUser: Scalars['Boolean']['output'];
   /** Chạy tổng hợp điểm */
@@ -270,6 +300,8 @@ export type Mutation = {
   runCrawlSubjectSurvey: CrawlJob;
   /** Chạy chuyển dữ liệu giữa các database */
   runTransferData: CrawlJob;
+  unmapCriteria: Scalars['Boolean']['output'];
+  updateCriteriaMapping: CriteriaMapping;
   updateSetting: AdminSetting;
   updateStaffSurveyCriteria: StaffSurveyCriteria;
   /** Cập nhật cấu hình khảo sát */
@@ -298,8 +330,23 @@ export type MutationAddSurveyListConfigArgs = {
 };
 
 
+export type MutationConfirmAutoMappingArgs = {
+  suggestions: Array<AutoMappingSuggestionInput>;
+};
+
+
 export type MutationConfirmCrawlJobArgs = {
   jobId: Scalars['String']['input'];
+};
+
+
+export type MutationCreateCriteriaMappingArgs = {
+  display_name: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteCriteriaMappingArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -316,6 +363,13 @@ export type MutationLoginArgs = {
 
 export type MutationLoginIntegrationArgs = {
   token: Scalars['String']['input'];
+};
+
+
+export type MutationMapCriteriaToGroupArgs = {
+  criteriaIds: Array<Scalars['ID']['input']>;
+  mappingId: Scalars['ID']['input'];
+  type: Scalars['String']['input'];
 };
 
 
@@ -341,6 +395,18 @@ export type MutationRunCrawlStaffSurveyArgs = {
 
 export type MutationRunCrawlSubjectSurveyArgs = {
   semester?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationUnmapCriteriaArgs = {
+  criteriaIds: Array<Scalars['ID']['input']>;
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateCriteriaMappingArgs = {
+  display_name: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -469,8 +535,11 @@ export type Query = {
   getAdditionalComments: Array<StaffSurveyAdditionalCommentDto>;
   getAllComments: StaffSurveyPointResponseDto;
   getAllCommentsCount: Scalars['Int']['output'];
+  getAutoMappingSuggestions: Array<AutoMappingSuggestion>;
   getBatchList: Array<StaffSurveyBatch>;
   getCriteriaList: Array<StaffSurveyCriteria>;
+  getCriteriaMapping: CriteriaMapping;
+  getCriteriaMappings: Array<CriteriaMapping>;
   getPointWithCommentByCriteria: StaffSurveyPointResponseDto;
   getPointsByCategory: Array<PointByCategoryDto>;
   getPointsByCategoryDonVi: Array<PointByCategoryDto>;
@@ -589,6 +658,11 @@ export type QueryGetAllCommentsArgs = {
 export type QueryGetAllCommentsCountArgs = {
   keyword?: InputMaybe<Scalars['String']['input']>;
   semester?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryGetCriteriaMappingArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -729,6 +803,8 @@ export type StaffSurveyCriteria = {
   index?: Maybe<Scalars['Int']['output']>;
   is_point_aggregated: Scalars['Boolean']['output'];
   is_shown: Scalars['Boolean']['output'];
+  mapping?: Maybe<CriteriaMapping>;
+  mapping_id?: Maybe<Scalars['String']['output']>;
   semesters: Array<Scalars['String']['output']>;
   staff_survey_criteria_id: Scalars['String']['output'];
 };
@@ -1038,6 +1114,62 @@ export type DeleteSurveyListConfigMutationVariables = Exact<{
 
 export type DeleteSurveyListConfigMutation = { __typename?: 'Mutation', deleteSurveyListConfig: boolean };
 
+export type GetCriteriaMappingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetCriteriaMappingsQuery = { __typename?: 'Query', getCriteriaMappings: Array<{ __typename?: 'CriteriaMapping', id: string, display_name: string, criteria?: Array<{ __typename?: 'Criteria', criteria_id: string, display_name: string, semester_id?: string | null }> | null, staffSurveyCriteria?: Array<{ __typename?: 'StaffSurveyCriteria', staff_survey_criteria_id: string, display_name: string, category: string, semesters: Array<string> }> | null }> };
+
+export type GetAutoMappingSuggestionsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAutoMappingSuggestionsQuery = { __typename?: 'Query', getAutoMappingSuggestions: Array<{ __typename?: 'AutoMappingSuggestion', display_name: string, criteriaIds: Array<string>, staffSurveyCriteriaIds: Array<string>, semesters: Array<string> }> };
+
+export type CreateCriteriaMappingMutationVariables = Exact<{
+  display_name: Scalars['String']['input'];
+}>;
+
+
+export type CreateCriteriaMappingMutation = { __typename?: 'Mutation', createCriteriaMapping: { __typename?: 'CriteriaMapping', id: string, display_name: string } };
+
+export type UpdateCriteriaMappingMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  display_name: Scalars['String']['input'];
+}>;
+
+
+export type UpdateCriteriaMappingMutation = { __typename?: 'Mutation', updateCriteriaMapping: { __typename?: 'CriteriaMapping', id: string, display_name: string } };
+
+export type DeleteCriteriaMappingMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteCriteriaMappingMutation = { __typename?: 'Mutation', deleteCriteriaMapping: boolean };
+
+export type MapCriteriaToGroupMutationVariables = Exact<{
+  mappingId: Scalars['ID']['input'];
+  criteriaIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  type: Scalars['String']['input'];
+}>;
+
+
+export type MapCriteriaToGroupMutation = { __typename?: 'Mutation', mapCriteriaToGroup: { __typename?: 'CriteriaMapping', id: string } };
+
+export type UnmapCriteriaMutationVariables = Exact<{
+  criteriaIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  type: Scalars['String']['input'];
+}>;
+
+
+export type UnmapCriteriaMutation = { __typename?: 'Mutation', unmapCriteria: boolean };
+
+export type ConfirmAutoMappingMutationVariables = Exact<{
+  suggestions: Array<AutoMappingSuggestionInput> | AutoMappingSuggestionInput;
+}>;
+
+
+export type ConfirmAutoMappingMutation = { __typename?: 'Mutation', confirmAutoMapping: boolean };
+
 export type DetailCriteriaQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -1050,7 +1182,7 @@ export type AllCriteriasQueryVariables = Exact<{
 }>;
 
 
-export type AllCriteriasQuery = { __typename?: 'Query', criterias: { __typename?: 'PaginatedCriteria', data: Array<{ __typename?: 'Criteria', display_name: string, criteria_id: string, type: Array<{ __typename?: 'CriteriaProperty', class_type: string, num: number }> }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+export type AllCriteriasQuery = { __typename?: 'Query', criterias: { __typename?: 'PaginatedCriteria', data: Array<{ __typename?: 'Criteria', display_name: string, criteria_id: string, mapping_id?: string | null, semester_id?: string | null, type: Array<{ __typename?: 'CriteriaProperty', class_type: string, num: number }> }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
 
 export type CriteriasQueryVariables = Exact<{
   filter?: InputMaybe<FilterArgs>;
@@ -1059,7 +1191,7 @@ export type CriteriasQueryVariables = Exact<{
 }>;
 
 
-export type CriteriasQuery = { __typename?: 'Query', criterias: { __typename?: 'PaginatedCriteria', data: Array<{ __typename?: 'Criteria', display_name: string, criteria_id: string }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+export type CriteriasQuery = { __typename?: 'Query', criterias: { __typename?: 'PaginatedCriteria', data: Array<{ __typename?: 'Criteria', display_name: string, criteria_id: string, mapping_id?: string | null, semester_id?: string | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
 
 export type OverallCriteriaPointsEachSemesterQueryVariables = Exact<{
   class_type?: InputMaybe<Scalars['String']['input']>;
@@ -1178,7 +1310,7 @@ export type AddListStaffSurveyDataMutation = { __typename?: 'Mutation', addListS
 export type GetStaffSurveyCriteriaListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaffSurveyCriteriaListQuery = { __typename?: 'Query', getCriteriaList: Array<{ __typename?: 'StaffSurveyCriteria', category: string, display_name: string, index?: number | null, semesters: Array<string>, staff_survey_criteria_id: string, is_shown: boolean }> };
+export type GetStaffSurveyCriteriaListQuery = { __typename?: 'Query', getCriteriaList: Array<{ __typename?: 'StaffSurveyCriteria', category: string, display_name: string, index?: number | null, semesters: Array<string>, staff_survey_criteria_id: string, mapping_id?: string | null, is_shown: boolean }> };
 
 export type GetStaffSurveyBatchListQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2421,6 +2553,313 @@ export function useDeleteSurveyListConfigMutation(baseOptions?: Apollo.MutationH
 export type DeleteSurveyListConfigMutationHookResult = ReturnType<typeof useDeleteSurveyListConfigMutation>;
 export type DeleteSurveyListConfigMutationResult = Apollo.MutationResult<DeleteSurveyListConfigMutation>;
 export type DeleteSurveyListConfigMutationOptions = Apollo.BaseMutationOptions<DeleteSurveyListConfigMutation, DeleteSurveyListConfigMutationVariables>;
+export const GetCriteriaMappingsDocument = gql`
+    query GetCriteriaMappings {
+  getCriteriaMappings {
+    id
+    display_name
+    criteria {
+      criteria_id
+      display_name
+      semester_id
+    }
+    staffSurveyCriteria {
+      staff_survey_criteria_id
+      display_name
+      category
+      semesters
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetCriteriaMappingsQuery__
+ *
+ * To run a query within a React component, call `useGetCriteriaMappingsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCriteriaMappingsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCriteriaMappingsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetCriteriaMappingsQuery(baseOptions?: Apollo.QueryHookOptions<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>(GetCriteriaMappingsDocument, options);
+      }
+export function useGetCriteriaMappingsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>(GetCriteriaMappingsDocument, options);
+        }
+// @ts-ignore
+export function useGetCriteriaMappingsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>): Apollo.UseSuspenseQueryResult<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>;
+export function useGetCriteriaMappingsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>): Apollo.UseSuspenseQueryResult<GetCriteriaMappingsQuery | undefined, GetCriteriaMappingsQueryVariables>;
+export function useGetCriteriaMappingsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>(GetCriteriaMappingsDocument, options);
+        }
+export type GetCriteriaMappingsQueryHookResult = ReturnType<typeof useGetCriteriaMappingsQuery>;
+export type GetCriteriaMappingsLazyQueryHookResult = ReturnType<typeof useGetCriteriaMappingsLazyQuery>;
+export type GetCriteriaMappingsSuspenseQueryHookResult = ReturnType<typeof useGetCriteriaMappingsSuspenseQuery>;
+export type GetCriteriaMappingsQueryResult = Apollo.QueryResult<GetCriteriaMappingsQuery, GetCriteriaMappingsQueryVariables>;
+export function refetchGetCriteriaMappingsQuery(variables?: GetCriteriaMappingsQueryVariables) {
+      return { query: GetCriteriaMappingsDocument, variables: variables }
+    }
+export const GetAutoMappingSuggestionsDocument = gql`
+    query GetAutoMappingSuggestions {
+  getAutoMappingSuggestions {
+    display_name
+    criteriaIds
+    staffSurveyCriteriaIds
+    semesters
+  }
+}
+    `;
+
+/**
+ * __useGetAutoMappingSuggestionsQuery__
+ *
+ * To run a query within a React component, call `useGetAutoMappingSuggestionsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAutoMappingSuggestionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAutoMappingSuggestionsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAutoMappingSuggestionsQuery(baseOptions?: Apollo.QueryHookOptions<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>(GetAutoMappingSuggestionsDocument, options);
+      }
+export function useGetAutoMappingSuggestionsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>(GetAutoMappingSuggestionsDocument, options);
+        }
+// @ts-ignore
+export function useGetAutoMappingSuggestionsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>): Apollo.UseSuspenseQueryResult<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>;
+export function useGetAutoMappingSuggestionsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>): Apollo.UseSuspenseQueryResult<GetAutoMappingSuggestionsQuery | undefined, GetAutoMappingSuggestionsQueryVariables>;
+export function useGetAutoMappingSuggestionsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>(GetAutoMappingSuggestionsDocument, options);
+        }
+export type GetAutoMappingSuggestionsQueryHookResult = ReturnType<typeof useGetAutoMappingSuggestionsQuery>;
+export type GetAutoMappingSuggestionsLazyQueryHookResult = ReturnType<typeof useGetAutoMappingSuggestionsLazyQuery>;
+export type GetAutoMappingSuggestionsSuspenseQueryHookResult = ReturnType<typeof useGetAutoMappingSuggestionsSuspenseQuery>;
+export type GetAutoMappingSuggestionsQueryResult = Apollo.QueryResult<GetAutoMappingSuggestionsQuery, GetAutoMappingSuggestionsQueryVariables>;
+export function refetchGetAutoMappingSuggestionsQuery(variables?: GetAutoMappingSuggestionsQueryVariables) {
+      return { query: GetAutoMappingSuggestionsDocument, variables: variables }
+    }
+export const CreateCriteriaMappingDocument = gql`
+    mutation CreateCriteriaMapping($display_name: String!) {
+  createCriteriaMapping(display_name: $display_name) {
+    id
+    display_name
+  }
+}
+    `;
+export type CreateCriteriaMappingMutationFn = Apollo.MutationFunction<CreateCriteriaMappingMutation, CreateCriteriaMappingMutationVariables>;
+
+/**
+ * __useCreateCriteriaMappingMutation__
+ *
+ * To run a mutation, you first call `useCreateCriteriaMappingMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateCriteriaMappingMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createCriteriaMappingMutation, { data, loading, error }] = useCreateCriteriaMappingMutation({
+ *   variables: {
+ *      display_name: // value for 'display_name'
+ *   },
+ * });
+ */
+export function useCreateCriteriaMappingMutation(baseOptions?: Apollo.MutationHookOptions<CreateCriteriaMappingMutation, CreateCriteriaMappingMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateCriteriaMappingMutation, CreateCriteriaMappingMutationVariables>(CreateCriteriaMappingDocument, options);
+      }
+export type CreateCriteriaMappingMutationHookResult = ReturnType<typeof useCreateCriteriaMappingMutation>;
+export type CreateCriteriaMappingMutationResult = Apollo.MutationResult<CreateCriteriaMappingMutation>;
+export type CreateCriteriaMappingMutationOptions = Apollo.BaseMutationOptions<CreateCriteriaMappingMutation, CreateCriteriaMappingMutationVariables>;
+export const UpdateCriteriaMappingDocument = gql`
+    mutation UpdateCriteriaMapping($id: ID!, $display_name: String!) {
+  updateCriteriaMapping(id: $id, display_name: $display_name) {
+    id
+    display_name
+  }
+}
+    `;
+export type UpdateCriteriaMappingMutationFn = Apollo.MutationFunction<UpdateCriteriaMappingMutation, UpdateCriteriaMappingMutationVariables>;
+
+/**
+ * __useUpdateCriteriaMappingMutation__
+ *
+ * To run a mutation, you first call `useUpdateCriteriaMappingMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateCriteriaMappingMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateCriteriaMappingMutation, { data, loading, error }] = useUpdateCriteriaMappingMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      display_name: // value for 'display_name'
+ *   },
+ * });
+ */
+export function useUpdateCriteriaMappingMutation(baseOptions?: Apollo.MutationHookOptions<UpdateCriteriaMappingMutation, UpdateCriteriaMappingMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateCriteriaMappingMutation, UpdateCriteriaMappingMutationVariables>(UpdateCriteriaMappingDocument, options);
+      }
+export type UpdateCriteriaMappingMutationHookResult = ReturnType<typeof useUpdateCriteriaMappingMutation>;
+export type UpdateCriteriaMappingMutationResult = Apollo.MutationResult<UpdateCriteriaMappingMutation>;
+export type UpdateCriteriaMappingMutationOptions = Apollo.BaseMutationOptions<UpdateCriteriaMappingMutation, UpdateCriteriaMappingMutationVariables>;
+export const DeleteCriteriaMappingDocument = gql`
+    mutation DeleteCriteriaMapping($id: ID!) {
+  deleteCriteriaMapping(id: $id)
+}
+    `;
+export type DeleteCriteriaMappingMutationFn = Apollo.MutationFunction<DeleteCriteriaMappingMutation, DeleteCriteriaMappingMutationVariables>;
+
+/**
+ * __useDeleteCriteriaMappingMutation__
+ *
+ * To run a mutation, you first call `useDeleteCriteriaMappingMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteCriteriaMappingMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteCriteriaMappingMutation, { data, loading, error }] = useDeleteCriteriaMappingMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDeleteCriteriaMappingMutation(baseOptions?: Apollo.MutationHookOptions<DeleteCriteriaMappingMutation, DeleteCriteriaMappingMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteCriteriaMappingMutation, DeleteCriteriaMappingMutationVariables>(DeleteCriteriaMappingDocument, options);
+      }
+export type DeleteCriteriaMappingMutationHookResult = ReturnType<typeof useDeleteCriteriaMappingMutation>;
+export type DeleteCriteriaMappingMutationResult = Apollo.MutationResult<DeleteCriteriaMappingMutation>;
+export type DeleteCriteriaMappingMutationOptions = Apollo.BaseMutationOptions<DeleteCriteriaMappingMutation, DeleteCriteriaMappingMutationVariables>;
+export const MapCriteriaToGroupDocument = gql`
+    mutation MapCriteriaToGroup($mappingId: ID!, $criteriaIds: [ID!]!, $type: String!) {
+  mapCriteriaToGroup(
+    mappingId: $mappingId
+    criteriaIds: $criteriaIds
+    type: $type
+  ) {
+    id
+  }
+}
+    `;
+export type MapCriteriaToGroupMutationFn = Apollo.MutationFunction<MapCriteriaToGroupMutation, MapCriteriaToGroupMutationVariables>;
+
+/**
+ * __useMapCriteriaToGroupMutation__
+ *
+ * To run a mutation, you first call `useMapCriteriaToGroupMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useMapCriteriaToGroupMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [mapCriteriaToGroupMutation, { data, loading, error }] = useMapCriteriaToGroupMutation({
+ *   variables: {
+ *      mappingId: // value for 'mappingId'
+ *      criteriaIds: // value for 'criteriaIds'
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useMapCriteriaToGroupMutation(baseOptions?: Apollo.MutationHookOptions<MapCriteriaToGroupMutation, MapCriteriaToGroupMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<MapCriteriaToGroupMutation, MapCriteriaToGroupMutationVariables>(MapCriteriaToGroupDocument, options);
+      }
+export type MapCriteriaToGroupMutationHookResult = ReturnType<typeof useMapCriteriaToGroupMutation>;
+export type MapCriteriaToGroupMutationResult = Apollo.MutationResult<MapCriteriaToGroupMutation>;
+export type MapCriteriaToGroupMutationOptions = Apollo.BaseMutationOptions<MapCriteriaToGroupMutation, MapCriteriaToGroupMutationVariables>;
+export const UnmapCriteriaDocument = gql`
+    mutation UnmapCriteria($criteriaIds: [ID!]!, $type: String!) {
+  unmapCriteria(criteriaIds: $criteriaIds, type: $type)
+}
+    `;
+export type UnmapCriteriaMutationFn = Apollo.MutationFunction<UnmapCriteriaMutation, UnmapCriteriaMutationVariables>;
+
+/**
+ * __useUnmapCriteriaMutation__
+ *
+ * To run a mutation, you first call `useUnmapCriteriaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUnmapCriteriaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [unmapCriteriaMutation, { data, loading, error }] = useUnmapCriteriaMutation({
+ *   variables: {
+ *      criteriaIds: // value for 'criteriaIds'
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useUnmapCriteriaMutation(baseOptions?: Apollo.MutationHookOptions<UnmapCriteriaMutation, UnmapCriteriaMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UnmapCriteriaMutation, UnmapCriteriaMutationVariables>(UnmapCriteriaDocument, options);
+      }
+export type UnmapCriteriaMutationHookResult = ReturnType<typeof useUnmapCriteriaMutation>;
+export type UnmapCriteriaMutationResult = Apollo.MutationResult<UnmapCriteriaMutation>;
+export type UnmapCriteriaMutationOptions = Apollo.BaseMutationOptions<UnmapCriteriaMutation, UnmapCriteriaMutationVariables>;
+export const ConfirmAutoMappingDocument = gql`
+    mutation ConfirmAutoMapping($suggestions: [AutoMappingSuggestionInput!]!) {
+  confirmAutoMapping(suggestions: $suggestions)
+}
+    `;
+export type ConfirmAutoMappingMutationFn = Apollo.MutationFunction<ConfirmAutoMappingMutation, ConfirmAutoMappingMutationVariables>;
+
+/**
+ * __useConfirmAutoMappingMutation__
+ *
+ * To run a mutation, you first call `useConfirmAutoMappingMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useConfirmAutoMappingMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [confirmAutoMappingMutation, { data, loading, error }] = useConfirmAutoMappingMutation({
+ *   variables: {
+ *      suggestions: // value for 'suggestions'
+ *   },
+ * });
+ */
+export function useConfirmAutoMappingMutation(baseOptions?: Apollo.MutationHookOptions<ConfirmAutoMappingMutation, ConfirmAutoMappingMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ConfirmAutoMappingMutation, ConfirmAutoMappingMutationVariables>(ConfirmAutoMappingDocument, options);
+      }
+export type ConfirmAutoMappingMutationHookResult = ReturnType<typeof useConfirmAutoMappingMutation>;
+export type ConfirmAutoMappingMutationResult = Apollo.MutationResult<ConfirmAutoMappingMutation>;
+export type ConfirmAutoMappingMutationOptions = Apollo.BaseMutationOptions<ConfirmAutoMappingMutation, ConfirmAutoMappingMutationVariables>;
 export const DetailCriteriaDocument = gql`
     query DetailCriteria($id: String!) {
   criteria(id: $id) {
@@ -2481,6 +2920,8 @@ export const AllCriteriasDocument = gql`
     data {
       display_name
       criteria_id
+      mapping_id
+      semester_id
       type {
         class_type
         num
@@ -2546,6 +2987,8 @@ export const CriteriasDocument = gql`
     data {
       display_name
       criteria_id
+      mapping_id
+      semester_id
     }
     meta {
       hasNext
@@ -3408,6 +3851,7 @@ export const GetStaffSurveyCriteriaListDocument = gql`
     index
     semesters
     staff_survey_criteria_id
+    mapping_id
     is_shown
   }
 }

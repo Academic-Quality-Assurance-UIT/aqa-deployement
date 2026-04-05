@@ -25,6 +25,7 @@ query GetStaffSurveyCriteriaList {
 		index
 		semesters
 		staff_survey_criteria_id
+		mapping_id
 		is_shown
 	}
 }

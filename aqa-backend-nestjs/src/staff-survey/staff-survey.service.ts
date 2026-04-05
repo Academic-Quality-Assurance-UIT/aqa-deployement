@@ -91,10 +91,8 @@ export class StaffSurveyService {
 
     if (showUnit) {
       unitCondition = '';
-      // When showing units, we want to see individual unit scores
-      // but still group regular categories by category name
-      selectField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN criteria.display_name ELSE criteria.category END`;
-      groupByField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN criteria.display_name ELSE criteria.category END`;
+      selectField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN COALESCE(cm.display_name, criteria.display_name) ELSE criteria.category END`;
+      groupByField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN COALESCE(cm.display_name, criteria.display_name) ELSE criteria.category END`;
     }
 
     return await this.staffSurveyPointRepo.query(
@@ -106,6 +104,8 @@ export class StaffSurveyService {
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      LEFT JOIN criteria_mapping AS cm
+        ON criteria.mapping_id = cm.id
       JOIN staff_survey_sheet AS sheet
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
@@ -128,17 +128,19 @@ export class StaffSurveyService {
     return await this.staffSurveyPointRepo.query(
       `
       SELECT
-        criteria.display_name AS category,
+        COALESCE(cm.display_name, criteria.display_name) AS category,
         AVG(point.point) AS avg_point
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      LEFT JOIN criteria_mapping AS cm
+        ON criteria.mapping_id = cm.id
       JOIN staff_survey_sheet AS sheet
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
       WHERE criteria.category = 'ĐƠN VỊ' AND criteria.is_shown = true ${semesterCondition}
-      GROUP BY criteria.staff_survey_criteria_id
+      GROUP BY COALESCE(cm.display_name, criteria.display_name), criteria.index
       ORDER BY criteria.index
     `,
       params,
@@ -166,18 +168,20 @@ export class StaffSurveyService {
     return await this.staffSurveyPointRepo.query(
       `
       SELECT
-        criteria.display_name AS criteria,
+        COALESCE(cm.display_name, criteria.display_name) AS criteria,
         criteria.index AS index,
         AVG(point.point) AS avg_point
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      LEFT JOIN criteria_mapping AS cm
+        ON criteria.mapping_id = cm.id
       JOIN staff_survey_sheet AS sheet
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
       WHERE criteria.category = $1 AND criteria.is_shown = true ${semesterCondition} ${displayNameCondition}
-      GROUP BY criteria.staff_survey_criteria_id
+      GROUP BY COALESCE(cm.display_name, criteria.display_name), criteria.index
       ORDER BY criteria.index
     `,
       params,
@@ -251,13 +255,15 @@ export class StaffSurveyService {
     const data = await this.staffSurveyPointRepo.query(
       `
       SELECT
-        criteria.display_name AS criteria,
+        COALESCE(cm.display_name, criteria.display_name) AS criteria,
         criteria.index AS index,
         point.point,
         point.comment
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      LEFT JOIN criteria_mapping AS cm
+        ON criteria.mapping_id = cm.id
       JOIN staff_survey_sheet AS sheet
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
@@ -341,13 +347,15 @@ export class StaffSurveyService {
       `
       SELECT * FROM (
         SELECT
-          criteria.display_name AS criteria,
+          COALESCE(cm.display_name, criteria.display_name) AS criteria,
           criteria.index AS index,
           point.point AS point,
           point.comment AS comment
         FROM staff_survey_point AS point
         JOIN staff_survey_criteria AS criteria
           ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        LEFT JOIN criteria_mapping AS cm
+          ON criteria.mapping_id = cm.id
         JOIN staff_survey_sheet AS sheet
           ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
         JOIN staff_survey_batch AS batch

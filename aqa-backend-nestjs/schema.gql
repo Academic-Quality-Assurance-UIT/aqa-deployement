@@ -12,6 +12,19 @@ type AuthDto {
   user: UserEntity!
 }
 
+type AutoMappingSuggestion {
+  criteriaIds: [ID!]!
+  display_name: String!
+  semesters: [String!]!
+  staffSurveyCriteriaIds: [ID!]!
+}
+
+input AutoMappingSuggestionInput {
+  criteriaIds: [ID!]!
+  display_name: String!
+  staffSurveyCriteriaIds: [ID!]!
+}
+
 type Class {
   class_id: String!
   class_type: String!
@@ -83,8 +96,19 @@ type Criteria {
   display_name: String!
   index: Int
   is_shown: Boolean!
+  mapping: CriteriaMapping
+  mapping_id: String
   semester: [Semester!]!
+  semester_id: String
   type: [CriteriaProperty!]!
+}
+
+type CriteriaMapping {
+  criteria: [Criteria!]
+  display_name: String!
+  id: ID!
+  raw_display_names: [String!]!
+  staffSurveyCriteria: [StaffSurveyCriteria!]
 }
 
 type CriteriaProperty {
@@ -168,14 +192,18 @@ type Mutation {
 
   """Thêm cấu hình khảo sát mới"""
   addSurveyListConfig(input: SurveyListConfigInput!): SurveyListConfig!
+  confirmAutoMapping(suggestions: [AutoMappingSuggestionInput!]!): Boolean!
 
   """Xác nhận dữ liệu → đưa vào database chính"""
   confirmCrawlJob(jobId: String!): CrawlJob!
+  createCriteriaMapping(display_name: String!): CriteriaMapping!
+  deleteCriteriaMapping(id: ID!): Boolean!
 
   """Xóa cấu hình khảo sát"""
   deleteSurveyListConfig(id: String!): Boolean!
   login(password: String!, username: String!): AuthDto!
   loginIntegration(token: String!): AuthDto!
+  mapCriteriaToGroup(criteriaIds: [ID!]!, mappingId: ID!, type: String!): CriteriaMapping!
   registerUser(user: UserDto!): UserEntity!
   removeUser(id: String!): Boolean!
 
@@ -193,6 +221,8 @@ type Mutation {
 
   """Chạy chuyển dữ liệu giữa các database"""
   runTransferData: CrawlJob!
+  unmapCriteria(criteriaIds: [ID!]!, type: String!): Boolean!
+  updateCriteriaMapping(display_name: String!, id: ID!): CriteriaMapping!
   updateSetting(key: String!, value: String!): AdminSetting!
   updateStaffSurveyCriteria(id: String!, is_shown: Boolean!): StaffSurveyCriteria!
 
@@ -300,8 +330,11 @@ type Query {
   getAdditionalComments(semester: String): [StaffSurveyAdditionalCommentDTO!]!
   getAllComments(filter: FilterArgs = {}, keyword: String, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
   getAllCommentsCount(keyword: String, semester: String): Int!
+  getAutoMappingSuggestions: [AutoMappingSuggestion!]!
   getBatchList: [StaffSurveyBatch!]!
   getCriteriaList: [StaffSurveyCriteria!]!
+  getCriteriaMapping(id: ID!): CriteriaMapping!
+  getCriteriaMappings: [CriteriaMapping!]!
   getPointWithCommentByCriteria(category: String, displayName: String, filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
   getPointsByCategory(semester: String, showUnit: Boolean): [PointByCategoryDTO!]!
   getPointsByCategoryDonVi(semester: String): [PointByCategoryDTO!]!
@@ -377,6 +410,8 @@ type StaffSurveyCriteria {
   index: Int
   is_point_aggregated: Boolean!
   is_shown: Boolean!
+  mapping: CriteriaMapping
+  mapping_id: String
   semesters: [String!]!
   staff_survey_criteria_id: String!
 }

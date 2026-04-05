@@ -1,0 +1,58 @@
+query GetCriteriaMappings {
+	getCriteriaMappings {
+		id
+		display_name
+		criteria {
+			criteria_id
+			display_name
+			semester_id
+		}
+		staffSurveyCriteria {
+			staff_survey_criteria_id
+			display_name
+			category
+			semesters
+		}
+	}
+}
+
+query GetAutoMappingSuggestions {
+	getAutoMappingSuggestions {
+		display_name
+		criteriaIds
+		staffSurveyCriteriaIds
+		semesters
+	}
+}
+
+mutation CreateCriteriaMapping($display_name: String!) {
+	createCriteriaMapping(display_name: $display_name) {
+		id
+		display_name
+	}
+}
+
+mutation UpdateCriteriaMapping($id: ID!, $display_name: String!) {
+	updateCriteriaMapping(id: $id, display_name: $display_name) {
+		id
+		display_name
+	}
+}
+
+mutation DeleteCriteriaMapping($id: ID!) {
+	deleteCriteriaMapping(id: $id)
+}
+
+mutation MapCriteriaToGroup($mappingId: ID!, $criteriaIds: [ID!]!, $type: String!) {
+	mapCriteriaToGroup(mappingId: $mappingId, criteriaIds: $criteriaIds, type: $type) {
+		id
+	}
+}
+
+mutation UnmapCriteria($criteriaIds: [ID!]!, $type: String!) {
+	unmapCriteria(criteriaIds: $criteriaIds, type: $type)
+}
+
+mutation ConfirmAutoMapping($suggestions: [AutoMappingSuggestionInput!]!) {
+	confirmAutoMapping(suggestions: $suggestions)
+}

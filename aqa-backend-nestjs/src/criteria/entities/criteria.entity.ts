@@ -9,6 +9,7 @@ import {
   OneToMany,
   PrimaryColumn,
 } from 'typeorm';
+import { CriteriaMapping } from './criteria-mapping.entity';
 
 @ObjectType()
 @Entity()
@@ -29,6 +30,7 @@ export class Criteria {
   @JoinColumn({ name: 'semester_id' })
   semester: Semester;
 
+  @Field({ nullable: true })
   @Column({ nullable: true })
   semester_id: string;
 
@@ -38,4 +40,13 @@ export class Criteria {
 
   @OneToMany(() => Point, (point) => point.criteria)
   points: Point[];
+
+  @Field(() => CriteriaMapping, { nullable: true })
+  @ManyToOne(() => CriteriaMapping, (mapping) => mapping.criteria, { nullable: true })
+  @JoinColumn({ name: 'mapping_id' })
+  mapping: CriteriaMapping;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  mapping_id: string;
 }

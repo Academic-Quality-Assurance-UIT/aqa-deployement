@@ -1,5 +1,6 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { Column, Entity, PrimaryColumn, Unique } from 'typeorm';
+import { Column, Entity, PrimaryColumn, Unique, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { CriteriaMapping } from '../../criteria/entities/criteria-mapping.entity';
 
 @ObjectType()
 @Entity()
@@ -31,5 +32,18 @@ export class StaffSurveyCriteria {
 
   @Field({ defaultValue: true })
   @Column({ default: true })
+  @Index()
   is_shown: boolean;
+
+  @Field(() => CriteriaMapping, { nullable: true })
+  @ManyToOne(() => CriteriaMapping, (mapping) => mapping.staffSurveyCriteria, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'mapping_id' })
+  mapping: CriteriaMapping;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  @Index()
+  mapping_id: string;
 }

@@ -37,18 +37,40 @@ export class CriteriaService extends BaseService<Criteria> {
           'Lecturer',
           'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
         )
-        .leftJoin('Subject.faculty', 'Faculty'),
+        .leftJoin('Subject.faculty', 'Faculty')
+        .leftJoin('Criteria.mapping', 'Mapping'),
       filter,
-      sort,
+      undefined,
     );
+
+    if (sort?.sortField) {
+      const {
+        sortField: { type },
+        isAscending,
+      } = sort;
+
+      const direction = isAscending ? 'ASC' : 'DESC';
+
+      if (type === 'point') {
+        query.addOrderBy('total_point', direction);
+      } else {
+        query.addOrderBy(
+          'COALESCE(Mapping.display_name, Criteria.display_name)',
+          direction,
+        );
+      }
+    }
 
     return paginateByQuery(
       query
-        .select('Criteria.criteria_id', 'criteria_id')
-        .addSelect('Criteria.index', 'index')
-        .addSelect('Criteria.semester_id', 'semester_id')
-        .addSelect('Criteria.display_name', 'display_name')
-        .groupBy('Criteria.criteria_id'),
+        .select('MAX(Criteria.criteria_id)', 'criteria_id')
+        .addSelect('MAX(Criteria.index)', 'index')
+        .addSelect('MAX(Criteria.semester_id)', 'semester_id')
+        .addSelect(
+          'COALESCE(Mapping.display_name, Criteria.display_name)',
+          'display_name',
+        )
+        .groupBy('COALESCE(Mapping.display_name, Criteria.display_name)'),
       pagination,
       filter,
       { isRaw: true },

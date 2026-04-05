@@ -17,6 +17,8 @@ query AllCriterias($filter: FilterArgs) {
 		data {
 			display_name
 			criteria_id
+			mapping_id
+			semester_id
 			type {
 				class_type
 				num
@@ -42,6 +44,8 @@ query Criterias($filter: FilterArgs, $isAscending: Boolean, $page: Int) {
 		data {
 			display_name
 			criteria_id
+			mapping_id
+			semester_id
 		}
 		meta {
 			hasNext

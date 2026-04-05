@@ -4,7 +4,7 @@ import { Role, useProfileQuery, useGetSettingQuery, useUpdateSettingMutation } f
 import { Button, Input, Skeleton, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AiOutlineSetting, AiOutlineDatabase, AiOutlineUnorderedList } from "react-icons/ai";
+import { AiOutlineSetting, AiOutlineDatabase, AiOutlineUnorderedList, AiOutlineCodepen } from "react-icons/ai";
 import { CrawlManager } from "@/components/admin/CrawlManager";
 import { StaffSurveyCriteriaTable } from "@/components/admin/StaffSurveyCriteriaTable";
 
@@ -111,6 +111,28 @@ export default function Page() {
 					</div>
 				</div>
 			</Skeleton>
+
+			<div className="flex flex-col gap-6 w-full p-6 bg-white dark:bg-black rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+				<div className="flex items-center gap-3 mb-2">
+					<AiOutlineCodepen size={24} className="text-gray-600" />
+					<h2 className="text-xl font-bold">Phân nhóm tiêu chí</h2>
+				</div>
+				<div className="flex flex-col gap-2 p-5 bg-gray-50 dark:bg-zinc-900 rounded-xl">
+					<p className="text-sm text-gray-500 mb-2">
+						Gộp các tiêu chí trùng lặp qua các học kỳ để đồng nhất dữ liệu báo cáo khảo sát sinh viên và cán bộ nhân viên.
+					</p>
+					<div className="flex justify-start">
+						<Button
+							color="primary"
+							variant="flat"
+							onPress={() => router.push("/criteria-mapping")}
+							className="font-bold rounded-xl"
+						>
+							Quản lý phân nhóm
+						</Button>
+					</div>
+				</div>
+			</div>
 
 			<div className="flex flex-col gap-8 w-full p-6 bg-white dark:bg-black rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
 				<div className="flex items-center gap-3 mb-2">
