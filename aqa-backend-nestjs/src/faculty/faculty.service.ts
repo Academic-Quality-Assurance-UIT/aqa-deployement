@@ -12,7 +12,10 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class FacultyService extends BaseService<Faculty> {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Faculty) private repo: Repository<Faculty>) {
+  constructor(
+    private filterQueryService: FilterQueryService,
+    @InjectRepository(Faculty) private repo: Repository<Faculty>,
+  ) {
     super();
   }
 
@@ -23,24 +26,26 @@ export class FacultyService extends BaseService<Faculty> {
     pagination: PaginationArgs,
     sort?: SortArgs,
   ) {
+    const query = await this.filterQueryService.filterQuery<Faculty>(
+      Faculty,
+      this.repo
+        .createQueryBuilder()
+        .innerJoin('Faculty.subjects', 'Subject')
+        .leftJoin('Subject.classes', 'Class')
+        .leftJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        )
+        .leftJoin('Class.points', 'Point')
+        .leftJoin('Point.criteria', 'Criteria')
+        .leftJoin('Class.semester', 'Semester'),
+      filter,
+      sort,
+    );
+
     return paginateByQuery(
-      this.filterQueryService.filterQuery<Faculty>(
-        Faculty,
-        this.repo
-          .createQueryBuilder()
-          .innerJoin('Faculty.subjects', 'Subject')
-          .leftJoin('Subject.classes', 'Class')
-          .leftJoin(
-            Lecturer,
-            'Lecturer',
-            'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
-          )
-          .leftJoin('Class.points', 'Point')
-          .leftJoin('Point.criteria', 'Criteria')
-          .leftJoin('Class.semester', 'Semester'),
-        filter,
-        sort,
-      )
+      query
         .select('Faculty.faculty_id', 'faculty_id')
         .addSelect('Faculty.display_name', 'display_name')
         .addSelect('Faculty.full_name', 'full_name')

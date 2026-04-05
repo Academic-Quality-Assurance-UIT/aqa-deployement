@@ -76,7 +76,7 @@ export class StaffSurveyService {
     return result.map((r) => r.semester);
   }
 
-  async getPointsByCategory(semester?: string) {
+  async getPointsByCategory(semester?: string, showUnit?: boolean) {
     const params: any[] = [];
     let semesterCondition = '';
     if (semester) {
@@ -84,11 +84,25 @@ export class StaffSurveyService {
       semesterCondition = `AND batch.semester = $${params.length}`;
     }
 
+    let selectField = 'criteria.category';
+    let groupByField = 'criteria.category';
+    let unitCondition = "AND criteria.category != 'ĐƠN VỊ'";
+    let isUnitField = "criteria.category = 'ĐƠN VỊ'";
+
+    if (showUnit) {
+      unitCondition = '';
+      // When showing units, we want to see individual unit scores
+      // but still group regular categories by category name
+      selectField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN criteria.display_name ELSE criteria.category END`;
+      groupByField = `CASE WHEN criteria.category = 'ĐƠN VỊ' THEN criteria.display_name ELSE criteria.category END`;
+    }
+
     return await this.staffSurveyPointRepo.query(
       `
       SELECT
-        criteria.category AS category,
-        AVG(point.point) AS avg_point
+        ${selectField} AS category,
+        AVG(point.point) AS avg_point,
+        (${isUnitField}) AS is_unit
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
@@ -96,8 +110,8 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category != 'ĐƠN VỊ' ${semesterCondition}
-      GROUP BY criteria.category
+      WHERE criteria.is_shown = true ${unitCondition} ${semesterCondition}
+      GROUP BY ${groupByField}, (${isUnitField})
     `,
       params,
     );
@@ -123,7 +137,7 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category = 'ĐƠN VỊ' ${semesterCondition}
+      WHERE criteria.category = 'ĐƠN VỊ' AND criteria.is_shown = true ${semesterCondition}
       GROUP BY criteria.staff_survey_criteria_id
       ORDER BY criteria.index
     `,
@@ -162,11 +176,52 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category = $1 ${semesterCondition} ${displayNameCondition}
+      WHERE criteria.category = $1 AND criteria.is_shown = true ${semesterCondition} ${displayNameCondition}
       GROUP BY criteria.staff_survey_criteria_id
       ORDER BY criteria.index
     `,
       params,
+    );
+  }
+
+  async getStaffSurveyPointsByYear() {
+    return await this.staffSurveyPointRepo.query(
+      `
+      SELECT
+        batch.semester AS year,
+        AVG(point.point) AS avg_point
+      FROM staff_survey_point AS point
+      JOIN staff_survey_sheet AS sheet
+        ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+      JOIN staff_survey_batch AS batch
+        ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+      JOIN staff_survey_criteria AS criteria
+        ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      WHERE criteria.is_shown = true
+      GROUP BY batch.semester
+      ORDER BY batch.semester DESC
+    `,
+    );
+  }
+
+  async getStaffSurveyPointsByCategoryAndYear() {
+    return await this.staffSurveyPointRepo.query(
+      `
+      SELECT
+        criteria.category AS category,
+        batch.semester AS year,
+        AVG(point.point) AS avg_point
+      FROM staff_survey_point AS point
+      JOIN staff_survey_criteria AS criteria
+        ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+      JOIN staff_survey_sheet AS sheet
+        ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+      JOIN staff_survey_batch AS batch
+        ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+      WHERE criteria.category != 'ĐƠN VỊ' AND criteria.is_shown = true
+      GROUP BY criteria.category, batch.semester
+      ORDER BY batch.semester DESC, criteria.category
+    `,
     );
   }
 
@@ -207,7 +262,7 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category = $1 AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${displayNameCondition}
+      WHERE criteria.category = $1 AND criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${displayNameCondition}
       ORDER BY criteria.index
       LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
     `,
@@ -238,7 +293,7 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category = $1 AND point.comment IS NOT NULL AND point.comment != '' ${metaSemesterCondition} ${metaDisplayNameCondition}
+      WHERE criteria.category = $1 AND criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${metaSemesterCondition} ${metaDisplayNameCondition}
     `,
       metaParams,
     );
@@ -262,26 +317,6 @@ export class StaffSurveyService {
     semester?: string,
     keyword?: string,
   ) {
-    const params: any[] = [];
-    let semesterCondition = '';
-    if (semester) {
-      params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
-    }
-
-    let keywordCondition = '';
-    if (keyword) {
-      params.push(`%${keyword}%`);
-      keywordCondition = `AND point.comment ILIKE $${params.length}`;
-    }
-
-    let sheetKeywordCondition = '';
-    if (keyword) {
-      // Reuse the same param index if possible, but params are positional.
-      // Actually, let's just push it again for simplicity or manage indices.
-      // To keep it simple, I'll just push again if needed, but I should be careful with param order.
-    }
-
     // Recalculate params for the whole query
     const queryParams: any[] = [];
     let qSemesterCondition = '';
@@ -317,7 +352,7 @@ export class StaffSurveyService {
           ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE point.comment IS NOT NULL AND point.comment != '' ${qSemesterCondition} ${qKeywordCondition}
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${qSemesterCondition} ${qKeywordCondition}
         
         UNION ALL
         
@@ -362,7 +397,9 @@ export class StaffSurveyService {
           ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE point.comment IS NOT NULL AND point.comment != '' ${mSemesterCondition} ${mKeywordCondition}
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${mSemesterCondition} ${mKeywordCondition}
         
         UNION ALL
         
@@ -421,7 +458,9 @@ export class StaffSurveyService {
           ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${keywordCondition}
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${keywordCondition}
         
         UNION ALL
         
@@ -436,7 +475,7 @@ export class StaffSurveyService {
       params,
     );
 
-    console.log({ count: parseInt(result[0].total_item || '0') })
+    console.log({ count: parseInt(result[0].total_item || '0') });
 
     return parseInt(result[0].total_item || '0');
   }
@@ -470,7 +509,7 @@ export class StaffSurveyService {
         ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-      WHERE criteria.category = $1 AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${displayNameCondition}
+      WHERE criteria.category = $1 AND criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${displayNameCondition}
     `,
       params,
     );
@@ -595,5 +634,12 @@ export class StaffSurveyService {
     }
 
     return batch;
+  }
+
+  async updateCriteria(id: string, is_shown: boolean) {
+    await this.staffSurveyCriteriaRepo.update(id, { is_shown });
+    return this.staffSurveyCriteriaRepo.findOne({
+      where: { staff_survey_criteria_id: id },
+    });
   }
 }

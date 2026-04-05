@@ -1,7 +1,6 @@
 import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { ClassService } from 'src/class/class.service';
 import { PaginatedClass } from 'src/class/dto/PaginatedClass';
-import { FilterArgs } from 'src/common/args/filter.arg';
 import { QueryArgs } from 'src/common/args/query.arg';
 import { Faculty } from 'src/faculty/entities/faculty.entity';
 import { FacultyService } from 'src/faculty/faculty.service';

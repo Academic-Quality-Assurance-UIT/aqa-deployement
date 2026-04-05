@@ -273,7 +273,7 @@ export default function ChartLayout({
 				</Extensible>
 			</div>
 
-			<div className="fixed w-[1400px] h-[1000px] -z-10 bg-white">
+			<div className="absolute top-[-9999px] left-[-9999px] w-[1400px] h-[1000px] pointer-events-none opacity-0 overflow-hidden bg-white">
 				{/* Hidden Chart for Export */}
 				<div
 					ref={hiddenChartRef}

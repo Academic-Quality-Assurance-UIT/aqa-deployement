@@ -13,7 +13,8 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 export class CriteriaService extends BaseService<Criteria> {
   private readonly logger = new Logger(CriteriaService.name);
 
-  constructor(private filterQueryService: FilterQueryService, 
+  constructor(
+    private filterQueryService: FilterQueryService,
     @InjectRepository(Criteria) private repo: Repository<Criteria>,
     @InjectRepository(Class) private classRepo: Repository<Class>,
   ) {
@@ -23,24 +24,26 @@ export class CriteriaService extends BaseService<Criteria> {
   relations = { semester: true };
 
   async findAll({ filter, pagination, sort }: QueryArgs) {
+    const query = await this.filterQueryService.filterQuery<Criteria>(
+      Criteria,
+      this.repo
+        .createQueryBuilder()
+        .leftJoin('Criteria.points', 'Point')
+        .leftJoin('Point.class', 'Class')
+        .leftJoin('Class.semester', 'Semester')
+        .leftJoin('Class.subject', 'Subject')
+        .leftJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        )
+        .leftJoin('Subject.faculty', 'Faculty'),
+      filter,
+      sort,
+    );
+
     return paginateByQuery(
-      this.filterQueryService.filterQuery<Criteria>(
-        Criteria,
-        this.repo
-          .createQueryBuilder()
-          .leftJoin('Criteria.points', 'Point')
-          .leftJoin('Point.class', 'Class')
-          .leftJoin('Class.semester', 'Semester')
-          .leftJoin('Class.subject', 'Subject')
-          .leftJoin(
-            Lecturer,
-            'Lecturer',
-            'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
-          )
-          .leftJoin('Subject.faculty', 'Faculty'),
-        filter,
-        sort,
-      )
+      query
         .select('Criteria.criteria_id', 'criteria_id')
         .addSelect('Criteria.index', 'index')
         .addSelect('Criteria.semester_id', 'semester_id')

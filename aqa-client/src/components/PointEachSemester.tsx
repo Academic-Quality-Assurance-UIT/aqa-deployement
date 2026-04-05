@@ -118,8 +118,8 @@ function InnerPointEachSemester({
 				}
 			})
 			.map((point) => ({
-				Điểm: point.average_point * 4,
-				"Trung bình toàn trường": point.all_average * 4,
+				Điểm: point.class_num === 0 ? null : point.average_point * 4,
+				"Trung bình toàn trường": point.all_average > 0 ? point.all_average * 4 : null,
 				semester_name: point.display_name,
 			})) || [];
 

@@ -1,24 +1,57 @@
 import { Injectable } from '@nestjs/common';
-import { SelectQueryBuilder } from 'typeorm';
+import { DataSource, SelectQueryBuilder } from 'typeorm';
 import { FilterArgs } from '../args/filter.arg';
 import { SortArgs } from '../args/sort.arg';
 import { searchString } from '../utils/searchString';
 
 @Injectable()
 export class FilterQueryService {
-  filterQuery<T>(
+  private allowedYearsCache: string[] = [];
+  private lastUpdate = 0;
+  private readonly CACHE_TTL = 60000; // 60 seconds
+
+  constructor(private dataSource: DataSource) {}
+
+  async getAllowedYears(): Promise<string[]> {
+    const now = Date.now();
+    if (
+      now - this.lastUpdate > this.CACHE_TTL ||
+      this.allowedYearsCache.length === 0
+    ) {
+      const adminSetting = await this.dataSource.query(
+        "SELECT value FROM admin_setting WHERE key = 'filter_year'",
+      );
+      const limit = parseInt(adminSetting[0]?.value || '5', 10);
+      const yearRes = await this.dataSource.query(
+        `SELECT year FROM semester GROUP BY year ORDER BY year DESC LIMIT ${limit}`,
+      );
+      this.allowedYearsCache = yearRes.map((r: any) => r.year);
+      this.lastUpdate = now;
+    }
+    return this.allowedYearsCache;
+  }
+
+  async filterQuery<T>(
     table: string | any,
     query: SelectQueryBuilder<T>,
     filter: FilterArgs,
     sortOptions?: SortArgs,
-  ): SelectQueryBuilder<T> {
+    allowedYears?: string[],
+  ): Promise<SelectQueryBuilder<T>> {
     let filteredQuery = query;
     const tableName = table.name ?? table;
 
-    // Subquery effectively applies filter_year dynamic cut-off
-    filteredQuery = filteredQuery.andWhere(
-      "Semester.year IN (SELECT year FROM semester GROUP BY year ORDER BY year DESC LIMIT CAST((SELECT value FROM admin_setting WHERE key = 'filter_year') AS INTEGER))"
-    );
+    // Use pre-calculated allowedYears if provided, otherwise fetch and cache
+    const yearsToUse = allowedYears || (await this.getAllowedYears());
+
+    if (yearsToUse && yearsToUse.length > 0) {
+      filteredQuery = filteredQuery.andWhere(
+        'Semester.year IN (:...allowedYears)',
+        {
+          allowedYears: yearsToUse,
+        },
+      );
+    }
 
     if (filter.program)
       filteredQuery = filteredQuery.andWhere('Class.program = :program', {
@@ -26,9 +59,12 @@ export class FilterQueryService {
       });
 
     if (filter.faculty_id)
-      filteredQuery = filteredQuery.andWhere('Faculty.faculty_id = :faculty_id', {
-        faculty_id: filter.faculty_id,
-      });
+      filteredQuery = filteredQuery.andWhere(
+        'Faculty.faculty_id = :faculty_id',
+        {
+          faculty_id: filter.faculty_id,
+        },
+      );
 
     if (filter.keyword)
       filteredQuery = filteredQuery.andWhere(searchString(tableName, filter), {
@@ -52,9 +88,12 @@ export class FilterQueryService {
       );
 
     if (filter.criteria_id)
-      filteredQuery = filteredQuery.andWhere('Point.criteria_id = :criteria_id', {
-        criterid_id: filter.criteria_id,
-      });
+      filteredQuery = filteredQuery.andWhere(
+        'Point.criteria_id = :criteria_id',
+        {
+          criterid_id: filter.criteria_id,
+        },
+      );
 
     if (filter.lecturer_id) {
       if (tableName === 'Lecturer') {

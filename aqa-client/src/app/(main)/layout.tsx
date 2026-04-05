@@ -5,6 +5,7 @@ import NavigationDrawer, { NavItem, NavSectionHeader } from "@/components/Naviga
 import { useProfileQuery } from "@/gql/graphql";
 import { useIsAdmin, useIsFullAccess, useIsLecturer } from "@/hooks/useIsAdmin";
 import { useIsFaculty } from "@/hooks/useIsFaculty";
+import PageTransition from "@/components/PageTransition";
 import { Suspense } from "react";
 import {
 	AiOutlineCodepen,
@@ -115,7 +116,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 				) : null}
 			</NavigationDrawer>
 			<main className="w-full h-screen overflow-y-auto px-6 lg:px-12 xl:px-16 pt-8 pb-24 lg:pt-10 lg:pb-16 overflow-x-hidden">
-				<Suspense fallback={<p>Loading</p>}>{children}</Suspense>
+				<PageTransition>
+					<Suspense fallback={<p>Loading</p>}>{children}</Suspense>
+				</PageTransition>
 			</main>
 		</div>
 	);

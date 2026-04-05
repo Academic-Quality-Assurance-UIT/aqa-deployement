@@ -120,6 +120,7 @@ export type Criteria = {
   criteria_id: Scalars['String']['output'];
   display_name: Scalars['String']['output'];
   index?: Maybe<Scalars['Int']['output']>;
+  is_shown: Scalars['Boolean']['output'];
   semester: Array<Semester>;
   type: Array<CriteriaProperty>;
 };
@@ -270,6 +271,7 @@ export type Mutation = {
   /** Chạy chuyển dữ liệu giữa các database */
   runTransferData: CrawlJob;
   updateSetting: AdminSetting;
+  updateStaffSurveyCriteria: StaffSurveyCriteria;
   /** Cập nhật cấu hình khảo sát */
   updateSurveyListConfig: SurveyListConfig;
   updateUser: UserEntity;
@@ -348,6 +350,12 @@ export type MutationUpdateSettingArgs = {
 };
 
 
+export type MutationUpdateStaffSurveyCriteriaArgs = {
+  id: Scalars['String']['input'];
+  is_shown: Scalars['Boolean']['input'];
+};
+
+
 export type MutationUpdateSurveyListConfigArgs = {
   id: Scalars['String']['input'];
   input: SurveyListConfigInput;
@@ -419,6 +427,7 @@ export type PointByCategoryDto = {
   __typename?: 'PointByCategoryDTO';
   avg_point: Scalars['Float']['output'];
   category: Scalars['String']['output'];
+  is_unit?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type PointByCriteriaDto = {
@@ -468,6 +477,8 @@ export type Query = {
   getPointsByCriteria: Array<PointByCriteriaDto>;
   getSetting: AdminSetting;
   getStaffSurveyCommentCount: Scalars['Int']['output'];
+  getStaffSurveyPointsByCategoryAndYear: Array<StaffSurveyPointByCategoryAndYearDto>;
+  getStaffSurveyPointsByYear: Array<StaffSurveyPointByYearDto>;
   getSurveySemesterList: Array<Scalars['String']['output']>;
   /** List all points, group by a specific entity */
   groupedPoints: PaginatedGroupedPoint;
@@ -593,6 +604,7 @@ export type QueryGetPointWithCommentByCriteriaArgs = {
 
 export type QueryGetPointsByCategoryArgs = {
   semester?: InputMaybe<Scalars['String']['input']>;
+  showUnit?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -716,8 +728,22 @@ export type StaffSurveyCriteria = {
   display_name: Scalars['String']['output'];
   index?: Maybe<Scalars['Int']['output']>;
   is_point_aggregated: Scalars['Boolean']['output'];
+  is_shown: Scalars['Boolean']['output'];
   semesters: Array<Scalars['String']['output']>;
   staff_survey_criteria_id: Scalars['String']['output'];
+};
+
+export type StaffSurveyPointByCategoryAndYearDto = {
+  __typename?: 'StaffSurveyPointByCategoryAndYearDTO';
+  avg_point: Scalars['Float']['output'];
+  category: Scalars['String']['output'];
+  year: Scalars['String']['output'];
+};
+
+export type StaffSurveyPointByYearDto = {
+  __typename?: 'StaffSurveyPointByYearDTO';
+  avg_point: Scalars['Float']['output'];
+  year: Scalars['String']['output'];
 };
 
 export type StaffSurveyPointDto = {
@@ -1152,7 +1178,7 @@ export type AddListStaffSurveyDataMutation = { __typename?: 'Mutation', addListS
 export type GetStaffSurveyCriteriaListQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetStaffSurveyCriteriaListQuery = { __typename?: 'Query', getCriteriaList: Array<{ __typename?: 'StaffSurveyCriteria', category: string, display_name: string, index?: number | null, semesters: Array<string>, staff_survey_criteria_id: string }> };
+export type GetStaffSurveyCriteriaListQuery = { __typename?: 'Query', getCriteriaList: Array<{ __typename?: 'StaffSurveyCriteria', category: string, display_name: string, index?: number | null, semesters: Array<string>, staff_survey_criteria_id: string, is_shown: boolean }> };
 
 export type GetStaffSurveyBatchListQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1166,10 +1192,11 @@ export type GetSurveySemesterListQuery = { __typename?: 'Query', getSurveySemest
 
 export type GetPointsByCategoryQueryVariables = Exact<{
   semester?: InputMaybe<Scalars['String']['input']>;
+  showUnit?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 
-export type GetPointsByCategoryQuery = { __typename?: 'Query', getPointsByCategory: Array<{ __typename?: 'PointByCategoryDTO', avg_point: number, category: string }> };
+export type GetPointsByCategoryQuery = { __typename?: 'Query', getPointsByCategory: Array<{ __typename?: 'PointByCategoryDTO', avg_point: number, category: string, is_unit?: boolean | null }> };
 
 export type GetPointsByCategoryDonViQueryVariables = Exact<{
   semester?: InputMaybe<Scalars['String']['input']>;
@@ -1222,6 +1249,24 @@ export type GetAllCommentsCountQueryVariables = Exact<{
 
 
 export type GetAllCommentsCountQuery = { __typename?: 'Query', getAllCommentsCount: number };
+
+export type GetStaffSurveyPointsByYearQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetStaffSurveyPointsByYearQuery = { __typename?: 'Query', getStaffSurveyPointsByYear: Array<{ __typename?: 'StaffSurveyPointByYearDTO', avg_point: number, year: string }> };
+
+export type GetStaffSurveyPointsByCategoryAndYearQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetStaffSurveyPointsByCategoryAndYearQuery = { __typename?: 'Query', getStaffSurveyPointsByCategoryAndYear: Array<{ __typename?: 'StaffSurveyPointByCategoryAndYearDTO', avg_point: number, category: string, year: string }> };
+
+export type UpdateStaffSurveyCriteriaMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+  is_shown: Scalars['Boolean']['input'];
+}>;
+
+
+export type UpdateStaffSurveyCriteriaMutation = { __typename?: 'Mutation', updateStaffSurveyCriteria: { __typename?: 'StaffSurveyCriteria', staff_survey_criteria_id: string, is_shown: boolean } };
 
 export type DetailSubjectQueryVariables = Exact<{
   id: Scalars['String']['input'];
@@ -3363,6 +3408,7 @@ export const GetStaffSurveyCriteriaListDocument = gql`
     index
     semesters
     staff_survey_criteria_id
+    is_shown
   }
 }
     `;
@@ -3495,10 +3541,11 @@ export function refetchGetSurveySemesterListQuery(variables?: GetSurveySemesterL
       return { query: GetSurveySemesterListDocument, variables: variables }
     }
 export const GetPointsByCategoryDocument = gql`
-    query GetPointsByCategory($semester: String) {
-  getPointsByCategory(semester: $semester) {
+    query GetPointsByCategory($semester: String, $showUnit: Boolean) {
+  getPointsByCategory(semester: $semester, showUnit: $showUnit) {
     avg_point
     category
+    is_unit
   }
 }
     `;
@@ -3516,6 +3563,7 @@ export const GetPointsByCategoryDocument = gql`
  * const { data, loading, error } = useGetPointsByCategoryQuery({
  *   variables: {
  *      semester: // value for 'semester'
+ *      showUnit: // value for 'showUnit'
  *   },
  * });
  */
@@ -3869,6 +3917,134 @@ export type GetAllCommentsCountQueryResult = Apollo.QueryResult<GetAllCommentsCo
 export function refetchGetAllCommentsCountQuery(variables?: GetAllCommentsCountQueryVariables) {
       return { query: GetAllCommentsCountDocument, variables: variables }
     }
+export const GetStaffSurveyPointsByYearDocument = gql`
+    query GetStaffSurveyPointsByYear {
+  getStaffSurveyPointsByYear {
+    avg_point
+    year
+  }
+}
+    `;
+
+/**
+ * __useGetStaffSurveyPointsByYearQuery__
+ *
+ * To run a query within a React component, call `useGetStaffSurveyPointsByYearQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetStaffSurveyPointsByYearQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetStaffSurveyPointsByYearQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetStaffSurveyPointsByYearQuery(baseOptions?: Apollo.QueryHookOptions<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>(GetStaffSurveyPointsByYearDocument, options);
+      }
+export function useGetStaffSurveyPointsByYearLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>(GetStaffSurveyPointsByYearDocument, options);
+        }
+// @ts-ignore
+export function useGetStaffSurveyPointsByYearSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>): Apollo.UseSuspenseQueryResult<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>;
+export function useGetStaffSurveyPointsByYearSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>): Apollo.UseSuspenseQueryResult<GetStaffSurveyPointsByYearQuery | undefined, GetStaffSurveyPointsByYearQueryVariables>;
+export function useGetStaffSurveyPointsByYearSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>(GetStaffSurveyPointsByYearDocument, options);
+        }
+export type GetStaffSurveyPointsByYearQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByYearQuery>;
+export type GetStaffSurveyPointsByYearLazyQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByYearLazyQuery>;
+export type GetStaffSurveyPointsByYearSuspenseQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByYearSuspenseQuery>;
+export type GetStaffSurveyPointsByYearQueryResult = Apollo.QueryResult<GetStaffSurveyPointsByYearQuery, GetStaffSurveyPointsByYearQueryVariables>;
+export function refetchGetStaffSurveyPointsByYearQuery(variables?: GetStaffSurveyPointsByYearQueryVariables) {
+      return { query: GetStaffSurveyPointsByYearDocument, variables: variables }
+    }
+export const GetStaffSurveyPointsByCategoryAndYearDocument = gql`
+    query GetStaffSurveyPointsByCategoryAndYear {
+  getStaffSurveyPointsByCategoryAndYear {
+    avg_point
+    category
+    year
+  }
+}
+    `;
+
+/**
+ * __useGetStaffSurveyPointsByCategoryAndYearQuery__
+ *
+ * To run a query within a React component, call `useGetStaffSurveyPointsByCategoryAndYearQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetStaffSurveyPointsByCategoryAndYearQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetStaffSurveyPointsByCategoryAndYearQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetStaffSurveyPointsByCategoryAndYearQuery(baseOptions?: Apollo.QueryHookOptions<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>(GetStaffSurveyPointsByCategoryAndYearDocument, options);
+      }
+export function useGetStaffSurveyPointsByCategoryAndYearLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>(GetStaffSurveyPointsByCategoryAndYearDocument, options);
+        }
+// @ts-ignore
+export function useGetStaffSurveyPointsByCategoryAndYearSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>): Apollo.UseSuspenseQueryResult<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>;
+export function useGetStaffSurveyPointsByCategoryAndYearSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>): Apollo.UseSuspenseQueryResult<GetStaffSurveyPointsByCategoryAndYearQuery | undefined, GetStaffSurveyPointsByCategoryAndYearQueryVariables>;
+export function useGetStaffSurveyPointsByCategoryAndYearSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>(GetStaffSurveyPointsByCategoryAndYearDocument, options);
+        }
+export type GetStaffSurveyPointsByCategoryAndYearQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByCategoryAndYearQuery>;
+export type GetStaffSurveyPointsByCategoryAndYearLazyQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByCategoryAndYearLazyQuery>;
+export type GetStaffSurveyPointsByCategoryAndYearSuspenseQueryHookResult = ReturnType<typeof useGetStaffSurveyPointsByCategoryAndYearSuspenseQuery>;
+export type GetStaffSurveyPointsByCategoryAndYearQueryResult = Apollo.QueryResult<GetStaffSurveyPointsByCategoryAndYearQuery, GetStaffSurveyPointsByCategoryAndYearQueryVariables>;
+export function refetchGetStaffSurveyPointsByCategoryAndYearQuery(variables?: GetStaffSurveyPointsByCategoryAndYearQueryVariables) {
+      return { query: GetStaffSurveyPointsByCategoryAndYearDocument, variables: variables }
+    }
+export const UpdateStaffSurveyCriteriaDocument = gql`
+    mutation UpdateStaffSurveyCriteria($id: String!, $is_shown: Boolean!) {
+  updateStaffSurveyCriteria(id: $id, is_shown: $is_shown) {
+    staff_survey_criteria_id
+    is_shown
+  }
+}
+    `;
+export type UpdateStaffSurveyCriteriaMutationFn = Apollo.MutationFunction<UpdateStaffSurveyCriteriaMutation, UpdateStaffSurveyCriteriaMutationVariables>;
+
+/**
+ * __useUpdateStaffSurveyCriteriaMutation__
+ *
+ * To run a mutation, you first call `useUpdateStaffSurveyCriteriaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateStaffSurveyCriteriaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateStaffSurveyCriteriaMutation, { data, loading, error }] = useUpdateStaffSurveyCriteriaMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      is_shown: // value for 'is_shown'
+ *   },
+ * });
+ */
+export function useUpdateStaffSurveyCriteriaMutation(baseOptions?: Apollo.MutationHookOptions<UpdateStaffSurveyCriteriaMutation, UpdateStaffSurveyCriteriaMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateStaffSurveyCriteriaMutation, UpdateStaffSurveyCriteriaMutationVariables>(UpdateStaffSurveyCriteriaDocument, options);
+      }
+export type UpdateStaffSurveyCriteriaMutationHookResult = ReturnType<typeof useUpdateStaffSurveyCriteriaMutation>;
+export type UpdateStaffSurveyCriteriaMutationResult = Apollo.MutationResult<UpdateStaffSurveyCriteriaMutation>;
+export type UpdateStaffSurveyCriteriaMutationOptions = Apollo.BaseMutationOptions<UpdateStaffSurveyCriteriaMutation, UpdateStaffSurveyCriteriaMutationVariables>;
 export const DetailSubjectDocument = gql`
     query DetailSubject($id: String!) {
   subject(id: $id) {

@@ -82,6 +82,7 @@ type Criteria {
   criteria_id: String!
   display_name: String!
   index: Int
+  is_shown: Boolean!
   semester: [Semester!]!
   type: [CriteriaProperty!]!
 }
@@ -193,6 +194,7 @@ type Mutation {
   """Chạy chuyển dữ liệu giữa các database"""
   runTransferData: CrawlJob!
   updateSetting(key: String!, value: String!): AdminSetting!
+  updateStaffSurveyCriteria(id: String!, is_shown: Boolean!): StaffSurveyCriteria!
 
   """Cập nhật cấu hình khảo sát"""
   updateSurveyListConfig(id: String!, input: SurveyListConfigInput!): SurveyListConfig!
@@ -251,6 +253,7 @@ input PaginationArgs {
 type PointByCategoryDTO {
   avg_point: Float!
   category: String!
+  is_unit: Boolean
 }
 
 type PointByCriteriaDTO {
@@ -300,11 +303,13 @@ type Query {
   getBatchList: [StaffSurveyBatch!]!
   getCriteriaList: [StaffSurveyCriteria!]!
   getPointWithCommentByCriteria(category: String, displayName: String, filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
-  getPointsByCategory(semester: String): [PointByCategoryDTO!]!
+  getPointsByCategory(semester: String, showUnit: Boolean): [PointByCategoryDTO!]!
   getPointsByCategoryDonVi(semester: String): [PointByCategoryDTO!]!
   getPointsByCriteria(category: String, displayName: String, semester: String): [PointByCriteriaDTO!]!
   getSetting(key: String!): AdminSetting!
   getStaffSurveyCommentCount(category: String, displayName: String, semester: String): Int!
+  getStaffSurveyPointsByCategoryAndYear: [StaffSurveyPointByCategoryAndYearDTO!]!
+  getStaffSurveyPointsByYear: [StaffSurveyPointByYearDTO!]!
   getSurveySemesterList: [String!]!
 
   """List all points, group by a specific entity"""
@@ -371,8 +376,20 @@ type StaffSurveyCriteria {
   display_name: String!
   index: Int
   is_point_aggregated: Boolean!
+  is_shown: Boolean!
   semesters: [String!]!
   staff_survey_criteria_id: String!
+}
+
+type StaffSurveyPointByCategoryAndYearDTO {
+  avg_point: Float!
+  category: String!
+  year: String!
+}
+
+type StaffSurveyPointByYearDTO {
+  avg_point: Float!
+  year: String!
 }
 
 input StaffSurveyPointDTO {

@@ -54,9 +54,9 @@ import { CrawlDataModule } from './crawl-data/crawl-data.module';
         logging: false,
         logger: new FileLogger(),
         extra: {
-          connectionTimeoutMillis: 5000, // Timeout after 5s if DB doesn't respond
-          query_timeout: 5000,
-          statement_timeout: 5000,
+          connectionTimeoutMillis: 30000, // Increased to 30s for heavy analytical queries
+          query_timeout: 30000,
+          statement_timeout: 30000,
         },
       }),
     }),

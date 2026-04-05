@@ -30,22 +30,7 @@ export default function Page() {
 		<div>
 			<div className="page-header">
 				<h1 className="page-title">Điểm đánh giá các khoa/ bộ môn</h1>
-				<div className="flex gap-3">
-					<StaffSurveySemesterSelector
-						semester={semester}
-						setSemester={setSemester}
-					/>
-					<Link href="/staff-survey-add">
-						<Button color="primary" variant="flat">
-							<p className="font-bold">Thêm dữ liệu mới</p>
-						</Button>
-					</Link>
-					<Link href="/staff-survey-upload">
-						<Button color="primary" variant="flat">
-							<p className="font-bold">Tải dữ liệu lên</p>
-						</Button>
-					</Link>
-				</div>
+				<div className="flex gap-3"></div>
 			</div>
 
 			<div className=" mt-8 flex flex-col gap-4">
@@ -58,7 +43,12 @@ export default function Page() {
 						columnNum={unitPoints?.getPointsByCategoryDonVi.length || 0}
 						columnSize={150}
 						isFullWidth={false}
-						handlerButtons={<></>}
+						handlerButtons={
+							<StaffSurveySemesterSelector
+								semester={semester}
+								setSemester={setSemester}
+							/>
+						}
 						exportData={unitChartData}
 						exportColumns={[
 							{ key: "name", label: "Đơn vị" },

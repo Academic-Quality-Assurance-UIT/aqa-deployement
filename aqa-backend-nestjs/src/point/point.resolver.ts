@@ -17,8 +17,8 @@ export class PointResolver {
     @Args() filter: FilterArgs,
     @Args() pagination: PaginationArgs,
     @Args('groupEntity', { nullable: true, defaultValue: 'Subject' })
-    groupEntity: 'Subject' | 'Lecturer' | 'Faculty',
+    groupEntity: 'Subject' | 'Lecturer' | 'Faculty' | 'Criteria' | 'Semester',
   ) {
-    return this.pointService.findAll(filter, pagination, groupEntity);
+    return this.pointService.findAll(filter, pagination, groupEntity as any);
   }
 }

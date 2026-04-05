@@ -32,12 +32,14 @@ export function useInfiniteScroll<T>({
 		isQuerying.current = true;
 		queryFunction({
 			variables: { page: 0, ...variables },
-			onCompleted: (value) => {
+		}).then((result: any) => {
+			const value = result.data;
+			if (value) {
 				setDataList((prev) => [
 					...prev,
 					...((Object.values(value)?.[0] as any).data || []),
 				]);
-			},
+			}
 		});
 		setDataList([]);
 	}, [variables, enabled]);
@@ -50,13 +52,15 @@ export function useInfiniteScroll<T>({
 						isQuerying.current = true;
 						queryFunction({
 							variables: { page: meta.page + 1, ...variables },
-							onCompleted: (value) => {
+						}).then((result: any) => {
+							const value = result.data;
+							if (value) {
 								setDataList((prev) => [
 									...prev,
 									...((Object.values(value)?.[0] as any).data ||
 										[]),
 								]);
-							},
+							}
 						});
 					}
 					observer.unobserve(entry.target);

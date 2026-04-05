@@ -18,6 +18,7 @@ export class MailService {
     text?: string;
     html?: string;
   }) {
+    console.log(`Sending mail to ${options.to}`);
     return 'mock-id';
   }
 }

@@ -9,7 +9,10 @@ import { Class } from './entities/class.entity';
 
 @Injectable()
 export class ClassService extends BaseService<Class> {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Class) private repo: Repository<Class>) {
+  constructor(
+    private filterQueryService: FilterQueryService,
+    @InjectRepository(Class) private repo: Repository<Class>,
+  ) {
     super();
   }
 
@@ -24,23 +27,20 @@ export class ClassService extends BaseService<Class> {
   };
 
   async findAll({ filter, sort, pagination }: QueryArgs) {
-    return paginateByQuery(
-      this.filterQueryService.filterQuery<Class>(
-        'Class',
-        this.repo
-          .createQueryBuilder()
-          .leftJoin('Class.subject', 'Subject')
-          .leftJoin('Class.lecturer', 'Lecturer')
-          .leftJoin('Subject.faculty', 'Faculty')
-          .leftJoin('Class.points', 'Point')
-          .leftJoin('Class.semester', 'Semester'),
-        filter,
-        sort,
-      ),
-      pagination,
+    const query = await this.filterQueryService.filterQuery<Class>(
+      'Class',
+      this.repo
+        .createQueryBuilder()
+        .leftJoin('Class.subject', 'Subject')
+        .leftJoin('Class.lecturer', 'Lecturer')
+        .leftJoin('Subject.faculty', 'Faculty')
+        .leftJoin('Class.points', 'Point')
+        .leftJoin('Class.semester', 'Semester'),
       filter,
-      {},
+      sort,
     );
+
+    return paginateByQuery(query, pagination, filter, {});
   }
 
   findOne(id: string): Promise<Class> {

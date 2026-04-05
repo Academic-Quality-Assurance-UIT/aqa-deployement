@@ -10,7 +10,10 @@ import { Class } from 'src/class/entities/class.entity';
 
 @Injectable()
 export class LecturerService extends BaseService<Lecturer> {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Lecturer) private repo: Repository<Lecturer>) {
+  constructor(
+    private filterQueryService: FilterQueryService,
+    @InjectRepository(Lecturer) private repo: Repository<Lecturer>,
+  ) {
     super();
   }
 
@@ -19,23 +22,25 @@ export class LecturerService extends BaseService<Lecturer> {
   };
 
   async findAll({ filter, pagination, sort }: QueryArgs) {
+    const query = await this.filterQueryService.filterQuery<Lecturer>(
+      Lecturer,
+      this.repo
+        .createQueryBuilder()
+        .leftJoin(
+          Class,
+          'Class',
+          'Class.lecturer_id = Lecturer.lecturer_id OR Class.lecturer_1_id = Lecturer.lecturer_id OR Class.lecturer_2_id = Lecturer.lecturer_id',
+        )
+        .leftJoin('Class.points', 'Point')
+        .leftJoin('Class.subject', 'Subject')
+        .leftJoin('Subject.faculty', 'Faculty')
+        .leftJoin('Class.semester', 'Semester'),
+      filter,
+      sort,
+    );
+
     return paginateByQuery(
-      this.filterQueryService.filterQuery<Lecturer>(
-        Lecturer,
-        this.repo
-          .createQueryBuilder()
-          .leftJoin(
-            Class,
-            'Class',
-            'Class.lecturer_id = Lecturer.lecturer_id OR Class.lecturer_1_id = Lecturer.lecturer_id OR Class.lecturer_2_id = Lecturer.lecturer_id',
-          )
-          .leftJoin('Class.points', 'Point')
-          .leftJoin('Class.subject', 'Subject')
-          .leftJoin('Subject.faculty', 'Faculty')
-          .leftJoin('Class.semester', 'Semester'),
-        filter,
-        sort,
-      )
+      query
         .select('Lecturer.lecturer_id', 'lecturer_id')
         .addSelect('Lecturer.display_name', 'display_name')
         .addSelect('Lecturer.email', 'email')

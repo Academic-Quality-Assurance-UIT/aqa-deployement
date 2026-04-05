@@ -10,11 +10,13 @@ export default function StaffSurveyCriteriaChart({
 	semester,
 	hideChart = false,
 	displayName,
+	hideTitle = false,
 }: {
 	category: string;
 	semester?: string;
 	hideChart?: boolean;
 	displayName?: string;
+	hideTitle?: boolean;
 }) {
 	const { data: points, loading: isLoading } = useGetPointsByCriteriaQuery({
 		variables: {
@@ -43,17 +45,23 @@ export default function StaffSurveyCriteriaChart({
 	if (hideChart) {
 		return (
 			<div className=" mt-4 px-0">
-				<div className="flex justify-between items-center mb-6">
-					<h2 className=" font-bold text-2xl text-gray-800 tracking-tight">Danh sách ý kiến</h2>
-					{commentCountData?.getStaffSurveyCommentCount !== undefined && (
-						<div className="px-4 py-1.5 bg-gray-50 rounded-full border border-gray-200 shadow-sm">
-							<span className="text-sm font-bold text-gray-500">
-								Tổng cộng: {commentCountData.getStaffSurveyCommentCount}
-							</span>
-						</div>
-					)}
-				</div>
-				<div className=" mt-4">
+				{!hideTitle && (
+					<div className="flex justify-between items-center mb-6">
+						<h2 className=" font-bold text-2xl text-gray-800 tracking-tight">
+							Danh sách ý kiến
+						</h2>
+						{commentCountData?.getStaffSurveyCommentCount !==
+							undefined && (
+							<div className="px-4 py-1.5 bg-gray-50 rounded-full border border-gray-200 shadow-sm">
+								<span className="text-sm font-bold text-gray-500">
+									Tổng cộng:{" "}
+									{commentCountData.getStaffSurveyCommentCount}
+								</span>
+							</div>
+						)}
+					</div>
+				)}
+				<div className={hideTitle ? "mt-0" : "mt-4"}>
 					<StaffSurveyCommentPage
 						category={category}
 						semester={semester}
@@ -117,17 +125,25 @@ export default function StaffSurveyCriteriaChart({
 						}}
 					/>
 					<div className=" mt-12 px-8">
-						<div className="flex justify-between items-center mb-4">
-							<h2 className=" font-semibold text-xl">Danh sách ý kiến</h2>
-							{commentCountData?.getStaffSurveyCommentCount !== undefined && (
-								<div className="px-3 py-1 bg-gray-100 rounded-full">
-									<span className="text-sm font-semibold text-gray-500">
-										Tổng cộng: {commentCountData.getStaffSurveyCommentCount}
-									</span>
-								</div>
-							)}
-						</div>
-						<div className=" mt-8">
+						{!hideTitle && (
+							<div className="flex justify-between items-center mb-4">
+								<h2 className=" font-semibold text-xl">
+									Danh sách ý kiến
+								</h2>
+								{commentCountData?.getStaffSurveyCommentCount !==
+									undefined && (
+									<div className="px-3 py-1 bg-gray-100 rounded-full">
+										<span className="text-sm font-semibold text-gray-500">
+											Tổng cộng:{" "}
+											{
+												commentCountData.getStaffSurveyCommentCount
+											}
+										</span>
+									</div>
+								)}
+							</div>
+						)}
+						<div className={hideTitle ? "mt-0" : "mt-8"}>
 							<StaffSurveyCommentPage
 								category={category}
 								semester={semester}

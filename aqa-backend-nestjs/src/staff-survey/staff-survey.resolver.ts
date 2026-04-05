@@ -1,7 +1,9 @@
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { QueryArgs } from 'src/common/args/query.arg';
 import { PointByCategoryDTO } from './dtos/point-by-category.dto';
+import { StaffSurveyPointByCategoryAndYearDTO } from './dtos/staff-survey-point-by-category-and-year.dto';
 import { PointByCriteriaDTO } from './dtos/point-by-criteria.dto';
+import { StaffSurveyPointByYearDTO } from './dtos/staff-survey-point-by-year.dto';
 import { StaffSurveyAdditionalCommentDTO } from './dtos/staff-survey-additional-comment.dto';
 import { StaffSurveyPointResponseDTO } from './dtos/staff-survey-point.dto';
 import { StaffSurveySheetDTO } from './dtos/staff-survey-sheet.dto';
@@ -56,8 +58,9 @@ export class StaffSurveyResolver {
   @Query(() => [PointByCategoryDTO])
   async getPointsByCategory(
     @Args('semester', { type: () => String, nullable: true }) semester?: string,
+    @Args('showUnit', { type: () => Boolean, nullable: true }) showUnit?: boolean,
   ) {
-    return await this.staffSurveyService.getPointsByCategory(semester);
+    return await this.staffSurveyService.getPointsByCategory(semester, showUnit);
   }
 
   @Query(() => [PointByCategoryDTO])
@@ -65,6 +68,16 @@ export class StaffSurveyResolver {
     @Args('semester', { type: () => String, nullable: true }) semester?: string,
   ) {
     return await this.staffSurveyService.getPointsByCategoryDonVi(semester);
+  }
+
+  @Query(() => [StaffSurveyPointByYearDTO])
+  async getStaffSurveyPointsByYear() {
+    return await this.staffSurveyService.getStaffSurveyPointsByYear();
+  }
+
+  @Query(() => [StaffSurveyPointByCategoryAndYearDTO])
+  async getStaffSurveyPointsByCategoryAndYear() {
+    return await this.staffSurveyService.getStaffSurveyPointsByCategoryAndYear();
   }
 
   @Query(() => [PointByCriteriaDTO])
@@ -138,5 +151,12 @@ export class StaffSurveyResolver {
   ) {
     return await this.staffSurveyService.getAdditionalComments(semester);
   }
-}
 
+  @Mutation(() => StaffSurveyCriteria)
+  async updateStaffSurveyCriteria(
+    @Args('id', { type: () => String }) id: string,
+    @Args('is_shown', { type: () => Boolean }) is_shown: boolean,
+  ) {
+    return await this.staffSurveyService.updateCriteria(id, is_shown);
+  }
+}

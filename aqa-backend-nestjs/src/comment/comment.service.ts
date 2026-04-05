@@ -10,30 +10,35 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class CommentService {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Comment) private repo: Repository<Comment>) {}
+  constructor(
+    private filterQueryService: FilterQueryService,
+    @InjectRepository(Comment) private repo: Repository<Comment>,
+  ) {}
 
-  findAll(
+  async findAll(
     filter: FilterArgs,
     paginationOptions: PaginationArgs,
     type: string[],
     topic: string[],
   ) {
+    const query = await this.filterQueryService.filterQuery<Comment>(
+      'Comment',
+      this.repo
+        .createQueryBuilder()
+        .innerJoin('Comment.class', 'Class')
+        .innerJoin('Class.subject', 'Subject')
+        .innerJoin('Subject.faculty', 'Faculty')
+        .innerJoin('Class.semester', 'Semester')
+        .innerJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        ),
+      filter,
+    );
+
     return paginateByQuery(
-      this.filterQueryService.filterQuery<Comment>(
-        'Comment',
-        this.repo
-          .createQueryBuilder()
-          .innerJoin('Comment.class', 'Class')
-          .innerJoin('Class.subject', 'Subject')
-          .innerJoin('Subject.faculty', 'Faculty')
-          .innerJoin('Class.semester', 'Semester')
-          .innerJoin(
-            Lecturer,
-            'Lecturer',
-            'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
-          ),
-        filter,
-      )
+      query
         .andWhere('array_length(Comment.type_list, 1) > 0')
         .andWhere(
           type && !type.includes('all') && type.length > 0
@@ -62,24 +67,26 @@ export class CommentService {
   }
 
   async getQuantity(filter: FilterArgs, type: string, topic: string) {
+    const query = await this.filterQueryService.filterQuery<Comment>(
+      'Comment',
+      this.repo
+        .createQueryBuilder()
+        .innerJoin('Comment.class', 'Class')
+        .innerJoin('Class.subject', 'Subject')
+        .innerJoin('Subject.faculty', 'Faculty')
+        .innerJoin('Class.semester', 'Semester')
+        .innerJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        ),
+      filter,
+    );
+
     return {
       type: type ?? 'all',
       quantity:
-        (await this.filterQueryService.filterQuery<Comment>(
-          'Comment',
-          this.repo
-            .createQueryBuilder()
-            .innerJoin('Comment.class', 'Class')
-            .innerJoin('Class.subject', 'Subject')
-            .innerJoin('Subject.faculty', 'Faculty')
-            .innerJoin('Class.semester', 'Semester')
-            .innerJoin(
-              Lecturer,
-              'Lecturer',
-              'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
-            ),
-          filter,
-        )
+        (await query
           .andWhere('array_length(Comment.type_list, 1) > 0')
           .andWhere(
             type && type != 'all' ? ':type = ANY(Comment.type_list) ' : 'true',

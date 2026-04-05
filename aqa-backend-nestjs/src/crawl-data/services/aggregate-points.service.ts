@@ -70,9 +70,7 @@ export class AggregatePointsService {
           successCount++;
         } catch (error: any) {
           failedCount++;
-          this.logger.error(
-            `Error staging aggregated point: ${error.message}`,
-          );
+          this.logger.error(`Error staging aggregated point: ${error.message}`);
         }
       }
 

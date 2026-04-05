@@ -28,4 +28,8 @@ export class StaffSurveyCriteria {
   @Field({ defaultValue: true })
   @Column({ default: true })
   is_point_aggregated: boolean;
+
+  @Field({ defaultValue: true })
+  @Column({ default: true })
+  is_shown: boolean;
 }

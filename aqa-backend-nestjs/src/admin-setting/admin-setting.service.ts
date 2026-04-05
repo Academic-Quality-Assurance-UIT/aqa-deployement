@@ -15,12 +15,17 @@ export class AdminSettingService implements OnModuleInit {
       where: { key: 'filter_year' },
     });
     if (!filterYearSetting) {
-      await this.adminSettingRepository.save({ key: 'filter_year', value: '5' });
+      await this.adminSettingRepository.save({
+        key: 'filter_year',
+        value: '5',
+      });
     }
   }
 
   async getSetting(key: string): Promise<AdminSetting> {
-    const setting = await this.adminSettingRepository.findOne({ where: { key } });
+    const setting = await this.adminSettingRepository.findOne({
+      where: { key },
+    });
     if (!setting) {
       return { key, value: '' };
     }
@@ -28,7 +33,9 @@ export class AdminSettingService implements OnModuleInit {
   }
 
   async setSetting(key: string, value: string): Promise<AdminSetting> {
-    const setting = await this.adminSettingRepository.findOne({ where: { key } });
+    const setting = await this.adminSettingRepository.findOne({
+      where: { key },
+    });
     if (setting) {
       setting.value = value;
       return this.adminSettingRepository.save(setting);

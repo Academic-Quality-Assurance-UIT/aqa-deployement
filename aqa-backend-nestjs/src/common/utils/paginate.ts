@@ -37,7 +37,23 @@ export async function paginateByQuery<T>(
     const [data, count] = await querySql.getManyAndCount();
     return { data, meta: new PaginatedMetaData(paginationOptions, count) };
   } else {
-    const count = (await querySql.getRawMany()).length;
+    // Optimization: avoid fetching all results to get count.
+    // We use a subquery to count the total number of groups correctly.
+    const subQuery = querySql
+      .clone()
+      .offset(undefined)
+      .limit(undefined)
+      .take(undefined)
+      .skip(undefined)
+      .setFindOptions({})
+      .select('1');
+    const [sql, params] = subQuery.getQueryAndParameters();
+    const totalRes = await querySql.connection.query(
+      `SELECT COUNT(*) AS count FROM (${sql}) AS subquery`,
+      params,
+    );
+    const count = parseInt(totalRes[0].count, 10);
+
     const data = await querySql
       .limit(paginationOptions.size)
       .offset(paginationOptions.page * paginationOptions.size)

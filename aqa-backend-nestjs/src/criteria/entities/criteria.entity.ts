@@ -32,6 +32,10 @@ export class Criteria {
   @Column({ nullable: true })
   semester_id: string;
 
+  @Field({ defaultValue: true })
+  @Column({ default: true })
+  is_shown: boolean;
+
   @OneToMany(() => Point, (point) => point.criteria)
   points: Point[];
 }

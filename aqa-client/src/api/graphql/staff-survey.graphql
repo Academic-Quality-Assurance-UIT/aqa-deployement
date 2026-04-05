@@ -25,6 +25,7 @@ query GetStaffSurveyCriteriaList {
 		index
 		semesters
 		staff_survey_criteria_id
+		is_shown
 	}
 }
 
@@ -40,10 +41,11 @@ query GetSurveySemesterList {
 	getSurveySemesterList
 }
 
-query GetPointsByCategory($semester: String) {
-	getPointsByCategory(semester: $semester) {
+query GetPointsByCategory($semester: String, $showUnit: Boolean) {
+	getPointsByCategory(semester: $semester, showUnit: $showUnit) {
 		avg_point
 		category
+		is_unit
 	}
 }
 
@@ -106,4 +108,27 @@ query GetAllComments($page: Int, $semester: String, $keyword: String) {
 
 query GetAllCommentsCount($semester: String, $keyword: String) {
 	getAllCommentsCount(semester: $semester, keyword: $keyword)
+}
+
+query GetStaffSurveyPointsByYear {
+	getStaffSurveyPointsByYear {
+		avg_point
+		year
+	}
+}
+
+query GetStaffSurveyPointsByCategoryAndYear {
+	getStaffSurveyPointsByCategoryAndYear {
+		avg_point
+		category
+		year
+	}
+}
+
+
+mutation UpdateStaffSurveyCriteria($id: String!, $is_shown: Boolean!) {
+	updateStaffSurveyCriteria(id: $id, is_shown: $is_shown) {
+		staff_survey_criteria_id
+		is_shown
+	}
 }
