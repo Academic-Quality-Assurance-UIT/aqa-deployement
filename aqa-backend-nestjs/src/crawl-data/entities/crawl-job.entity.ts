@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 import { CrawlJobType } from '../enums/crawl-job-type.enum';
 import { CrawlJobStatus } from '../enums/crawl-job-status.enum';
@@ -46,4 +46,24 @@ export class CrawlJob {
   @Field(() => Date)
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'integer', default: 0 })
+  progress: number;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'integer', default: 0 })
+  total_data: number;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'integer', default: 0 })
+  detail_progress: number;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'integer', default: 0 })
+  detail_total: number;
+
+  @Field(() => Date, { nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
+  last_activity_at: Date;
 }

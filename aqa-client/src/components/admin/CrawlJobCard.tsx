@@ -6,7 +6,8 @@ import {
   CrawlJobType, 
   useGetCrawlStagingDataSummaryQuery,
   useConfirmCrawlJobMutation,
-  useAbandonCrawlJobMutation
+  useAbandonCrawlJobMutation,
+  useStopCrawlJobMutation
 } from "@/gql/graphql";
 import { 
   Button, 
@@ -18,7 +19,8 @@ import {
   Spinner, 
   Accordion, 
   AccordionItem,
-  Tooltip
+  Tooltip,
+  useDisclosure
 } from "@heroui/react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -27,8 +29,11 @@ import {
   AiOutlineCheckCircle, 
   AiOutlineCloseCircle, 
   AiOutlineHistory,
-  AiOutlineInfoCircle
+  AiOutlineInfoCircle,
+  AiOutlineMonitor,
+  AiOutlineStop
 } from "react-icons/ai";
+import { CrawlJobMonitorModal } from "./CrawlJobMonitorModal";
 import { useState, useMemo } from "react";
 
 interface CrawlJobCardProps {
@@ -55,6 +60,8 @@ export const CrawlJobCard = ({ type, title, description, jobs, onRun, running, r
 
   const [confirmJob, { loading: confirming }] = useConfirmCrawlJobMutation();
   const [abandonJob, { loading: abandoning }] = useAbandonCrawlJobMutation();
+  const [stopJob, { loading: stopping }] = useStopCrawlJobMutation();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const handleConfirm = async () => {
     if (!latestJob) return;
@@ -73,6 +80,18 @@ export const CrawlJobCard = ({ type, title, description, jobs, onRun, running, r
       refetchJobs();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleStop = async () => {
+    if (!latestJob) return;
+    if (window.confirm("Dừng quá trình thu thập này?")) {
+      try {
+        await stopJob({ variables: { jobId: latestJob.crawl_job_id } });
+        refetchJobs();
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -157,6 +176,34 @@ export const CrawlJobCard = ({ type, title, description, jobs, onRun, running, r
             </Button>
           )}
 
+          {latestJob && (
+            <div className="flex gap-2 flex-1">
+              <Button 
+                  size="sm" 
+                  variant="flat"
+                  color="secondary"
+                  startContent={<AiOutlineMonitor />}
+                  onPress={onOpen}
+                  className="flex-1 font-bold"
+              >
+                  Giám sát
+              </Button>
+              {isJobRunning && (
+                <Button 
+                  size="sm" 
+                  variant="flat" 
+                  color="danger"
+                  onPress={handleStop}
+                  isLoading={stopping}
+                  startContent={<AiOutlineStop />}
+                  className="font-bold w-1/3"
+                >
+                  Dừng
+                </Button>
+              )}
+            </div>
+          )}
+
           {isCompleted && (
             <>
               <Button 
@@ -218,6 +265,13 @@ export const CrawlJobCard = ({ type, title, description, jobs, onRun, running, r
           </Accordion>
         )}
       </CardBody>
+      {latestJob && (
+        <CrawlJobMonitorModal 
+            job={latestJob} 
+            isOpen={isOpen} 
+            onOpenChange={onOpenChange} 
+        />
+      )}
     </Card>
   );
 };

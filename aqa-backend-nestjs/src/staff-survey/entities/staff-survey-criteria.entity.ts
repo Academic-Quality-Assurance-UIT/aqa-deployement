@@ -1,5 +1,13 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { Column, Entity, PrimaryColumn, Unique, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryColumn,
+  Unique,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { CriteriaMapping } from '../../criteria/entities/criteria-mapping.entity';
 
 @ObjectType()

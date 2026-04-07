@@ -6,12 +6,14 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { CrawlJob } from './crawl-job.entity';
 import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
 @Entity()
+@Unique(['crawl_job_id', 'data_type', 'key'])
 export class CrawlStagingData {
   @Field()
   @PrimaryGeneratedColumn('uuid')
@@ -32,6 +34,10 @@ export class CrawlStagingData {
   @Field(() => GraphQLJSON)
   @Column({ type: 'jsonb' })
   data: any;
+
+  @Field({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
+  key: string;
 
   @Field(() => Date)
   @CreateDateColumn({ type: 'timestamptz' })

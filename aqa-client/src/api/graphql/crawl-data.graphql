@@ -14,6 +14,11 @@ query GetCrawlJobs($type: CrawlJobType) {
     parameters
     created_by
     created_at
+    progress
+    total_data
+    detail_progress
+    detail_total
+    last_activity_at
   }
 }
 
@@ -29,6 +34,20 @@ query GetCrawlJob($id: String!) {
     parameters
     created_by
     created_at
+    progress
+    total_data
+    detail_progress
+    detail_total
+    last_activity_at
+  }
+}
+
+query GetCrawlStagingData($jobId: String!, $limit: Int, $offset: Int, $dataType: String) {
+  crawlStagingData(jobId: $jobId, limit: $limit, offset: $offset, dataType: $dataType) {
+    id
+    data_type
+    data
+    created_at
   }
 }
 
@@ -39,6 +58,49 @@ query GetCrawlStagingDataSummary($jobId: String!) {
       type
       count
     }
+  }
+}
+
+query GetCrawlJobLogs($jobId: String!, $limit: Int, $offset: Int) {
+  crawlJobLogs(jobId: $jobId, limit: $limit, offset: $offset) {
+    id
+    timestamp
+    service
+    endpoint
+    method
+    status_code
+    duration_ms
+    error
+    metadata
+    api_log_id
+  }
+}
+
+query GetCrawlApiRequestLogs($jobId: String!, $limit: Int, $offset: Int) {
+  crawlApiRequestLogs(jobId: $jobId, limit: $limit, offset: $offset) {
+    id
+    created_at
+    request_url
+    request_method
+    response_status_code
+    duration_ms
+    error_message
+  }
+}
+
+query GetCrawlApiRequestLog($id: String!) {
+  crawlApiRequestLog(id: $id) {
+    id
+    created_at
+    request_url
+    request_method
+    request_params
+    request_headers
+    response_status_code
+    response_body
+    response_headers
+    duration_ms
+    error_message
   }
 }
 
@@ -53,6 +115,7 @@ query GetSurveyListConfigs($type: CrawlJobType) {
     semester_type
     semester_name
     is_active
+    last_crawled_at
     created_at
     updated_at
   }
@@ -62,8 +125,8 @@ query GetSurveyListConfigs($type: CrawlJobType) {
 # Mutations - Run Jobs
 # ========================
 
-mutation RunCrawlSubjectSurvey($semester: String) {
-  runCrawlSubjectSurvey(semester: $semester) {
+mutation RunCrawlSubjectSurvey($semester: String, $surveyConfigIds: [String!]) {
+  runCrawlSubjectSurvey(semester: $semester, surveyConfigIds: $surveyConfigIds) {
     crawl_job_id
     type
     status
@@ -71,8 +134,8 @@ mutation RunCrawlSubjectSurvey($semester: String) {
   }
 }
 
-mutation RunCrawlLecturerSurvey($semester: String) {
-  runCrawlLecturerSurvey(semester: $semester) {
+mutation RunCrawlLecturerSurvey($semester: String, $surveyConfigIds: [String!]) {
+  runCrawlLecturerSurvey(semester: $semester, surveyConfigIds: $surveyConfigIds) {
     crawl_job_id
     type
     status
@@ -125,6 +188,13 @@ mutation AbandonCrawlJob($jobId: String!) {
   }
 }
 
+mutation StopCrawlJob($jobId: String!) {
+  stopCrawlJob(jobId: $jobId) {
+    crawl_job_id
+    status
+  }
+}
+
 # ========================
 # Mutations - Survey List Config
 # ========================
@@ -153,4 +223,22 @@ mutation UpdateSurveyListConfig($id: String!, $input: SurveyListConfigInput!) {
 
 mutation DeleteSurveyListConfig($id: String!) {
   deleteSurveyListConfig(id: $id)
+}
+
+query getSurveyCrawlHistory($jobId: String, $surveyConfigId: String, $limit: Int, $offset: Int) {
+  surveyCrawlHistory(jobId: $jobId, surveyConfigId: $surveyConfigId, limit: $limit, offset: $offset) {
+    id
+    survey_list_config_id
+    crawl_job_id
+    sid
+    status
+    records_fetched
+    error_message
+    started_at
+    completed_at
+  }
+}
+
+query searchExternalSurveys($keyword: String, $page: Int, $limit: Int, $order: String, $direction: String) {
+  searchExternalSurveys(keyword: $keyword, page: $page, limit: $limit, order: $order, direction: $direction)
 }

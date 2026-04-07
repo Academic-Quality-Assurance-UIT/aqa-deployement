@@ -58,9 +58,13 @@ export class StaffSurveyResolver {
   @Query(() => [PointByCategoryDTO])
   async getPointsByCategory(
     @Args('semester', { type: () => String, nullable: true }) semester?: string,
-    @Args('showUnit', { type: () => Boolean, nullable: true }) showUnit?: boolean,
+    @Args('showUnit', { type: () => Boolean, nullable: true })
+    showUnit?: boolean,
   ) {
-    return await this.staffSurveyService.getPointsByCategory(semester, showUnit);
+    return await this.staffSurveyService.getPointsByCategory(
+      semester,
+      showUnit,
+    );
   }
 
   @Query(() => [PointByCategoryDTO])

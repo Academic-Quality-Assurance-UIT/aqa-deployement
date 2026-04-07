@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SurveyApiClient } from './survey-api-client';
+import { CrawlJob } from '../entities/crawl-job.entity';
 import { CrawlStagingData } from '../entities/crawl-staging-data.entity';
 import { SurveyListConfig } from '../entities/survey-list-config.entity';
 import { CrawlJobType } from '../enums/crawl-job-type.enum';
@@ -12,6 +13,8 @@ export class CrawlStaffSurveyService {
 
   constructor(
     private readonly apiClient: SurveyApiClient,
+    @InjectRepository(CrawlJob)
+    private readonly crawlJobRepo: Repository<CrawlJob>,
     @InjectRepository(CrawlStagingData)
     private readonly stagingRepo: Repository<CrawlStagingData>,
     @InjectRepository(SurveyListConfig)
@@ -27,8 +30,19 @@ export class CrawlStaffSurveyService {
 
     let successCount = 0;
     let errorCount = 0;
+    
+    let globalTotalData = 0;
+    let globalProgress = 0;
 
     for (const surveyInfo of surveyList) {
+      if (!(await this.isJobRunning(crawlJobId))) {
+        this.logger.warn(`Job ${crawlJobId} has been stopped. Aborting crawl.`);
+        return {
+          total: surveyList.length,
+          success: successCount,
+          failed: errorCount,
+        };
+      }
       try {
         this.logger.log(`Processing staff survey SID: ${surveyInfo.sid}`);
 
@@ -37,6 +51,8 @@ export class CrawlStaffSurveyService {
           surveyInfo.sid,
           1,
           10,
+          3,
+          crawlJobId,
         );
         if (
           !firstPage.success ||
@@ -49,10 +65,20 @@ export class CrawlStaffSurveyService {
 
         const sampleId = firstPage.data[0].id;
         const totalPages = firstPage.meta?.pagination?.pageCount || 1;
+        const totalItems = firstPage.meta?.pagination?.total || 0;
+
+        globalTotalData += totalItems;
+        await this.crawlJobRepo.update(crawlJobId, {
+          total_data: globalTotalData,
+        });
 
         // Step 2: Fetch question list
-        const questionListResponse =
-          await this.apiClient.getSurveyAnswerDetail(surveyInfo.sid, sampleId);
+        const questionListResponse = await this.apiClient.getSurveyAnswerDetail(
+          surveyInfo.sid,
+          sampleId,
+          3,
+          crawlJobId,
+        );
         if (!questionListResponse.success || !questionListResponse.data) {
           throw new Error(
             `Failed to fetch question list for SID: ${surveyInfo.sid}`,
@@ -79,12 +105,19 @@ export class CrawlStaffSurveyService {
           }
         }
 
+        globalProgress += firstPage.data.length;
+        await this.crawlJobRepo.update(crawlJobId, {
+          progress: globalProgress,
+        });
+
         // Step 4: Process remaining pages
         for (let page = 2; page <= totalPages; page++) {
           const pageData = await this.apiClient.getSurveyResponses(
             surveyInfo.sid,
             page,
             10,
+            3,
+            crawlJobId,
           );
           if (pageData.data?.length > 0) {
             for (const responseData of pageData.data) {
@@ -102,6 +135,10 @@ export class CrawlStaffSurveyService {
                 });
               }
             }
+            globalProgress += pageData.data.length;
+            await this.crawlJobRepo.update(crawlJobId, {
+              progress: globalProgress,
+            });
           }
           if (page < totalPages) {
             await new Promise((r) => setTimeout(r, 500));
@@ -123,6 +160,14 @@ export class CrawlStaffSurveyService {
       success: successCount,
       failed: errorCount,
     };
+  }
+
+  private async isJobRunning(jobId: string): Promise<boolean> {
+    const job = await this.crawlJobRepo.findOne({
+      where: { crawl_job_id: jobId },
+      select: ['status'],
+    });
+    return job?.status === 'RUNNING';
   }
 
   private async getSurveyList(year?: string): Promise<any[]> {
@@ -214,9 +259,7 @@ export class CrawlStaffSurveyService {
       return { parentQid: aMatch[1], suffix: aMatch[2] };
     }
 
-    const sortedQids = [...knownParentQids].sort(
-      (a, b) => b.length - a.length,
-    );
+    const sortedQids = [...knownParentQids].sort((a, b) => b.length - a.length);
     for (const qid of sortedQids) {
       if (lastPart === qid) return { parentQid: qid, suffix: '' };
       if (lastPart.startsWith(qid) && lastPart.length > qid.length) {
@@ -246,8 +289,14 @@ export class CrawlStaffSurveyService {
   ): Array<{ type: string; data: any }> {
     const results: Array<{ type: string; data: any }> = [];
     const METADATA_KEYS = new Set([
-      'id', 'token', 'submitdate', 'lastpage',
-      'startlanguage', 'startdate', 'datestamp', 'token_info',
+      'id',
+      'token',
+      'submitdate',
+      'lastpage',
+      'startlanguage',
+      'startdate',
+      'datestamp',
+      'token_info',
     ]);
 
     const tokenInfo = responseData.token_info;
@@ -266,10 +315,7 @@ export class CrawlStaffSurveyService {
       if (parts.length !== 3) continue;
 
       const lastPart = parts[2];
-      const parsed = this.parseLastPart(
-        lastPart,
-        questionInfo.knownParentQids,
-      );
+      const parsed = this.parseLastPart(lastPart, questionInfo.knownParentQids);
       if (!parsed) continue;
 
       const { parentQid, suffix } = parsed;
@@ -308,7 +354,10 @@ export class CrawlStaffSurveyService {
       }
 
       if (parentQuestion.type === 'F') {
-        if (!currentPointGroup || currentPointGroup.pointParentQid !== parentQid) {
+        if (
+          !currentPointGroup ||
+          currentPointGroup.pointParentQid !== parentQid
+        ) {
           if (currentPointGroup) allGroups.push(currentPointGroup);
 
           const subQuestions =

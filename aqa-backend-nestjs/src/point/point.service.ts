@@ -10,7 +10,10 @@ import { Lecturer } from 'src/lecturer/entities/lecturer.entity';
 
 @Injectable()
 export class PointService {
-  constructor(private filterQueryService: FilterQueryService, @InjectRepository(Point) private repo: Repository<Point>) { }
+  constructor(
+    private filterQueryService: FilterQueryService,
+    @InjectRepository(Point) private repo: Repository<Point>,
+  ) {}
 
   async findAll(
     filter: FilterArgs,
@@ -32,7 +35,7 @@ export class PointService {
           'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
         ),
       { ...filter, keyword: '' },
-    )
+    );
 
     return paginateByQuery(
       query

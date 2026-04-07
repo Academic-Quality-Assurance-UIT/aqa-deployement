@@ -22,7 +22,10 @@ export class CriteriaMapping {
   @Field(() => [Criteria], { nullable: true })
   criteria: Criteria[];
 
-  @OneToMany(() => StaffSurveyCriteria, (staffSurveyCriteria) => staffSurveyCriteria.mapping)
+  @OneToMany(
+    () => StaffSurveyCriteria,
+    (staffSurveyCriteria) => staffSurveyCriteria.mapping,
+  )
   @Field(() => [StaffSurveyCriteria], { nullable: true })
   staffSurveyCriteria: StaffSurveyCriteria[];
 }

@@ -11,7 +11,10 @@ import {
   CrawlJobStatus
 } from "@/gql/graphql";
 import { CrawlJobCard } from "./CrawlJobCard";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { LecturerSurveySelectModal } from "./LecturerSurveySelectModal";
+import { SurveyCrawlHistoryTable } from "./SurveyCrawlHistoryTable";
+import { useDisclosure } from "@heroui/react";
 
 export const CrawlManager = () => {
   const { data, loading, refetch, startPolling, stopPolling } = useGetCrawlJobsQuery({
@@ -38,12 +41,39 @@ export const CrawlManager = () => {
   const [runAggregatePoints, { loading: aggregateLoading }] = useRunAggregatePointsMutation();
   const [runTransferData, { loading: transferLoading }] = useRunTransferDataMutation();
 
+  const { isOpen: isSelectModalOpen, onOpen: onSelectModalOpen, onClose: onSelectModalClose } = useDisclosure();
+  const [activeSurveyType, setActiveSurveyType] = useState<CrawlJobType | null>(null);
+  const [activeSurveyMutation, setActiveSurveyMutation] = useState<any>(null);
+  const [activeSurveyLoading, setActiveSurveyLoading] = useState(false);
+
   const handleRun = async (type: CrawlJobType, mutation: any, vars: any = {}) => {
+    if (type === CrawlJobType.LecturerSurvey || type === CrawlJobType.SubjectSurvey) {
+      setActiveSurveyType(type);
+      setActiveSurveyMutation(() => mutation);
+      setActiveSurveyLoading(false);
+      onSelectModalOpen();
+      return;
+    }
+
     try {
       await mutation({ variables: vars });
       refetch();
     } catch (err) {
       console.error(`Failed to run ${type}:`, err);
+    }
+  };
+
+  const submitSurveyCrawl = async (surveyConfigIds: string[]) => {
+    if (!activeSurveyMutation) return;
+    setActiveSurveyLoading(true);
+    try {
+      await activeSurveyMutation({ variables: { surveyConfigIds: surveyConfigIds.length > 0 ? surveyConfigIds : undefined } });
+      refetch();
+      onSelectModalClose();
+    } catch (err) {
+      console.error(`Failed to run survey crawl:`, err);
+    } finally {
+      setActiveSurveyLoading(false);
     }
   };
 
@@ -107,6 +137,20 @@ export const CrawlManager = () => {
             />
           ))}
         </div>
+      </div>
+      
+      {activeSurveyType && (
+        <LecturerSurveySelectModal
+          isOpen={isSelectModalOpen}
+          onClose={onSelectModalClose}
+          type={activeSurveyType!}
+          onRun={submitSurveyCrawl}
+          isLoading={activeSurveyLoading}
+        />
+      )}
+
+      <div className="flex flex-col gap-2 p-5 bg-gray-50 dark:bg-zinc-900 rounded-xl mt-4">
+        <SurveyCrawlHistoryTable />
       </div>
     </div>
   );

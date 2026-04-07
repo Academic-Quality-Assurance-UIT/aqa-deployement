@@ -54,17 +54,51 @@ type CommentQuantity {
   type: String!
 }
 
+type CrawlApiRequestLog {
+  crawl_job_id: String!
+  created_at: DateTime!
+  duration_ms: Int
+  error_message: String
+  id: String!
+  request_headers: JSON
+  request_method: String!
+  request_params: JSON
+  request_url: String!
+  response_body: JSON
+  response_headers: JSON
+  response_status_code: Int
+}
+
 type CrawlJob {
   completed_at: DateTime
   crawl_job_id: String!
   created_at: DateTime!
   created_by: String
+  detail_progress: Int
+  detail_total: Int
   error_message: String
+  last_activity_at: DateTime
   parameters: JSON
+  progress: Int
   started_at: DateTime
   status: CrawlJobStatus!
   summary: JSON
+  total_data: Int
   type: CrawlJobType!
+}
+
+type CrawlJobLog {
+  api_log_id: String
+  crawl_job_id: String!
+  duration_ms: Int
+  endpoint: String!
+  error: String
+  id: String!
+  metadata: JSON
+  method: String!
+  service: String!
+  status_code: Int
+  timestamp: DateTime!
 }
 
 """Status of a crawl job"""
@@ -84,6 +118,15 @@ enum CrawlJobType {
   STAFF_SURVEY
   SUBJECT_SURVEY
   TRANSFER_DATA
+}
+
+type CrawlStagingData {
+  crawl_job_id: String!
+  created_at: DateTime!
+  data: JSON!
+  data_type: String!
+  id: String!
+  key: String
 }
 
 type CrawlStagingDataSummary {
@@ -211,16 +254,17 @@ type Mutation {
   runAggregatePoints: CrawlJob!
 
   """Chạy thu thập KS Giảng viên"""
-  runCrawlLecturerSurvey(semester: String): CrawlJob!
+  runCrawlLecturerSurvey(semester: String, surveyConfigIds: [String!]): CrawlJob!
 
   """Chạy thu thập KS CBNV"""
   runCrawlStaffSurvey(year: String): CrawlJob!
 
   """Chạy thu thập KS Môn học"""
-  runCrawlSubjectSurvey(semester: String): CrawlJob!
+  runCrawlSubjectSurvey(semester: String, surveyConfigIds: [String!]): CrawlJob!
 
   """Chạy chuyển dữ liệu giữa các database"""
   runTransferData: CrawlJob!
+  stopCrawlJob(jobId: String!): CrawlJob!
   unmapCriteria(criteriaIds: [ID!]!, type: String!): Boolean!
   updateCriteriaMapping(display_name: String!, id: ID!): CriteriaMapping!
   updateSetting(key: String!, value: String!): AdminSetting!
@@ -310,11 +354,23 @@ type Query {
   """List all comments"""
   comments(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: [String!], type: [String!]): PaginatedComment!
 
+  """Lấy chi tiết một cuộc gọi API qua ID"""
+  crawlApiRequestLog(id: String!): CrawlApiRequestLog
+
+  """Lấy log chi tiết cuộc gọi API"""
+  crawlApiRequestLogs(jobId: String!, limit: Int! = 50, offset: Int! = 0): [CrawlApiRequestLog!]!
+
   """Lấy thông tin chi tiết một job"""
   crawlJob(id: String!): CrawlJob
 
+  """Lấy danh sách log của một job"""
+  crawlJobLogs(jobId: String!, limit: Int! = 50, offset: Int! = 0): [CrawlJobLog!]!
+
   """Lấy danh sách các job thu thập dữ liệu"""
   crawlJobs(type: CrawlJobType): [CrawlJob!]!
+
+  """Lấy dữ liệu tạm chi tiết"""
+  crawlStagingData(dataType: String, jobId: String!, limit: Int! = 50, offset: Int! = 0): [CrawlStagingData!]!
 
   """Thông tin tổng hợp dữ liệu tạm"""
   crawlStagingDataSummary(jobId: String!): CrawlStagingDataSummary!
@@ -356,10 +412,16 @@ type Query {
   profile: UserEntity!
   programs: [Program!]!
 
+  """Tìm kiếm danh sách survey từ API của trường"""
+  searchExternalSurveys(direction: String! = "DESC", keyword: String, limit: Int! = 20, order: String! = "startdate", page: Int! = 1): JSON!
+
   """List all semester"""
   semesters: [Semester!]
   subject(id: String!): Subject
   subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject!
+
+  """Lấy lịch sử crawl của các survey config"""
+  surveyCrawlHistory(jobId: String, limit: Int! = 50, offset: Int! = 0, surveyConfigId: String): [SurveyCrawlHistory!]!
 
   """Lấy danh sách cấu hình khảo sát"""
   surveyListConfigs(type: CrawlJobType): [SurveyListConfig!]!
@@ -489,10 +551,24 @@ type Subject {
   total_point: Float
 }
 
+type SurveyCrawlHistory {
+  completed_at: DateTime
+  crawl_job_id: String!
+  created_at: DateTime!
+  error_message: String
+  id: String!
+  records_fetched: Int!
+  sid: String!
+  started_at: DateTime!
+  status: String!
+  survey_list_config_id: String!
+}
+
 type SurveyListConfig {
   created_at: DateTime!
   id: String!
   is_active: Boolean!
+  last_crawled_at: DateTime
   semester_name: String
   semester_type: String
   sid: String!

@@ -51,6 +51,10 @@ export class SurveyListConfig {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
+  @Field(() => Date, { nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
+  last_crawled_at: Date;
+
   @Field(() => Date)
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;

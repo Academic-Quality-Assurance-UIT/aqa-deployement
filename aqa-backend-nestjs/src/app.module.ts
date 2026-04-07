@@ -26,6 +26,7 @@ import { AiGenerateModule } from './ai-generate/ai-generate.module';
 import { AdminSettingModule } from './admin-setting/admin-setting.module';
 import { FilterQueryModule } from './common/services/filter-query.module';
 import { CrawlDataModule } from './crawl-data/crawl-data.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -54,7 +55,7 @@ import { CrawlDataModule } from './crawl-data/crawl-data.module';
         logging: false,
         logger: new FileLogger(),
         extra: {
-          connectionTimeoutMillis: 30000, // Increased to 30s for heavy analytical queries
+          connectionTimeoutMillis: 30000,
           query_timeout: 30000,
           statement_timeout: 30000,
         },
@@ -78,6 +79,7 @@ import { CrawlDataModule } from './crawl-data/crawl-data.module';
     AdminSettingModule,
     FilterQueryModule,
     CrawlDataModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

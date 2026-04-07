@@ -42,7 +42,9 @@ export class Criteria {
   points: Point[];
 
   @Field(() => CriteriaMapping, { nullable: true })
-  @ManyToOne(() => CriteriaMapping, (mapping) => mapping.criteria, { nullable: true })
+  @ManyToOne(() => CriteriaMapping, (mapping) => mapping.criteria, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'mapping_id' })
   mapping: CriteriaMapping;
 

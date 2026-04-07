@@ -72,7 +72,7 @@ export class CriteriaMappingResolver {
 
   @Mutation(() => Boolean)
   async confirmAutoMapping(
-    @Args('suggestions', { type: () => [AutoMappingSuggestionInput] }) 
+    @Args('suggestions', { type: () => [AutoMappingSuggestionInput] })
     suggestions: AutoMappingSuggestionInput[],
   ) {
     // Convert input to suggestions

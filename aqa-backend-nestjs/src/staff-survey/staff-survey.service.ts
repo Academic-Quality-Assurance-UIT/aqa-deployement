@@ -87,7 +87,7 @@ export class StaffSurveyService {
     let selectField = 'criteria.category';
     let groupByField = 'criteria.category';
     let unitCondition = "AND criteria.category != 'ĐƠN VỊ'";
-    let isUnitField = "criteria.category = 'ĐƠN VỊ'";
+    const isUnitField = "criteria.category = 'ĐƠN VỊ'";
 
     if (showUnit) {
       unitCondition = '';
