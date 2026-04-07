@@ -223,6 +223,28 @@ type Lecturer {
   username: String
 }
 
+type LecturerRankingItem {
+  avg_point: Float!
+  display_name: String
+  faculty_id: String
+  faculty_name: String
+  lecturer_id: String!
+  previous_rank: Int
+  rank: Int!
+  taught_subjects: [LecturerRankingSubject!]
+  total_classes: Int!
+  total_subjects: Int!
+}
+
+type LecturerRankingResult {
+  items: [LecturerRankingItem!]!
+}
+
+type LecturerRankingSubject {
+  display_name: String
+  subject_id: String!
+}
+
 type Mutation {
   """Hủy bỏ dữ liệu tạm"""
   abandonCrawlJob(jobId: String!): CrawlJob!
@@ -406,6 +428,11 @@ type Query {
 
   """View detail information of a specific lecturer"""
   lecturer(id: String!): Lecturer
+
+  """
+  Get ranked lecturers by average point with rank change from previous year
+  """
+  lecturerRanking(filter: FilterArgs = {}, limit: Int = 10, minClasses: Int = 0): LecturerRankingResult!
 
   """List all lecturer"""
   lecturers(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedLecturer!

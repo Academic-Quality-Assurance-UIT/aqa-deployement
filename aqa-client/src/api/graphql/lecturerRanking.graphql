@@ -1,0 +1,19 @@
+query LecturerRanking($filter: FilterArgs, $minClasses: Int, $limit: Int) {
+	lecturerRanking(filter: $filter, minClasses: $minClasses, limit: $limit) {
+		items {
+			rank
+			lecturer_id
+			display_name
+			faculty_id
+			faculty_name
+			avg_point
+			total_subjects
+			total_classes
+			previous_rank
+			taught_subjects {
+				subject_id
+				display_name
+			}
+		}
+	}
+}

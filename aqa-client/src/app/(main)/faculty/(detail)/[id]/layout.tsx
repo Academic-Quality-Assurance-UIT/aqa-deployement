@@ -47,7 +47,7 @@ export default function Layout({
 					},
 				]}
 			/>
-			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
+			<div className="mt-6 w-full p-0 h-auto">{children}</div>
 		</FilterProvider>
 	);
 }

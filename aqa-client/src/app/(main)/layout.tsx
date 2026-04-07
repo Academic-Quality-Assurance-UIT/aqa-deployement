@@ -78,6 +78,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 					/>
 				) : null}
 
+				<NavItem
+					title="Xếp hạng giảng viên"
+					description="Bảng xếp hạng giảng viên theo điểm trung bình"
+					link="/lecturer-ranking"
+					icon={AiOutlinePieChart}
+				/>
+
 				{isFullAcess || isAdmin || true ? (
 					<>
 						<NavSectionHeader label="Khảo sát CBNV" />

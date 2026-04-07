@@ -314,6 +314,31 @@ export type LecturerPointsArgs = {
   sort?: InputMaybe<SortArgs>;
 };
 
+export type LecturerRankingItem = {
+  __typename?: 'LecturerRankingItem';
+  avg_point: Scalars['Float']['output'];
+  display_name?: Maybe<Scalars['String']['output']>;
+  faculty_id?: Maybe<Scalars['String']['output']>;
+  faculty_name?: Maybe<Scalars['String']['output']>;
+  lecturer_id: Scalars['String']['output'];
+  previous_rank?: Maybe<Scalars['Int']['output']>;
+  rank: Scalars['Int']['output'];
+  taught_subjects?: Maybe<Array<LecturerRankingSubject>>;
+  total_classes: Scalars['Int']['output'];
+  total_subjects: Scalars['Int']['output'];
+};
+
+export type LecturerRankingResult = {
+  __typename?: 'LecturerRankingResult';
+  items: Array<LecturerRankingItem>;
+};
+
+export type LecturerRankingSubject = {
+  __typename?: 'LecturerRankingSubject';
+  display_name?: Maybe<Scalars['String']['output']>;
+  subject_id: Scalars['String']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   /** Hủy bỏ dữ liệu tạm */
@@ -615,6 +640,8 @@ export type Query = {
   groupedPoints: PaginatedGroupedPoint;
   /** View detail information of a specific lecturer */
   lecturer?: Maybe<Lecturer>;
+  /** Get ranked lecturers by average point with rank change from previous year */
+  lecturerRanking: LecturerRankingResult;
   /** List all lecturer */
   lecturers: PaginatedLecturer;
   profile: UserEntity;
@@ -817,6 +844,13 @@ export type QueryGroupedPointsArgs = {
 
 export type QueryLecturerArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryLecturerRankingArgs = {
+  filter?: InputMaybe<FilterArgs>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  minClasses?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -1411,7 +1445,7 @@ export type DetailLecturerQueryVariables = Exact<{
 }>;
 
 
-export type DetailLecturerQuery = { __typename?: 'Query', lecturer?: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null } | null };
+export type DetailLecturerQuery = { __typename?: 'Query', lecturer?: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', display_name: string } } | null };
 
 export type AllLecturersQueryVariables = Exact<{
   filter?: InputMaybe<FilterArgs>;
@@ -1419,7 +1453,16 @@ export type AllLecturersQueryVariables = Exact<{
 }>;
 
 
-export type AllLecturersQuery = { __typename?: 'Query', lecturers: { __typename?: 'PaginatedLecturer', data: Array<{ __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null }> } };
+export type AllLecturersQuery = { __typename?: 'Query', lecturers: { __typename?: 'PaginatedLecturer', data: Array<{ __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', display_name: string } }> } };
+
+export type LecturerRankingQueryVariables = Exact<{
+  filter?: InputMaybe<FilterArgs>;
+  minClasses?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type LecturerRankingQuery = { __typename?: 'Query', lecturerRanking: { __typename?: 'LecturerRankingResult', items: Array<{ __typename?: 'LecturerRankingItem', rank: number, lecturer_id: string, display_name?: string | null, faculty_id?: string | null, faculty_name?: string | null, avg_point: number, total_subjects: number, total_classes: number, previous_rank?: number | null, taught_subjects?: Array<{ __typename?: 'LecturerRankingSubject', subject_id: string, display_name?: string | null }> | null }> } };
 
 export type LecturerstWithPointsQueryVariables = Exact<{
   filter?: InputMaybe<FilterArgs>;
@@ -3788,6 +3831,9 @@ export const DetailLecturerDocument = gql`
     display_name
     email
     faculty_id
+    faculty {
+      display_name
+    }
     gender
     learning
     learning_position
@@ -3848,6 +3894,9 @@ export const AllLecturersDocument = gql`
       display_name
       email
       faculty_id
+      faculty {
+        display_name
+      }
       gender
       learning
       learning_position
@@ -3901,6 +3950,68 @@ export type AllLecturersSuspenseQueryHookResult = ReturnType<typeof useAllLectur
 export type AllLecturersQueryResult = Apollo.QueryResult<AllLecturersQuery, AllLecturersQueryVariables>;
 export function refetchAllLecturersQuery(variables?: AllLecturersQueryVariables) {
       return { query: AllLecturersDocument, variables: variables }
+    }
+export const LecturerRankingDocument = gql`
+    query LecturerRanking($filter: FilterArgs, $minClasses: Int, $limit: Int) {
+  lecturerRanking(filter: $filter, minClasses: $minClasses, limit: $limit) {
+    items {
+      rank
+      lecturer_id
+      display_name
+      faculty_id
+      faculty_name
+      avg_point
+      total_subjects
+      total_classes
+      previous_rank
+      taught_subjects {
+        subject_id
+        display_name
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useLecturerRankingQuery__
+ *
+ * To run a query within a React component, call `useLecturerRankingQuery` and pass it any options that fit your needs.
+ * When your component renders, `useLecturerRankingQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useLecturerRankingQuery({
+ *   variables: {
+ *      filter: // value for 'filter'
+ *      minClasses: // value for 'minClasses'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useLecturerRankingQuery(baseOptions?: Apollo.QueryHookOptions<LecturerRankingQuery, LecturerRankingQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<LecturerRankingQuery, LecturerRankingQueryVariables>(LecturerRankingDocument, options);
+      }
+export function useLecturerRankingLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<LecturerRankingQuery, LecturerRankingQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<LecturerRankingQuery, LecturerRankingQueryVariables>(LecturerRankingDocument, options);
+        }
+// @ts-ignore
+export function useLecturerRankingSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<LecturerRankingQuery, LecturerRankingQueryVariables>): Apollo.UseSuspenseQueryResult<LecturerRankingQuery, LecturerRankingQueryVariables>;
+export function useLecturerRankingSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LecturerRankingQuery, LecturerRankingQueryVariables>): Apollo.UseSuspenseQueryResult<LecturerRankingQuery | undefined, LecturerRankingQueryVariables>;
+export function useLecturerRankingSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<LecturerRankingQuery, LecturerRankingQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<LecturerRankingQuery, LecturerRankingQueryVariables>(LecturerRankingDocument, options);
+        }
+export type LecturerRankingQueryHookResult = ReturnType<typeof useLecturerRankingQuery>;
+export type LecturerRankingLazyQueryHookResult = ReturnType<typeof useLecturerRankingLazyQuery>;
+export type LecturerRankingSuspenseQueryHookResult = ReturnType<typeof useLecturerRankingSuspenseQuery>;
+export type LecturerRankingQueryResult = Apollo.QueryResult<LecturerRankingQuery, LecturerRankingQueryVariables>;
+export function refetchLecturerRankingQuery(variables?: LecturerRankingQueryVariables) {
+      return { query: LecturerRankingDocument, variables: variables }
     }
 export const LecturerstWithPointsDocument = gql`
     query LecturerstWithPoints($filter: FilterArgs, $sort: SortArgs, $page: Int) {

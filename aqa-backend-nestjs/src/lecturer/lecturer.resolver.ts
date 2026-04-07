@@ -1,11 +1,13 @@
-import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Args, Int, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { ClassService } from 'src/class/class.service';
 import { PaginatedClass } from 'src/class/dto/PaginatedClass';
+import { FilterArgs } from 'src/common/args/filter.arg';
 import { QueryArgs } from 'src/common/args/query.arg';
 import { Faculty } from 'src/faculty/entities/faculty.entity';
 import { FacultyService } from 'src/faculty/faculty.service';
 import { GroupedPoint } from 'src/point/dto/PaginatedGroupedPoint';
 import { PointService } from 'src/point/point.service';
+import { LecturerRankingResult } from './dto/LecturerRanking.dto';
 import { PaginatedLecturer } from './dto/PaginatedLecturer';
 import { Lecturer } from './entities/lecturer.entity';
 import { LecturerService } from './lecturer.service';
@@ -36,6 +38,30 @@ export class LecturerResolver {
     return this.lecturerService.findOne(id);
   }
 
+  @Query(() => LecturerRankingResult, {
+    name: 'lecturerRanking',
+    description:
+      'Get ranked lecturers by average point with rank change from previous year',
+  })
+  getLecturerRanking(
+    @Args('filter', { type: () => FilterArgs, nullable: true, defaultValue: {} })
+    filter: FilterArgs,
+    @Args('minClasses', {
+      type: () => Int,
+      nullable: true,
+      defaultValue: 0,
+    })
+    minClasses: number,
+    @Args('limit', {
+      type: () => Int,
+      nullable: true,
+      defaultValue: 10,
+    })
+    limit: number,
+  ) {
+    return this.lecturerService.getLecturerRanking(filter, minClasses, limit);
+  }
+
   @ResolveField(() => [GroupedPoint])
   async points(@Parent() lecturer: Lecturer, @Args() { filter }: QueryArgs) {
     const { lecturer_id } = lecturer;
@@ -63,3 +89,4 @@ export class LecturerResolver {
     return result;
   }
 }
+

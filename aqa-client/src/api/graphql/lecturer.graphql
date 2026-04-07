@@ -4,6 +4,9 @@ query DetailLecturer($id: String!) {
 		display_name
 		email
 		faculty_id
+		faculty {
+			display_name
+		}
 		gender
 		learning
 		learning_position
@@ -24,6 +27,9 @@ query AllLecturers($filter: FilterArgs, $sort: SortArgs) {
 			display_name
 			email
 			faculty_id
+			faculty {
+				display_name
+			}
 			gender
 			learning
 			learning_position
@@ -37,3 +43,4 @@ query AllLecturers($filter: FilterArgs, $sort: SortArgs) {
 		}
 	}
 }
+

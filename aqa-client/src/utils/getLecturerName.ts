@@ -7,7 +7,6 @@ export default function getLecturerName(lecturer: {
 }) {
 	const { authData } = useAuth.getState();
 
-	console.log({ authData });
 	if (authData?.user?.role) {
 		const { role } = authData.user;
 
