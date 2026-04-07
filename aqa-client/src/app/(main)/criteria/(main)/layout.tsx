@@ -1,9 +1,8 @@
 "use client";
 
 import BreadCrumb from "@/components/BreadCrumb";
+import CriteriaSemesterChart from "@/components/CriteriaSemesterChart";
 import PageTabs from "@/components/PageTabs";
-import ClassTypeSelector from "@/components/selectors/ClassTypeSelector";
-import { SemesterSelectorWithFilterUrlQuery } from "@/components/selectors/SemesterSelector";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
 import { usePathname } from "next/navigation";
@@ -32,13 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 					},
 				]}
 			/>
-			<div className="mt-4 flex flex-row items-center gap-2 p-1 bg-white dark:bg-zinc-900 border-1 border-divider rounded-xl w-fit shadow-sm">
-				<p className="font-bold text-sm pl-4">Các bộ lọc: </p>
-				<ClassTypeSelector isNoBorder />
-				<div className=" w-[2px] h-5 bg-zinc-200" />
-				<SemesterSelectorWithFilterUrlQuery isNoBorder />
-			</div>
-			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
+			<div className="mt-4 w-full p-0 flex-1">{children}</div>
 		</FilterProvider>
 	);
 }

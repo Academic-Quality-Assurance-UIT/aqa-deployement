@@ -159,6 +159,13 @@ type CriteriaProperty {
   num: Int!
 }
 
+type CriteriaSemesterStats {
+  ht1: Int!
+  ht2: Int!
+  lt: Int!
+  semester: String!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -397,6 +404,7 @@ type Query {
   """Thông tin tổng hợp dữ liệu tạm"""
   crawlStagingDataSummary(jobId: String!): CrawlStagingDataSummary!
   criteria(id: String!): Criteria
+  criteriaSemesterStats: [CriteriaSemesterStats!]!
   criterias(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedCriteria!
   currentUser: UserEntity!
 

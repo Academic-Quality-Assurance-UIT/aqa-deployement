@@ -96,4 +96,38 @@ export class CriteriaService extends BaseService<Criteria> {
 
     return criteriaProperties;
   }
+  async findCriteriaCountBySemester() {
+    const rawResults = await this.repo
+      .createQueryBuilder('Criteria')
+      .leftJoin('Criteria.points', 'Point')
+      .leftJoin('Point.class', 'Class')
+      .leftJoin('Class.semester', 'Semester')
+      .select('Semester.display_name', 'semester')
+      .addSelect('Class.class_type', 'class_type')
+      .addSelect('COUNT(DISTINCT Criteria.criteria_id)', 'count')
+      .where('Semester.display_name IS NOT NULL')
+      .andWhere("Class.class_type IN ('LT', 'HT1', 'HT2')")
+      .groupBy('Semester.display_name')
+      .addGroupBy('Class.class_type')
+      .getRawMany();
+
+    const statsMap = new Map<string, any>();
+
+    for (const row of rawResults) {
+      if (!statsMap.has(row.semester)) {
+        statsMap.set(row.semester, {
+          semester: row.semester,
+          lt: 0,
+          ht1: 0,
+          ht2: 0,
+        });
+      }
+      const entry = statsMap.get(row.semester);
+      if (row.class_type === 'LT') entry.lt = parseInt(row.count);
+      else if (row.class_type === 'HT1') entry.ht1 = parseInt(row.count);
+      else if (row.class_type === 'HT2') entry.ht2 = parseInt(row.count);
+    }
+
+    return Array.from(statsMap.values());
+  }
 }

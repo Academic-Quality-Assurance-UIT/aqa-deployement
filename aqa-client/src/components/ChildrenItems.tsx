@@ -7,7 +7,7 @@ import EmptyDataMessage from "./EmptyDataMessage";
 import { usePathname } from "next/navigation";
 import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
 import { useDisplayNameOfUrlFilter } from "@/hooks/useDisplayNameOfUrlFilter";
-import { AiOutlineClose } from "react-icons/ai";
+import { AiOutlineClose, AiOutlineRight } from "react-icons/ai";
 import _ from "lodash";
 
 type Props = {
@@ -37,24 +37,26 @@ export default function ChildrenItems({
 	);
 
 	return (
-		<div className=" flex-1 py-6 flex flex-col items-start gap-4">
+		<div className=" flex-1 py-4 flex flex-col items-start gap-4">
 			{loading !== false ? (
 				<Loading />
 			) : items.length > 1 ||
 			  (items.length === 1 && items.at(0)?.value !== "all") ? (
 				<>
-					<Button
-						variant={"shadow"}
-						color={"primary"}
-						onPress={() =>
-							items.find((v) => v.value === "all")?.onClick?.("all")
-						}
-						className=" w-full"
-					>
-						<p className=" text-start font-semibold">
-							{items.find((v) => v.value === "all")?.display_name}
-						</p>
-					</Button>
+					{items.find((v) => v.value === "all") && (
+						<Button
+							variant={"shadow"}
+							color={"primary"}
+							onPress={() =>
+								items.find((v) => v.value === "all")?.onClick?.("all")
+							}
+							className=" w-full"
+						>
+							<p className=" text-start font-semibold">
+								{items.find((v) => v.value === "all")?.display_name}
+							</p>
+						</Button>
+					)}
 					<div className=" border-1 border-foreground-300 w-full flex flex-col rounded-xl overflow-hidden">
 						{[...items]
 							.sort((a, b) =>
@@ -68,7 +70,7 @@ export default function ChildrenItems({
 							.map(({ display_name, value, onClick }, index) => (
 								<div
 									key={display_name}
-									className="px-4 py-3 border-b-1 border-foreground-300 bg-background cursor-pointer hover:bg-foreground-100 duration-200 active:bg-foreground-200"
+									className="px-4 py-3 border-b-1 border-foreground-300 bg-background cursor-pointer hover:bg-gray-100 duration-200 active:bg-gray-300 flex items-center justify-between gap-4"
 									onClick={() => onClick(value)}
 								>
 									<p className=" text-start font-semibold">
@@ -76,6 +78,7 @@ export default function ChildrenItems({
 											isDisplayIndex ? `${index + 1}. ` : ""
 										}${display_name}`}
 									</p>
+									<AiOutlineRight className="text-foreground-400 flex-shrink-0" />
 								</div>
 							))}
 					</div>

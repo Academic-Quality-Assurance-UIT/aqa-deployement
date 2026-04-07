@@ -84,3 +84,12 @@ query OverallCriteriaPointsEachSemester(
 		}
 	}
 }
+
+query CriteriaSemesterStats {
+	criteriaSemesterStats {
+		semester
+		lt
+		ht1
+		ht2
+	}
+}

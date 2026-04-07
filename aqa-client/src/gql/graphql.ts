@@ -203,6 +203,14 @@ export type CriteriaProperty = {
   num: Scalars['Int']['output'];
 };
 
+export type CriteriaSemesterStats = {
+  __typename?: 'CriteriaSemesterStats';
+  ht1: Scalars['Int']['output'];
+  ht2: Scalars['Int']['output'];
+  lt: Scalars['Int']['output'];
+  semester: Scalars['String']['output'];
+};
+
 export type Faculty = {
   __typename?: 'Faculty';
   display_name: Scalars['String']['output'];
@@ -613,6 +621,7 @@ export type Query = {
   /** Thông tin tổng hợp dữ liệu tạm */
   crawlStagingDataSummary: CrawlStagingDataSummary;
   criteria?: Maybe<Criteria>;
+  criteriaSemesterStats: Array<CriteriaSemesterStats>;
   criterias: PaginatedCriteria;
   currentUser: UserEntity;
   /** List all faculty available */
@@ -1427,6 +1436,11 @@ export type OverallCriteriaPointsEachSemesterQueryVariables = Exact<{
 
 
 export type OverallCriteriaPointsEachSemesterQuery = { __typename?: 'Query', groupedPoints: { __typename?: 'PaginatedGroupedPoint', data: Array<{ __typename?: 'GroupedPoint', average_point: number, class_num: number, display_name?: string | null, id: string, max_point?: number | null, point?: number | null }> } };
+
+export type CriteriaSemesterStatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CriteriaSemesterStatsQuery = { __typename?: 'Query', criteriaSemesterStats: Array<{ __typename?: 'CriteriaSemesterStats', semester: string, lt: number, ht1: number, ht2: number }> };
 
 export type FacultiesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3726,6 +3740,54 @@ export type OverallCriteriaPointsEachSemesterSuspenseQueryHookResult = ReturnTyp
 export type OverallCriteriaPointsEachSemesterQueryResult = Apollo.QueryResult<OverallCriteriaPointsEachSemesterQuery, OverallCriteriaPointsEachSemesterQueryVariables>;
 export function refetchOverallCriteriaPointsEachSemesterQuery(variables?: OverallCriteriaPointsEachSemesterQueryVariables) {
       return { query: OverallCriteriaPointsEachSemesterDocument, variables: variables }
+    }
+export const CriteriaSemesterStatsDocument = gql`
+    query CriteriaSemesterStats {
+  criteriaSemesterStats {
+    semester
+    lt
+    ht1
+    ht2
+  }
+}
+    `;
+
+/**
+ * __useCriteriaSemesterStatsQuery__
+ *
+ * To run a query within a React component, call `useCriteriaSemesterStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCriteriaSemesterStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCriteriaSemesterStatsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCriteriaSemesterStatsQuery(baseOptions?: Apollo.QueryHookOptions<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>(CriteriaSemesterStatsDocument, options);
+      }
+export function useCriteriaSemesterStatsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>(CriteriaSemesterStatsDocument, options);
+        }
+// @ts-ignore
+export function useCriteriaSemesterStatsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>): Apollo.UseSuspenseQueryResult<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>;
+export function useCriteriaSemesterStatsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>): Apollo.UseSuspenseQueryResult<CriteriaSemesterStatsQuery | undefined, CriteriaSemesterStatsQueryVariables>;
+export function useCriteriaSemesterStatsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>(CriteriaSemesterStatsDocument, options);
+        }
+export type CriteriaSemesterStatsQueryHookResult = ReturnType<typeof useCriteriaSemesterStatsQuery>;
+export type CriteriaSemesterStatsLazyQueryHookResult = ReturnType<typeof useCriteriaSemesterStatsLazyQuery>;
+export type CriteriaSemesterStatsSuspenseQueryHookResult = ReturnType<typeof useCriteriaSemesterStatsSuspenseQuery>;
+export type CriteriaSemesterStatsQueryResult = Apollo.QueryResult<CriteriaSemesterStatsQuery, CriteriaSemesterStatsQueryVariables>;
+export function refetchCriteriaSemesterStatsQuery(variables?: CriteriaSemesterStatsQueryVariables) {
+      return { query: CriteriaSemesterStatsDocument, variables: variables }
     }
 export const FacultiesDocument = gql`
     query Faculties {

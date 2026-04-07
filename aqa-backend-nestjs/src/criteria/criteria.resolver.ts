@@ -6,6 +6,7 @@ import { CriteriaService } from './criteria.service';
 import { PaginatedCriteria } from './dto/PaginatedCriteria.dto';
 import { Criteria } from './entities/criteria.entity';
 import { CriteriaProperty } from './dto/CriteriaProperty.dto';
+import { CriteriaSemesterStats } from './dto/CriteriaSemesterStats.dto';
 
 @Resolver(() => Criteria)
 export class CriteriaResolver {
@@ -21,6 +22,11 @@ export class CriteriaResolver {
   @Query(() => Criteria, { name: 'criteria', nullable: true })
   findOne(@Args('id', { type: () => String }) id: string) {
     return this.criteriaService.findOne(id);
+  }
+
+  @Query(() => [CriteriaSemesterStats], { name: 'criteriaSemesterStats' })
+  findCriteriaSemesterStats() {
+    return this.criteriaService.findCriteriaCountBySemester();
   }
 
   @ResolveField(() => [Semester])
