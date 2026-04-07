@@ -21,7 +21,7 @@ export class StaffSurveyService {
     private staffSurveyCriteriaRepo: Repository<StaffSurveyCriteria>,
     @InjectRepository(StaffSurveyPoint)
     private staffSurveyPointRepo: Repository<StaffSurveyPoint>,
-  ) {}
+  ) { }
 
   async create(inputData: StaffSurveySheetDTO) {
     const { survey_name: surveyName, points, ...data } = inputData;
@@ -69,9 +69,9 @@ export class StaffSurveyService {
   async getSemesterList(): Promise<string[]> {
     const result = await this.staffSurveyBatchRepo
       .createQueryBuilder('batch')
-      .select('DISTINCT batch.semester', 'semester')
-      .where('batch.semester IS NOT NULL')
-      .orderBy('batch.semester', 'DESC')
+      .select('DISTINCT batch.display_name', 'semester')
+      .where('batch.display_name IS NOT NULL')
+      .orderBy('batch.display_name', 'DESC')
       .getRawMany();
     return result.map((r) => r.semester);
   }
@@ -81,7 +81,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     let selectField = 'criteria.category';
@@ -122,7 +122,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     return await this.staffSurveyPointRepo.query(
@@ -156,7 +156,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     let displayNameCondition = '';
@@ -192,7 +192,7 @@ export class StaffSurveyService {
     return await this.staffSurveyPointRepo.query(
       `
       SELECT
-        batch.semester AS year,
+        batch.display_name AS year,
         AVG(point.point) AS avg_point
       FROM staff_survey_point AS point
       JOIN staff_survey_sheet AS sheet
@@ -202,8 +202,8 @@ export class StaffSurveyService {
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
       WHERE criteria.is_shown = true
-      GROUP BY batch.semester
-      ORDER BY batch.semester DESC
+      GROUP BY batch.display_name
+      ORDER BY batch.display_name DESC
     `,
     );
   }
@@ -213,7 +213,7 @@ export class StaffSurveyService {
       `
       SELECT
         criteria.category AS category,
-        batch.semester AS year,
+        batch.display_name AS year,
         AVG(point.point) AS avg_point
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
@@ -223,8 +223,8 @@ export class StaffSurveyService {
       JOIN staff_survey_batch AS batch
         ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
       WHERE criteria.category != 'ĐƠN VỊ' AND criteria.is_shown = true
-      GROUP BY criteria.category, batch.semester
-      ORDER BY batch.semester DESC, criteria.category
+      GROUP BY criteria.category, batch.display_name
+      ORDER BY batch.display_name DESC, criteria.category
     `,
     );
   }
@@ -239,7 +239,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     let displayNameCondition = '';
@@ -279,7 +279,7 @@ export class StaffSurveyService {
     let metaSemesterCondition = '';
     if (semester) {
       metaParams.push(semester);
-      metaSemesterCondition = `AND batch.semester = $${metaParams.length}`;
+      metaSemesterCondition = `AND batch.display_name = $${metaParams.length}`;
     }
 
     let metaDisplayNameCondition = '';
@@ -328,7 +328,7 @@ export class StaffSurveyService {
     let qSemesterCondition = '';
     if (semester) {
       queryParams.push(semester);
-      qSemesterCondition = `AND batch.semester = $${queryParams.length}`;
+      qSemesterCondition = `AND batch.display_name = $${queryParams.length}`;
     }
 
     let qKeywordCondition = '';
@@ -384,7 +384,7 @@ export class StaffSurveyService {
     let mSemesterCondition = '';
     if (semester) {
       metaParams.push(semester);
-      mSemesterCondition = `AND batch.semester = $${metaParams.length}`;
+      mSemesterCondition = `AND batch.display_name = $${metaParams.length}`;
     }
 
     let mKeywordCondition = '';
@@ -445,7 +445,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     let keywordCondition = '';
@@ -497,7 +497,7 @@ export class StaffSurveyService {
     let semesterCondition = '';
     if (semester) {
       params.push(semester);
-      semesterCondition = `AND batch.semester = $${params.length}`;
+      semesterCondition = `AND batch.display_name = $${params.length}`;
     }
 
     let displayNameCondition = '';
@@ -541,7 +541,7 @@ export class StaffSurveyService {
       );
 
     if (semester) {
-      query.andWhere('batch.semester = :semester', { semester });
+      query.andWhere('batch.display_name = :semester', { semester });
     }
 
     return await query.getMany();
