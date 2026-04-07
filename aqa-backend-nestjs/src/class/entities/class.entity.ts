@@ -6,6 +6,7 @@ import { Subject } from 'src/subject/entities/subject.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -27,6 +28,7 @@ export class Class {
   @JoinColumn({ name: 'semester_id' })
   semester: Semester;
 
+  @Index()
   @Column()
   semester_id: string;
 
@@ -42,6 +44,7 @@ export class Class {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
+  @Index()
   @Column()
   subject_id: string;
 
@@ -49,6 +52,7 @@ export class Class {
   @JoinColumn({ name: 'lecturer_id' })
   lecturer: Lecturer;
 
+  @Index()
   @Column()
   lecturer_id: string;
 
@@ -56,6 +60,7 @@ export class Class {
   @JoinColumn({ name: 'lecturer_1_id' })
   lecturer_1: Lecturer;
 
+  @Index()
   @Column({ nullable: true })
   lecturer_1_id: string;
 
@@ -63,10 +68,11 @@ export class Class {
   @JoinColumn({ name: 'lecturer_2_id' })
   lecturer_2: Lecturer;
 
+  @Index()
   @Column({ nullable: true })
   lecturer_2_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Field(() => Int, { nullable: true, defaultValue: 0 })
   total_student: number;
 

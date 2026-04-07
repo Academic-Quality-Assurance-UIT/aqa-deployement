@@ -1,7 +1,7 @@
 import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 import { Class } from 'src/class/entities/class.entity';
 import { Criteria } from 'src/criteria/entities/criteria.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 
 @Entity()
 @ObjectType()
@@ -10,6 +10,7 @@ export class Point {
   @Field(() => String)
   point_id: string;
 
+  @Index()
   @Column()
   @Field(() => Int)
   max_point: number;
@@ -23,11 +24,17 @@ export class Point {
   @Field(() => Class, { nullable: true })
   class: Class;
 
+  @Index()
+  @Column()
+  @Field()
+  class_id: string;
+
   @ManyToOne(() => Criteria)
   @JoinColumn({ name: 'criteria_id' })
   @Field(() => Criteria, { nullable: true })
   criteria: Criteria;
 
+  @Index()
   @Column()
   @Field()
   criteria_id: string;

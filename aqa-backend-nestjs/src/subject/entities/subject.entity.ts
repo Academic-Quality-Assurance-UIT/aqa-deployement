@@ -4,6 +4,7 @@ import { Faculty } from 'src/faculty/entities/faculty.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -22,6 +23,7 @@ export class Subject {
   display_name: string;
 
   @Field({ nullable: true })
+  @Index()
   @Column()
   faculty_id: string;
 

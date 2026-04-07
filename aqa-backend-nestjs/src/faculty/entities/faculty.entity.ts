@@ -5,7 +5,7 @@ import {
   PaginatedGroupedPoint,
 } from 'src/point/dto/PaginatedGroupedPoint';
 import { Subject } from 'src/subject/entities/subject.entity';
-import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, OneToMany, PrimaryColumn } from 'typeorm';
 
 @ObjectType()
 @Entity()
@@ -22,6 +22,7 @@ export class Faculty {
   @Field({ nullable: true })
   full_name: string;
 
+  @Index()
   @Column({ default: true })
   @Field(() => Boolean, { nullable: true, defaultValue: true })
   is_displayed: boolean;

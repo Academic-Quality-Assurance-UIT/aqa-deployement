@@ -1,5 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @ObjectType()
 @Entity()
@@ -16,6 +16,7 @@ export class Semester {
   @Field({ nullable: true })
   type: string;
 
+  @Index()
   @Column({ nullable: true })
   @Field({ nullable: true })
   year: string;

@@ -74,6 +74,7 @@ export class UserService {
   }
 
   async update(id: string, userDto: UpdateUserDto): Promise<UserEntity> {
+    console.log({ id, userDto })
     const user = await this.userRepo.findOneBy({ id });
     if (!user) throw new Error('User not found');
 
