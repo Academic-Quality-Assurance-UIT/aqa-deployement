@@ -11,7 +11,7 @@ import {
 import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
 import useLecturerInfo from "@/hooks/useLecturerInfo";
 import { useAuth } from "@/stores/auth.store";
-import { Button, Tooltip } from "@heroui/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from "@heroui/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
@@ -178,52 +178,99 @@ export default function BreadCrumb() {
 					) => (
 						<div key={title} className=" flex gap-1 items-center">
 							<Tooltip content={name ?? "Tất cả"} color="primary">
-								<Button
-									variant="light"
-									className={twMerge(
-										" w-fit h-fit bg-background",
-										name ? className : ""
-									)}
-									onPress={() => {
-										setUrlQuery(`/${link}`, {
-											...onClickValue,
-											...defaultValue,
-										});
-									}}
-								>
-									<div className=" px-1 py-2 lg:p-2 flex-col gap-2 items-start">
-										<p className=" text-foreground-900 text-xs text-start">
-											{title}
-										</p>
-										<p
-											className={twMerge(
-												" h-auto max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis text-foreground-900 text-start font-semibold",
-												link === "criteria" ? " " : ""
-											)}
+								{value ? (
+									<Dropdown>
+										<DropdownTrigger>
+											<Button
+												variant="light"
+												className={twMerge(
+													" w-fit h-fit bg-background",
+													name ? className : ""
+												)}
+											>
+												<div className=" px-1 py-2 lg:p-2 flex-col gap-2 items-start">
+													<p className=" text-foreground-900 text-xs text-start">
+														{title}
+													</p>
+													<p
+														className={twMerge(
+															" h-auto max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis text-foreground-900 text-start font-semibold",
+															link === "criteria"
+																? " "
+																: ""
+														)}
+													>
+														{name || "Tất cả"}
+													</p>
+												</div>
+											</Button>
+										</DropdownTrigger>
+										<DropdownMenu
+											aria-label={`${title} actions`}
+											className="max-w-[300px]"
 										>
-											{name || "Tất cả"}
-										</p>
-									</div>
-								</Button>
+											<DropdownItem
+												key="all"
+												onPress={() => {
+													setUrlQuery(`/${link}`, {
+														...onClickValue,
+														...defaultValue,
+													});
+												}}
+											>
+												Xem tất cả {title.toLowerCase()}
+											</DropdownItem>
+											<DropdownItem
+												key="current"
+												onPress={() => {
+													setUrlQuery(
+														`/${link}/${value}`,
+														onClickValue
+													);
+												}}
+											>
+												<p className="flex gap-1 items-center w-full min-w-0 pr-4">
+													<span className="whitespace-nowrap flex-shrink-0">
+														Xem {title.toLowerCase()}
+													</span>
+													<span className="font-bold truncate min-w-0 max-w-[200px] inline-block">
+														{name}
+													</span>
+												</p>
+											</DropdownItem>
+										</DropdownMenu>
+									</Dropdown>
+								) : (
+									<Button
+										variant="light"
+										className={twMerge(
+											" w-fit h-fit bg-background",
+											name ? className : ""
+										)}
+										onPress={() => {
+											setUrlQuery(`/${link}`, {
+												...onClickValue,
+												...defaultValue,
+											});
+										}}
+									>
+										<div className=" px-1 py-2 lg:p-2 flex-col gap-2 items-start">
+											<p className=" text-foreground-900 text-xs text-start">
+												{title}
+											</p>
+											<p
+												className={twMerge(
+													" h-auto max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis text-foreground-900 text-start font-semibold",
+													link === "criteria" ? " " : ""
+												)}
+											>
+												{name || "Tất cả"}
+											</p>
+										</div>
+									</Button>
+								)}
 							</Tooltip>
 							{index !== paths.length - 1 ? (
-								// <div
-								// 	className=" rounded-xl grid place-items-center h-full px-1 lg:px-2 cursor-pointer bg-transparent hover:bg-card active:bg-foreground-200 duration-200"
-								// 	onClick={() => {
-								// 		if (value)
-								// 			setUrlQuery(
-								// 				`/${link}/${value}`,
-								// 				onClickValue
-								// 			);
-								// 		else
-								// 			setUrlQuery(`/${link}`, {
-								// 				...onClickValue,
-								// 				...defaultValue,
-								// 			});
-								// 	}}
-								// >
-								// 	<IoChevronForwardOutline size={20} />
-								// </div>
 								<div className=" mx-2 w-[6px] h-full rounded-md bg-primary-200" />
 							) : null}
 						</div>

@@ -19,13 +19,13 @@ export default function Layout({
 
 	return (
 		<FilterProvider>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<p className="font-medium text-slate-500">{`Tiêu chí`}</p>
 			<h1 className="page-title mt-1 mb-4">
 				{data?.criteria?.display_name || ""}
 			</h1>
-			<div className="mb-6">
-				<BreadCrumb />
-			</div>
 			<PageTabs
 				defaultPath={`criteria/${criteria_id}`}
 				lastIndex={3}

@@ -15,10 +15,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
 	return (
 		<FilterProvider>
-			<h1 className="page-title mb-4">Tiêu chí</h1>
 			<div className="mb-6">
 				<BreadCrumb />
 			</div>
+			<h1 className="page-title mb-4">Tiêu chí</h1>
 			<PageTabs
 				defaultPath="criteria"
 				tabs={[
