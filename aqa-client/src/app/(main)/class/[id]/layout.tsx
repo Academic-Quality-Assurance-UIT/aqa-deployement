@@ -6,7 +6,9 @@ import PageTabs from "@/components/PageTabs";
 import TextLink from "@/components/TextLink";
 import { useDetailClassQuery } from "@/gql/graphql";
 import { hashAndShorten } from "@/utils/lecturerIdHash";
-import { useSearchParams } from "next/navigation";
+import { Button } from "@heroui/react";
+import { RiArrowLeftSLine } from "@remixicon/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode } from "react";
 
 export default function DetailClassPage({
@@ -23,11 +25,27 @@ export default function DetailClassPage({
 
 	const searchParams = useSearchParams();
 	const isShowedName = searchParams.get("showLecturerName") === "true";
+	const router = useRouter();
 
 	return (
 		<div>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
+			<div className="flex items-center gap-1 -ml-2 mb-1">
+				<Button
+					isIconOnly
+					variant="light"
+					size="sm"
+					onPress={() => router.back()}
+					className="text-slate-500"
+				>
+					<RiArrowLeftSLine size={20} />
+				</Button>
+				<p className="font-medium text-slate-500">{`Lớp`}</p>
+			</div>
 			<h1 className="page-title mb-1">
-				{classInfo?.display_name} - {classInfo?.subject.display_name}
+				{classInfo?.display_name || ""} - {classInfo?.subject.display_name || ""}
 			</h1>
 			<div className="flex gap-4 items-end mb-4">
 				<h2 className="mt-3 text-gray-600 dark:text-gray-300">
@@ -49,9 +67,6 @@ export default function DetailClassPage({
 					</>
 				</h2>
 				<LecturerShowToggle />
-			</div>
-			<div className="mb-6">
-				<BreadCrumb />
 			</div>
 			<PageTabs
 				lastIndex={3}

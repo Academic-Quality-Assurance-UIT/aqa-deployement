@@ -6,7 +6,9 @@ import PageTabs from "@/components/PageTabs";
 import { useIsLecturer } from "@/hooks/useIsAdmin";
 import useLecturerInfo from "@/hooks/useLecturerInfo";
 import { hashAndShorten } from "@/utils/lecturerIdHash";
-import { useSearchParams } from "next/navigation";
+import { Button } from "@heroui/react";
+import { RiArrowLeftSLine } from "@remixicon/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useState } from "react";
 
 export default function Layout({
@@ -17,6 +19,7 @@ export default function Layout({
 	children: ReactNode;
 }) {
 	const { lecturer } = useLecturerInfo(lecturer_id);
+	const router = useRouter();
 
 	const { isLecturer } = useIsLecturer();
 
@@ -26,6 +29,23 @@ export default function Layout({
 
 	return (
 		<div>
+			{isLecturer ? null : (
+				<div className="mb-6">
+					<BreadCrumb />
+				</div>
+			)}
+			<div className="flex items-center gap-1 -ml-2 mb-1">
+				<Button
+					isIconOnly
+					variant="light"
+					size="sm"
+					onPress={() => router.back()}
+					className="text-slate-500"
+				>
+					<RiArrowLeftSLine size={20} />
+				</Button>
+				<p className="font-medium text-slate-500">{`Giảng viên`}</p>
+			</div>
 			<div className="flex gap-4 items-end mb-4">
 				<h1 className="page-title">
 					{isShowedName ? (
@@ -38,11 +58,6 @@ export default function Layout({
 				</h1>
 				<LecturerShowToggle />
 			</div>
-			{isLecturer ? null : (
-				<div className="mb-6">
-					<BreadCrumb />
-				</div>
-			)}
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`lecturer/${lecturer_id}`}

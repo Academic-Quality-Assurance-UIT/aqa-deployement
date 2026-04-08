@@ -4,7 +4,10 @@ import BreadCrumb from "@/components/BreadCrumb";
 import PageTabs from "@/components/PageTabs";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useDetailSubjectQuery } from "@/gql/graphql";
+import { Button } from "@heroui/react";
+import { RiArrowLeftSLine } from "@remixicon/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
 export default function Layout({
@@ -15,11 +18,27 @@ export default function Layout({
 	children: ReactNode;
 }) {
 	const { data } = useDetailSubjectQuery({ variables: { id: subject_id } });
+	const router = useRouter();
 
 	return (
 		<div>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			{data?.subject ? (
 				<>
+					<div className="flex items-center gap-1 -ml-2 mb-1">
+						<Button
+							isIconOnly
+							variant="light"
+							size="sm"
+							onPress={() => router.back()}
+							className="text-slate-500"
+						>
+							<RiArrowLeftSLine size={20} />
+						</Button>
+						<p className="font-medium text-slate-500">{`Môn học`}</p>
+					</div>
 					<h1 className="page-title mb-1">
 						{data.subject.display_name}
 					</h1>
@@ -33,9 +52,6 @@ export default function Layout({
 					</h2>
 				</>
 			) : null}
-			<div className="mb-6">
-				<BreadCrumb />
-			</div>
 			<PageTabs
 				lastIndex={3}
 				defaultPath={`subject/${subject_id}`}

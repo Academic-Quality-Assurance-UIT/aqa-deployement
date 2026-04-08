@@ -13,8 +13,10 @@ export default function Page({ params }: { params: any }) {
 
 	return (
 		<FilterProvider>
+			<div className="mb-6">
+				<BreadCrumb />
+			</div>
 			<h1 className="page-title mb-6">Lớp</h1>
-			<BreadCrumb />
 			<ChildrenItems
 				loading={loading}
 				items={[
