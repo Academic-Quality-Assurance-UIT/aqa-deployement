@@ -18,6 +18,7 @@ import { CrawlLecturerSurveyService } from './crawl-lecturer-survey.service';
 import { CrawlStaffSurveyService } from './crawl-staff-survey.service';
 import { AggregatePointsService } from './aggregate-points.service';
 import { TransferDataService } from './transfer-data.service';
+import { TopicAssignmentService } from './topic-assignment.service';
 import { SurveyApiClient } from './survey-api-client';
 import { SurveyCrawlHistory } from '../entities/survey-crawl-history.entity';
 import { Student } from '../../student/entities/student.entity';
@@ -49,6 +50,7 @@ export class CrawlDataService implements OnModuleInit {
     private readonly surveyCrawlHistoryRepo: Repository<SurveyCrawlHistory>,
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
+    private readonly topicAssignmentService: TopicAssignmentService,
   ) {}
 
   async onModuleInit() {
@@ -87,7 +89,6 @@ export class CrawlDataService implements OnModuleInit {
   }
 
   private async checkTimeouts() {
-    const timeoutMs = 15000; // 15 seconds (slightly more than 10s to be safe)
     const now = new Date();
 
     const runningJobs = await this.crawlJobRepo.find({
@@ -95,16 +96,20 @@ export class CrawlDataService implements OnModuleInit {
     });
 
     for (const job of runningJobs) {
+      const timeoutMs =
+        job.type === CrawlJobType.TOPIC_ASSIGNMENT
+          ? 600000  // 10 minutes for ML inference
+          : 15000;  // 15 seconds for crawl jobs
       const lastActivity =
         job.last_activity_at || job.started_at || job.created_at;
       if (now.getTime() - lastActivity.getTime() > timeoutMs) {
         this.logger.warn(
-          `Job ${job.crawl_job_id} timed out (no activity for >10s). Marking as FAILED.`,
+          `Job ${job.crawl_job_id} timed out (no activity for >${timeoutMs / 1000}s). Marking as FAILED.`,
         );
         job.status = CrawlJobStatus.FAILED;
         job.completed_at = now;
         job.error_message =
-          'Job timed out: No activity detected for more than 10 seconds.';
+          `Job timed out: No activity detected for more than ${timeoutMs / 1000} seconds.`;
         await this.crawlJobRepo.save(job);
       }
     }
@@ -437,6 +442,15 @@ export class CrawlDataService implements OnModuleInit {
           result = await this.transferDataService.transfer(
             job.crawl_job_id,
             job.parameters?.sourceConfig,
+          );
+          break;
+        case CrawlJobType.TOPIC_ASSIGNMENT:
+          result = await this.topicAssignmentService.run(
+            job.crawl_job_id,
+            job.parameters?.semesterIds,
+            async (progress: number, total: number) => {
+              await this.updateJobProgress(job.crawl_job_id, progress, total);
+            },
           );
           break;
         default:

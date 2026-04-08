@@ -74,16 +74,17 @@ export const LecturerSurveySelectModal = ({
               selectionMode="multiple"
               selectedKeys={selectedKeys}
               onSelectionChange={(keys) => setSelectedKeys(keys as Set<string>)}
+              layout="fixed"
               classNames={{
                 wrapper: "max-h-[400px] overflow-auto",
               }}
             >
               <TableHeader>
-                <TableColumn>SID</TableColumn>
+                <TableColumn width={100}>SID</TableColumn>
                 <TableColumn>Tên khảo sát</TableColumn>
-                <TableColumn>Năm học</TableColumn>
-                <TableColumn>Loại</TableColumn>
-                <TableColumn>Lần thu thập cuối</TableColumn>
+                <TableColumn width={140} align="center">Năm học</TableColumn>
+                <TableColumn width={100} align="center">Loại</TableColumn>
+                <TableColumn width={200} align="end">Lần thu thập cuối</TableColumn>
               </TableHeader>
               <TableBody
                 items={surveys}
@@ -93,11 +94,31 @@ export const LecturerSurveySelectModal = ({
               >
                 {(item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.sid}</TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.year || "-"}</TableCell>
-                    <TableCell>{item.type || "-"}</TableCell>
-                    <TableCell>{item.last_crawled_at ? new Date(item.last_crawled_at).toLocaleString('vi-VN') : "Chưa từng thu thập"}</TableCell>
+                    <TableCell>
+                      <span className="text-tiny text-default-400 font-mono">{item.sid}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="py-1">
+                        <span className="text-small font-medium text-default-700">{item.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-small">{item.year || "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-small">{item.type || "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-tiny text-default-500 whitespace-nowrap">
+                        {item.last_crawled_at ? new Date(item.last_crawled_at).toLocaleString('vi-VN', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : "Chưa từng thu thập"}
+                      </span>
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>

@@ -8,6 +8,7 @@ import { CrawlJobLog } from './entities/crawl-job-log.entity';
 import { CrawlApiRequestLog } from './entities/crawl-api-request-log.entity';
 import { SurveyCrawlHistory } from './entities/survey-crawl-history.entity';
 import { Student } from '../student/entities/student.entity';
+import { Comment } from '../comment/entities/comment.entity';
 import { CrawlDataResolver } from './crawl-data.resolver';
 import { CrawlDataService } from './services/crawl-data.service';
 import { SurveyApiClient } from './services/survey-api-client';
@@ -16,6 +17,7 @@ import { CrawlLecturerSurveyService } from './services/crawl-lecturer-survey.ser
 import { CrawlStaffSurveyService } from './services/crawl-staff-survey.service';
 import { AggregatePointsService } from './services/aggregate-points.service';
 import { TransferDataService } from './services/transfer-data.service';
+import { TopicAssignmentService } from './services/topic-assignment.service';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { TransferDataService } from './services/transfer-data.service';
       CrawlApiRequestLog,
       SurveyCrawlHistory,
       Student,
+      Comment,
     ]),
     ConfigModule,
   ],
@@ -39,6 +42,7 @@ import { TransferDataService } from './services/transfer-data.service';
     CrawlStaffSurveyService,
     AggregatePointsService,
     TransferDataService,
+    TopicAssignmentService,
   ],
   exports: [CrawlDataService],
 })

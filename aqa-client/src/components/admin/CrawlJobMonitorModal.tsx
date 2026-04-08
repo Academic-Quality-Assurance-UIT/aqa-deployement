@@ -9,6 +9,8 @@ import {
 	useGetCrawlStagingDataSummaryQuery,
 	useGetCrawlStagingDataQuery,
 	useStopCrawlJobMutation,
+	useConfirmCrawlJobMutation,
+	useAbandonCrawlJobMutation,
 } from "@/gql/graphql";
 import { JsonView, darkStyles, defaultStyles } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
@@ -62,6 +64,8 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 	const [stagingPage, setStagingPage] = useState(1);
 	const [activeDataType, setActiveDataType] = useState<string | null>(null);
 	const [stopCrawlJob, { loading: stopping }] = useStopCrawlJobMutation();
+	const [confirmJob, { loading: confirming }] = useConfirmCrawlJobMutation();
+	const [abandonJob, { loading: abandoning }] = useAbandonCrawlJobMutation();
 	const [lastReload, setLastReload] = useState<Date>(new Date());
 	const limit = 10;
 
@@ -149,6 +153,24 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 			} catch (e) {
 				console.error("Failed to stop job:", e);
 			}
+		}
+	};
+
+	const handleConfirm = async () => {
+		try {
+			await confirmJob({ variables: { jobId: job.crawl_job_id } });
+			handleReload();
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
+	const handleAbandon = async () => {
+		try {
+			await abandonJob({ variables: { jobId: job.crawl_job_id } });
+			handleReload();
+		} catch (err) {
+			console.error(err);
 		}
 	};
 
@@ -444,8 +466,34 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 								</Table>
 							</div>
 						</ModalBody>
-						<ModalFooter>
-							<Button variant="light" onPress={onClose}>
+						<ModalFooter className="flex justify-between items-center">
+							<div className="flex gap-2">
+								{currentJob.status === CrawlJobStatus.Completed && (
+									<>
+										<Button 
+											color="success" 
+											variant="flat"
+											startContent={<AiOutlineCheckCircle />}
+											onPress={handleConfirm}
+											isLoading={confirming}
+											className="font-bold"
+										>
+											Xác nhận dữ liệu
+										</Button>
+										<Button 
+											color="danger" 
+											variant="light"
+											startContent={<AiOutlineCloseCircle />}
+											onPress={handleAbandon}
+											isLoading={abandoning}
+											className="font-bold"
+										>
+											Hủy bỏ
+										</Button>
+									</>
+								)}
+							</div>
+							<Button variant="light" onPress={onClose} className="font-bold">
 								Đóng
 							</Button>
 						</ModalFooter>

@@ -156,6 +156,7 @@ export enum CrawlJobType {
   LecturerSurvey = 'LECTURER_SURVEY',
   StaffSurvey = 'STAFF_SURVEY',
   SubjectSurvey = 'SUBJECT_SURVEY',
+  TopicAssignment = 'TOPIC_ASSIGNMENT',
   TransferData = 'TRANSFER_DATA'
 }
 
@@ -5738,3 +5739,76 @@ export function useRemoveUserMutation(baseOptions?: Apollo.MutationHookOptions<R
 export type RemoveUserMutationHookResult = ReturnType<typeof useRemoveUserMutation>;
 export type RemoveUserMutationResult = Apollo.MutationResult<RemoveUserMutation>;
 export type RemoveUserMutationOptions = Apollo.BaseMutationOptions<RemoveUserMutation, RemoveUserMutationVariables>;
+
+// ========================
+// Topic Assignment - Types
+// ========================
+
+export type TopicAssignmentPreview = {
+  __typename?: 'TopicAssignmentPreview';
+  totalComments: Scalars['Int']['output'];
+  assignedComments: Scalars['Int']['output'];
+  unassignedComments: Scalars['Int']['output'];
+  samples: Array<Scalars['JSON']['output']>;
+};
+
+export type RunTopicAssignmentMutationVariables = Exact<{
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+export type RunTopicAssignmentMutation = { __typename?: 'Mutation', runTopicAssignment: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null, progress?: number | null, total_data?: number | null } };
+
+export type TopicAssignmentPreviewQueryVariables = Exact<{
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+export type TopicAssignmentPreviewQuery = { __typename?: 'Query', topicAssignmentPreview: { __typename?: 'TopicAssignmentPreview', totalComments: number, assignedComments: number, unassignedComments: number, samples: Array<any> } };
+
+// ========================
+// Topic Assignment - Documents
+// ========================
+
+export const RunTopicAssignmentDocument = gql`
+    mutation RunTopicAssignment($semesterIds: [String!]) {
+  runTopicAssignment(semesterIds: $semesterIds) {
+    crawl_job_id
+    type
+    status
+    started_at
+    progress
+    total_data
+  }
+}
+    `;
+export type RunTopicAssignmentMutationFn = Apollo.MutationFunction<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
+export function useRunTopicAssignmentMutation(baseOptions?: Apollo.MutationHookOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>(RunTopicAssignmentDocument, options);
+      }
+export type RunTopicAssignmentMutationHookResult = ReturnType<typeof useRunTopicAssignmentMutation>;
+export type RunTopicAssignmentMutationResult = Apollo.MutationResult<RunTopicAssignmentMutation>;
+export type RunTopicAssignmentMutationOptions = Apollo.BaseMutationOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
+
+export const TopicAssignmentPreviewDocument = gql`
+    query TopicAssignmentPreview($semesterIds: [String!], $limit: Int, $offset: Int) {
+  topicAssignmentPreview(semesterIds: $semesterIds, limit: $limit, offset: $offset) {
+    totalComments
+    assignedComments
+    unassignedComments
+    samples
+  }
+}
+    `;
+export function useTopicAssignmentPreviewQuery(baseOptions?: Apollo.QueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
+      }
+export function useTopicAssignmentPreviewLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
+        }
+export type TopicAssignmentPreviewQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewQuery>;
+export type TopicAssignmentPreviewLazyQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewLazyQuery>;
+export type TopicAssignmentPreviewQueryResult = Apollo.QueryResult<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>;

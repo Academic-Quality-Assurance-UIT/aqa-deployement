@@ -16,10 +16,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../user/decorator/user.decorator';
 import GraphQLJSON from 'graphql-type-json';
 import { UserEntity } from '../user/entities/user.entity';
+import { TopicAssignmentPreview } from './dtos/topic-assignment-preview.dto';
+import { TopicAssignmentService } from './services/topic-assignment.service';
 
 @Resolver()
 export class CrawlDataResolver {
-  constructor(private readonly crawlDataService: CrawlDataService) {}
+  constructor(
+    private readonly crawlDataService: CrawlDataService,
+    private readonly topicAssignmentService: TopicAssignmentService,
+  ) {}
 
   // ========================
   // Queries
@@ -264,5 +269,36 @@ export class CrawlDataResolver {
   @UseGuards(JwtAuthGuard)
   async deleteSurveyListConfig(@Args('id') id: string): Promise<boolean> {
     return this.crawlDataService.deleteSurveyListConfig(id);
+  }
+
+  // ========================
+  // Topic Assignment
+  // ========================
+
+  @Mutation(() => CrawlJob, {
+    description: 'Chạy phân loại chủ đề cho bình luận',
+  })
+  @UseGuards(JwtAuthGuard)
+  async runTopicAssignment(
+    @Args('semesterIds', { type: () => [String], nullable: true }) semesterIds?: string[],
+    @CurrentUser() user?: UserEntity,
+  ): Promise<CrawlJob> {
+    return this.crawlDataService.runCrawl(
+      CrawlJobType.TOPIC_ASSIGNMENT,
+      { semesterIds },
+      user?.username,
+    );
+  }
+
+  @Query(() => TopicAssignmentPreview, {
+    description: 'Xem trước dữ liệu bình luận trước khi phân loại chủ đề',
+  })
+  @UseGuards(JwtAuthGuard)
+  async topicAssignmentPreview(
+    @Args('semesterIds', { type: () => [String], nullable: true }) semesterIds?: string[],
+    @Args('limit', { type: () => Int, defaultValue: 20 }) limit: number = 20,
+    @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number = 0,
+  ): Promise<TopicAssignmentPreview> {
+    return this.topicAssignmentService.getPreview(semesterIds, limit, offset);
   }
 }

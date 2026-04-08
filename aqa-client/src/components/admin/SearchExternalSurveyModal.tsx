@@ -113,6 +113,7 @@ export const SearchExternalSurveyModal = ({
             aria-label="External surveys"
             sortDescriptor={sortDescriptor}
             onSortChange={setSortDescriptor}
+            layout="fixed"
             bottomContent={
               pages > 0 ? (
                 <div className="flex w-full justify-center">
@@ -130,10 +131,10 @@ export const SearchExternalSurveyModal = ({
             }
           >
             <TableHeader>
-              <TableColumn key="sid" allowsSorting>SID</TableColumn>
+              <TableColumn key="sid" allowsSorting width={120}>SID</TableColumn>
               <TableColumn key="title" allowsSorting>Tên khảo sát</TableColumn>
-              <TableColumn key="startdate" allowsSorting>Ngày bắt đầu</TableColumn>
-              <TableColumn key="action">Thao tác</TableColumn>
+              <TableColumn key="startdate" allowsSorting width={160} align="center">Ngày bắt đầu</TableColumn>
+              <TableColumn key="action" width={120} align="end">Thao tác</TableColumn>
             </TableHeader>
             <TableBody
               items={rows}
@@ -143,9 +144,17 @@ export const SearchExternalSurveyModal = ({
             >
               {(item: any) => (
                 <TableRow key={item.sid}>
-                  <TableCell>{item.sid}</TableCell>
-                  <TableCell>{item.title}</TableCell>
-                  <TableCell>{item.startdate || "-"}</TableCell>
+                  <TableCell>
+                    <span className="text-tiny text-default-400 font-mono">{item.sid}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="py-1">
+                      <span className="text-small font-medium text-default-700">{item.title}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-tiny text-default-500">{item.startdate || "-"}</span>
+                  </TableCell>
                   <TableCell>
                     <Button
                       size="sm"

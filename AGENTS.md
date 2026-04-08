@@ -1,310 +1,142 @@
 # AGENTS.md
 
-## Build, Lint, and Test Commands
+## Monorepo Layout
 
-### Monorepo Commands
+| Package | Scope | Framework | Port |
+|---------|-------|-----------|------|
+| `aqa-backend-nestjs/` | `@aqa/backend` | NestJS + GraphQL (code-first) | 8000 |
+| `aqa-client/` | `@aqa/client` | Next.js 14 (App Router) | 3000 |
+| `aqa-crawl-data/` | `@aqa/crawl-data` | Node.js scripts (JS, not TS) | — |
+| `aqa-llm/` | `@aqa/llm` | Node.js (JS, not TS) | — |
+
+**`aqa-llm` and `aqa-crawl-data` are git submodules.** If they appear empty after cloning, run `git submodule update --init --recursive`.
+
+## Commands
+
+### Monorepo (from root)
 ```bash
-pnpm install                    # Install all dependencies
-pnpm turbo dev                  # Start all services in development mode
+pnpm install                    # Install all deps
+pnpm turbo dev                  # Start all dev servers
 pnpm turbo build                # Build all packages
 pnpm turbo lint                 # Lint all packages
 pnpm turbo test                 # Run all tests
-pnpm turbo format               # Format all packages
 ```
 
-### Backend (NestJS) Commands
+CI pipeline order: **lint → test → build**.
+
+### Backend (`cd aqa-backend-nestjs`)
 ```bash
-cd aqa-backend-nestjs
-pnpm dev                        # Start development server with hot reload
-pnpm build                      # Build the backend
-pnpm start                      # Start production server
-pnpm lint                       # Run ESLint with auto-fix
-pnpm test                       # Run Jest tests
-pnpm test:watch                 # Run tests in watch mode
-pnpm test:cov                   # Run tests with coverage report
-pnpm test:e2e                   # Run E2E tests
-pnpm typeorm                   # Run TypeORM CLI
+pnpm dev                        # `nest start --watch` (hot reload)
+pnpm build                      # `nest build`
+pnpm start                      # `node dist/main` (production)
+pnpm test                       # Jest (testRegex: *.spec.ts, rootDir: src/)
+pnpm test:e2e                   # Jest with test/jest-e2e.json config
 ```
 
-### Frontend (Next.js) Commands
+### Frontend (`cd aqa-client`)
 ```bash
-cd aqa-client
-pnpm dev                        # Start Next.js development server
-pnpm build                      # Build Next.js application
-pnpm start                      # Start production server
-pnpm lint                       # Run ESLint
-pnpm codegen                   # Generate GraphQL client code
+pnpm dev                        # `next dev`
+pnpm build                      # `next build`
+pnpm lint                       # `next lint`
+pnpm codegen                    # graphql-codegen --watch (needs BACKEND_URL or running backend)
 ```
 
-### Data Crawler Commands
-```bash
-cd aqa-crawl-data
-pnpm crawl                      # Run crawler
-pnpm crawl-all                  # Run all crawlers
-pnpm aggregate                  # Aggregate points
-pnpm stats                      # Show statistics
-pnpm transfer                   # Transfer data
-pnpm test-db                    # Test database connections
-```
+**Codegen requires `BACKEND_URL` env var** (or a running backend) to fetch the GraphQL schema. Running `pnpm codegen` starts in watch mode. To run once, use `npx graphql-codegen --config codegen.ts`.
 
-### LLM Commands
+### Crawler (`cd aqa-crawl-data`)
 ```bash
-cd aqa-llm
-pnpm start                      # Start LLM service
-pnpm get-dataset                # Get dataset for fine-tuning
+pnpm crawl                      # node index.js
+pnpm crawl-all                  # node crawl-all.js
+pnpm aggregate                  # node aggregate-points.js -- aggregate point scores
+pnpm transfer                   # node transfer-data-configurable.js --transfer
+pnpm test-db                    # node test-connections.js -- verify DB connections
+```
+Many more scripts exist in `package.json` (crawl-lecturer, copy-staff-survey, split-lecturers, etc.).
+
+### LLM (`cd aqa-llm`)
+```bash
+pnpm start                      # node index.js
+pnpm get-dataset                # Fetch fine-tuning dataset
 pnpm convert-dataset            # Convert dataset format
 ```
+No real tests exist — `pnpm test` just prints an error.
 
-### Running a Single Test
+## Single-Package / Single-Test Shortcuts
+
 ```bash
-# For backend tests
-cd aqa-backend-nestjs && pnpm test <test-file>
-
-# For frontend tests
-cd aqa-client && pnpm test <test-file>
-
-# For specific test file
+# Run a single backend test
 pnpm turbo test --filter=@aqa/backend -- --testPathPattern=<pattern>
+
+# Run a single frontend test (if any exist)
 pnpm turbo test --filter=@aqa/client -- --testPathPattern=<pattern>
+
+# Or just cd into the package:
+cd aqa-backend-nestjs && pnpm test -- --testPathPattern=user.service
 ```
 
-## Code Style Guidelines
+## Architecture & Key Details
 
-### General Principles
-- Use TypeScript for all code
-- Follow monorepo structure with scoped packages (@aqa/*)
-- Use pnpm as package manager (version 9.x+)
-- Leverage Turborepo for build orchestration
+### Backend (NestJS)
+- **GraphQL code-first**: Schema is auto-generated at `aqa-backend-nestjs/schema.gql` from decorators. Do not hand-edit.
+- Modules are **flat under `src/`** (e.g. `src/auth/`, `src/user/`), NOT in `src/modules/`.
+- Shared code lives in `src/common/` (args, dto, logger, scalars, services, types, utils).
+- Migrations use `src/data-source.ts` (TypeORM DataSource), NOT `ormconfig.json`. The `pnpm typeorm` script references the old ormconfig path which may not work — prefer using `src/data-source.ts` directly.
+- TypeORM `synchronize: false` in production — always generate and run migrations explicitly.
+- PostgreSQL extensions required: `uuid-ossp`, `unaccent`, `pg_trgm`, `btree_gin`.
+- Redis is used for caching (defined in `docker-compose.yml`).
 
-### Backend (NestJS) Style
-**Formatting (Prettier):**
-- Single quotes for strings
-- Trailing commas on all lines
-- Tab width: 2 spaces
-- Use spaces, not tabs
-- Print width: 80 characters
+### Frontend (Next.js)
+- **App Router** (`src/app/`), not Pages Router.
+- Auth uses **NextAuth.js v5 beta** (next-auth@5.0.0-beta.20).
+- Path aliases (in `tsconfig.json`): `@/*` → `./src/*`, `@components/*`, `@contexts/*`, `@assets/*`.
+- `.graphql` files live in `src/api/graphql/`, **not** `src/graphql/`.
+- Codegen output goes to `src/gql/graphql.ts`.
+- Zustand stores are in `src/stores/`.
+- Server actions are in `src/server-actions/`.
 
-**Linting (ESLint):**
-- Use `@typescript-eslint/parser` and `@typescript-eslint/eslint-plugin`
-- Extend `plugin:@typescript-eslint/recommended` and `plugin:prettier/recommended`
-- Disable explicit function return types and module boundary types
-- Disable explicit any type (use `any` when necessary)
-- Enable node and jest environments
+### Crawler
+- Written in plain JavaScript (no TypeScript, no Jest).
+- Connects directly to PostgreSQL via `pg` (not through the backend API).
+- The sentiment-analysis subdirectory has its own Dockerfile and runs as a separate service (`absa-service` on port 8001).
 
-**Naming Conventions:**
-- Use PascalCase for classes and interfaces
-- Use camelCase for functions, variables, and methods
-- Use UPPER_SNAKE_CASE for constants
-- Use descriptive names for services, modules, and entities
+## Formatting — Packages Differ
 
-**Error Handling:**
-- Use NestJS built-in exception filters
-- Implement proper error responses with HTTP status codes
-- Log errors appropriately using NestJS Logger
-- Use try-catch blocks for database operations
+| Setting | Backend | Frontend |
+|---------|---------|----------|
+| Quotes | Single | **Double** |
+| Indent | 2 spaces | **Tabs, width 4** |
+| Semicolons | Default (yes) | Yes |
+| Print width | 80 | 85 |
+| Trailing commas | All | ES5 |
 
-**Code Organization:**
-- Organize code by feature modules
-- Use dependency injection for services
-- Implement DTOs for input validation
-- Use guards for authorization
-- Use interceptors for cross-cutting concerns
+The existing AGENTS.md incorrectly stated frontend uses single quotes — it uses **double quotes** (see `.prettierrc`).
 
-### Frontend (Next.js) Style
-**Formatting (Prettier):**
-- Tab width: 4 spaces
-- Use tabs, not spaces
-- Use semicolons
-- Single quotes for strings
-- Print width: 85 characters
-- Trailing commas: es5
-- Bracket spacing: true
-- JSX single quotes: false
-- Arrow parens: always
-- End of line: lf
+## TypeScript Strictness
 
-**Linting (ESLint):**
-- Use `next/core-web-vitals` as base
-- Follow Next.js best practices
-- Use React 18.2+ patterns
-- Implement proper error boundaries
+Backend `tsconfig.json`: `strictNullChecks: false`, `noImplicitAny: false`. The codebase intentionally allows nullables and implicit `any`.
 
-**Naming Conventions:**
-- Use PascalCase for components
-- Use camelCase for functions, variables, and hooks
-- Use UPPER_SNAKE_CASE for constants
-- Use descriptive names for components, hooks, and utilities
+## Environment Variables
 
-**Code Organization:**
-- Use App Router structure (app directory)
-- Organize components by feature or domain
-- Use server components by default
-- Use client components only when necessary
-- Implement proper TypeScript types
+Root `.env` is required. Copy `.env.example` and fill in values:
+- `DB_TYPE`, `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` — PostgreSQL connection
+- `NEXT_PUBLIC_API_URL_V2` — Client-facing GraphQL URL (injected at build time)
+- `BACKEND_URL` / `BACKEND_API_URL` — Server-side backend URLs
+- `CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN` — Google OAuth
+- `JWT_SECRET` — Token signing
 
-**State Management:**
-- Use Zustand for global state
-- Use SWR for data fetching and caching
-- Use React Query for server state
-- Keep components pure and functional
+These three (`BACKEND_URL`, `BACKEND_API_URL`, `NEXT_PUBLIC_API_URL_V2`) are declared in `turbo.json` `globalEnv` and affect cache invalidation.
 
-**Styling:**
-- Use Tailwind CSS for styling
-- Use @heroui/react for UI components
-- Use @emotion/react and @emotion/styled for CSS-in-JS
-- Follow component-based design system
-- Use consistent spacing and typography
+## Deployment
 
-**GraphQL Integration:**
-- Use Apollo Client for GraphQL operations
-- Generate types with GraphQL Codegen
-- Use typed queries and mutations
-- Implement proper error handling
+- Push to `main` → CI (lint/test/build) → if passing, Docker Hub push → SSH deploy via VPN.
+- Push to `dev` → CI only (no deploy).
+- Docker Compose builds from **monorepo root** context (Dockerfiles are inside each package directory).
+- Backend container uses `network_mode: "host"`. Frontend container maps port 3000.
+- The `absa-service` (sentiment analysis) is a separate container built from `aqa-crawl-data/src/sentiment-analysis/Dockerfile`.
 
-### Database (TypeORM)
-**Naming Conventions:**
-- Use camelCase for entity properties
-- Use snake_case for database columns
-- Use PascalCase for entity names
-- Implement proper relationships with decorators
+## Gotchas
 
-**Error Handling:**
-- Use TypeORM's built-in error handling
-- Implement proper transaction management
-- Use try-catch for database operations
-- Handle connection errors appropriately
-
-### Authentication & Security
-**Backend:**
-- Use JWT strategy for token-based authentication
-- Use Passport for authentication middleware
-- Hash passwords with bcrypt (salt rounds: 10)
-- Implement proper authorization with guards
-- Validate input data with DTOs
-- Use environment variables for sensitive data
-
-**Frontend:**
-- Use NextAuth.js for authentication
-- Store tokens securely in httpOnly cookies
-- Implement proper error handling for auth failures
-- Use protected routes with middleware
-
-### API Design (GraphQL)
-**Backend:**
-- Use NestJS GraphQL decorators (@Query, @Mutation, @Resolver)
-- Implement proper input types with @InputType
-- Use @Field for GraphQL schema
-- Implement proper error handling with GraphQL errors
-- Use @UseGuards for authorization
-
-**Frontend:**
-- Use Apollo Client for GraphQL operations
-- Generate types with GraphQL Codegen
-- Use typed queries and mutations
-- Implement proper error handling
-
-### Testing
-**Backend:**
-- Use Jest for unit and integration tests
-- Use @nestjs/testing for NestJS components
-- Use Supertest for HTTP testing
-- Mock external dependencies
-- Test both success and error cases
-
-**Frontend:**
-- Use Jest for unit tests
-- Use React Testing Library for component tests
-- Test user interactions and state changes
-- Mock API calls and external services
-
-### Code Generation
-**GraphQL Codegen:**
-- Use `@graphql-codegen/cli` for code generation
-- Use `@graphql-codegen/client-preset` for Apollo Client
-- Use `@graphql-codegen/typescript-operations` for typed queries
-- Use `@graphql-codegen/typescript-react-apollo` for React Apollo
-- Run codegen with `pnpm codegen` command
-
-### Environment Variables
-**Backend:**
-- Use `@nestjs/config` for configuration
-- Store sensitive data in .env file
-- Use environment variables for URLs and credentials
-- Validate configuration at startup
-
-**Frontend:**
-- Use `NEXT_PUBLIC_` prefix for public variables
-- Store private variables in .env.local
-- Use environment variables for API URLs
-- Never expose sensitive data in client-side code
-
-### File Organization
-**Backend:**
-- `src/` - Main source directory
-- `src/modules/` - Feature modules
-- `src/common/` - Shared utilities
-- `src/config/` - Configuration files
-- `src/dto/` - Data transfer objects
-- `src/entities/` - TypeORM entities
-- `src/guards/` - Authorization guards
-- `src/interceptors/` - Request/response interceptors
-- `src/middleware/` - Express middleware
-- `src/pipes/` - Validation pipes
-- `src/resolvers/` - GraphQL resolvers
-- `src/services/` - Business logic services
-- `src/types/` - TypeScript types
-- `src/utils/` - Utility functions
-
-**Frontend:**
-- `src/` - Main source directory
-- `src/app/` - Next.js App Router pages
-- `src/components/` - Reusable components
-- `src/contexts/` - React contexts
-- `src/hooks/` - Custom React hooks
-- `src/lib/` - Utility libraries
-- `src/modules/` - Feature modules
-- `src/types/` - TypeScript types
-- `src/utils/` - Utility functions
-- `src/styles/` - Global styles
-- `src/graphql/` - GraphQL operations
-- `src/config/` - Configuration files
-
-### Monorepo Structure
-- Use scoped packages with @aqa/* prefix
-- Follow conventional commit messages
-- Use turbo.json for build configuration
-- Leverage pnpm workspaces for dependency management
-- Implement proper dependency relationships
-- Use turbo cache for faster builds
-
-### Documentation
-- Keep code self-documenting
-- Add JSDoc comments for complex functions
-- Use inline comments for non-obvious logic
-- Update documentation when changing APIs
-- Follow existing documentation patterns
-
-### Performance
-- Use lazy loading for large components
-- Implement proper caching strategies
-- Optimize database queries
-- Use pagination for large datasets
-- Implement code splitting for Next.js
-- Use React.memo for expensive components
-- Implement proper debouncing/throttling
-
-### Accessibility
-- Use semantic HTML elements
-- Implement proper ARIA labels
-- Ensure keyboard navigation
-- Use proper color contrast
-- Test with screen readers
-- Follow WCAG guidelines
-
-### Deployment
-- Use Docker for containerization
-- Use Docker Compose for orchestration
-- Implement proper environment configurations
-- Use CI/CD pipelines for automated deployment
-- Follow deployment documentation
-- Test deployment in staging environment
+- Frontend codegen runs in **watch mode** by default (`--watch` flag). For one-shot generation, run `npx graphql-codegen --config codegen.ts`.
+- The `pnpm typeorm` script references `ormconfig.json` which doesn't exist. Use `data-source.ts` for TypeORM CLI tasks.
+- `aqa-llm` and `aqa-crawl-data` are git submodules — clone with `--recurse-submodules` or init after cloning.
+- Backend port is 8000 (hardcoded in `main.ts`), not 3000.

@@ -32,6 +32,6 @@ export class Comment {
   type_list: string[];
 
   @Column({ nullable: true })
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   topic: string;
 }

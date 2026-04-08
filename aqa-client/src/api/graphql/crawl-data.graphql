@@ -242,3 +242,27 @@ query getSurveyCrawlHistory($jobId: String, $surveyConfigId: String, $limit: Int
 query searchExternalSurveys($keyword: String, $page: Int, $limit: Int, $order: String, $direction: String) {
   searchExternalSurveys(keyword: $keyword, page: $page, limit: $limit, order: $order, direction: $direction)
 }
+
+# ========================
+# Topic Assignment
+# ========================
+
+mutation RunTopicAssignment($semesterIds: [String!]) {
+  runTopicAssignment(semesterIds: $semesterIds) {
+    crawl_job_id
+    type
+    status
+    started_at
+    progress
+    total_data
+  }
+}
+
+query TopicAssignmentPreview($semesterIds: [String!], $limit: Int, $offset: Int) {
+  topicAssignmentPreview(semesterIds: $semesterIds, limit: $limit, offset: $offset) {
+    totalComments
+    assignedComments
+    unassignedComments
+    samples
+  }
+}

@@ -6,6 +6,7 @@ export enum CrawlJobType {
   STAFF_SURVEY = 'STAFF_SURVEY',
   AGGREGATE_POINTS = 'AGGREGATE_POINTS',
   TRANSFER_DATA = 'TRANSFER_DATA',
+  TOPIC_ASSIGNMENT = 'TOPIC_ASSIGNMENT',
 }
 
 registerEnumType(CrawlJobType, {

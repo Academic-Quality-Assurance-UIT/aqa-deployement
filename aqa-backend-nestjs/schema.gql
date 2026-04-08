@@ -44,7 +44,7 @@ type Comment {
   class: Class
   comment_id: String!
   display_name: String!
-  topic: String!
+  topic: String
   type: String!
   type_list: [String!]!
 }
@@ -117,6 +117,7 @@ enum CrawlJobType {
   LECTURER_SURVEY
   STAFF_SURVEY
   SUBJECT_SURVEY
+  TOPIC_ASSIGNMENT
   TRANSFER_DATA
 }
 
@@ -291,6 +292,9 @@ type Mutation {
   """Chạy thu thập KS Môn học"""
   runCrawlSubjectSurvey(semester: String, surveyConfigIds: [String!]): CrawlJob!
 
+  """Chạy phân loại chủ đề cho bình luận"""
+  runTopicAssignment(semesterIds: [String!]): CrawlJob!
+
   """Chạy chuyển dữ liệu giữa các database"""
   runTransferData: CrawlJob!
   stopCrawlJob(jobId: String!): CrawlJob!
@@ -460,6 +464,9 @@ type Query {
 
   """Lấy danh sách cấu hình khảo sát"""
   surveyListConfigs(type: CrawlJobType): [SurveyListConfig!]!
+
+  """Xem trước dữ liệu bình luận trước khi phân loại chủ đề"""
+  topicAssignmentPreview(limit: Int! = 20, offset: Int! = 0, semesterIds: [String!]): TopicAssignmentPreview!
   users(name: String): [UserEntity!]!
 }
 
@@ -624,6 +631,13 @@ input SurveyListConfigInput {
   title: String
   type: String
   year: String
+}
+
+type TopicAssignmentPreview {
+  assignedComments: Int!
+  samples: [JSON!]!
+  totalComments: Int!
+  unassignedComments: Int!
 }
 
 input UpdateUserDto {
