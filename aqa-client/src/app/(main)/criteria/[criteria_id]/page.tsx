@@ -20,17 +20,18 @@ export default function Page({
 
 	return (
 		<div>
+			<h2 className=" font-bold text-lg mt-10 mb-2">Danh sách các học kỳ</h2>
 			<ChildrenItems
 				isSort={false}
 				loading={loading}
 				items={[
-					{
-						display_name: "Tất cả học kỳ",
-						value: "all",
-						onClick() {
-							setUrlQuery(`/semester`, {});
-						},
-					},
+					// {
+					// 	display_name: "Tất cả học kỳ",
+					// 	value: "all",
+					// 	onClick() {
+					// 		setUrlQuery(`/semester`, {});
+					// 	},
+					// },
 					...(sortSemester(data?.criteria?.semester || [])
 						.reverse()
 						.map(({ display_name, semester_id }) => ({

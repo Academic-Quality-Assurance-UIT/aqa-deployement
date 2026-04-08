@@ -2,6 +2,8 @@
 
 import BreadCrumb from "@/components/BreadCrumb";
 import PageTabs from "@/components/PageTabs";
+import PointEachSemester from "@/components/PointEachSemester";
+import ProgramSelector from "@/components/selectors/ProgramSelector";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useDetailCriteriaQuery } from "@/gql/graphql";
 import { Button } from "@heroui/react";
@@ -41,21 +43,21 @@ export default function Layout({
 			<h1 className="page-title mt-1 mb-4">
 				{data?.criteria?.display_name || ""}
 			</h1>
-			<PageTabs
-				defaultPath={`criteria/${criteria_id}`}
-				lastIndex={3}
-				tabs={[
-					{
-						link: "",
-						title: "Trang chủ",
-					},
-					{
-						link: "detail",
-						title: "Chi tiết",
-					},
-				]}
-			/>
-			<div className="mt-6 w-full p-0 h-[420px]">{children}</div>
+			<FilterProvider>
+				<div className=" mt-10">
+					<PointEachSemester
+						title="Điểm đánh giá trung bình qua từng học kỳ"
+						legend="Điểm đánh giá"
+						query={{ criteria_id }}
+						selectors={
+							<>
+								<ProgramSelector />
+							</>
+						}
+					/>
+				</div>
+			</FilterProvider>
+			<div className="mt-2 w-full p-0 h-[420px]">{children}</div>
 		</FilterProvider>
 	);
 }
