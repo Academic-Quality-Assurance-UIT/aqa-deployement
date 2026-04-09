@@ -4,12 +4,14 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { CrawlJobType } from '../enums/crawl-job-type.enum';
 
 @ObjectType()
 @Entity()
+@Unique(['sid', 'survey_type'])
 export class SurveyListConfig {
   @Field()
   @PrimaryGeneratedColumn('uuid')

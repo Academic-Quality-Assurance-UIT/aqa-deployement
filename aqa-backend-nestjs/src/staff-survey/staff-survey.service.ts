@@ -21,7 +21,7 @@ export class StaffSurveyService {
     private staffSurveyCriteriaRepo: Repository<StaffSurveyCriteria>,
     @InjectRepository(StaffSurveyPoint)
     private staffSurveyPointRepo: Repository<StaffSurveyPoint>,
-  ) { }
+  ) {}
 
   async create(inputData: StaffSurveySheetDTO) {
     const { survey_name: surveyName, points, ...data } = inputData;

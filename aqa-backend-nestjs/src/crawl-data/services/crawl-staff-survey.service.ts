@@ -30,7 +30,7 @@ export class CrawlStaffSurveyService {
 
     let successCount = 0;
     let errorCount = 0;
-    
+
     let globalTotalData = 0;
     let globalProgress = 0;
 

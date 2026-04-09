@@ -1,10 +1,5 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
-import {
-  Column,
-  Entity,
-  PrimaryColumn,
-  Index,
-} from 'typeorm';
+import { Column, Entity, PrimaryColumn, Index } from 'typeorm';
 
 @ObjectType()
 @Entity({ name: 'student' })

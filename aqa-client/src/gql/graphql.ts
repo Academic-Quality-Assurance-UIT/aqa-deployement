@@ -145,6 +145,7 @@ export enum CrawlJobStatus {
   Abandoned = 'ABANDONED',
   Completed = 'COMPLETED',
   Confirmed = 'CONFIRMED',
+  Confirming = 'CONFIRMING',
   Failed = 'FAILED',
   Pending = 'PENDING',
   Running = 'RUNNING'

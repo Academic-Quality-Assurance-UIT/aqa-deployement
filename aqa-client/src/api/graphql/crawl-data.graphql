@@ -205,7 +205,10 @@ mutation AddSurveyListConfig($input: SurveyListConfigInput!) {
     survey_type
     sid
     title
+    type
     year
+    semester_type
+    semester_name
     is_active
   }
 }

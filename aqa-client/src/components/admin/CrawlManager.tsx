@@ -41,7 +41,10 @@ export const CrawlManager = () => {
   const [runStaffSurvey, { loading: staffLoading }] = useRunCrawlStaffSurveyMutation();
 
   const jobs = useMemo(() => data?.crawlJobs || [], [data]);
-  const isAnyJobRunning = useMemo(() => jobs.some((j: any) => j.status === CrawlJobStatus.Running), [jobs]);
+  const isAnyJobRunning = useMemo(() => 
+    jobs.some((j: any) => 
+      j.status === CrawlJobStatus.Running || j.status === CrawlJobStatus.Confirming
+    ), [jobs]);
 
   // Handle polling when jobs are running
   useEffect(() => {

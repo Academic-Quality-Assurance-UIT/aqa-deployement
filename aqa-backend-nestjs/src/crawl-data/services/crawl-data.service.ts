@@ -92,14 +92,19 @@ export class CrawlDataService implements OnModuleInit {
     const now = new Date();
 
     const runningJobs = await this.crawlJobRepo.find({
-      where: { status: CrawlJobStatus.RUNNING },
+      where: [
+        { status: CrawlJobStatus.RUNNING },
+        { status: CrawlJobStatus.CONFIRMING },
+      ],
     });
 
     for (const job of runningJobs) {
       const timeoutMs =
         job.type === CrawlJobType.TOPIC_ASSIGNMENT
-          ? 600000  // 10 minutes for ML inference
-          : 15000;  // 15 seconds for crawl jobs
+          ? 600000 // 10 minutes for ML inference
+          : job.status === CrawlJobStatus.CONFIRMING
+          ? 300000 // 5 minutes for confirming large datasets
+          : 15000; // 15 seconds for crawl jobs
       const lastActivity =
         job.last_activity_at || job.started_at || job.created_at;
       if (now.getTime() - lastActivity.getTime() > timeoutMs) {
@@ -108,14 +113,21 @@ export class CrawlDataService implements OnModuleInit {
         );
         job.status = CrawlJobStatus.FAILED;
         job.completed_at = now;
-        job.error_message =
-          `Job timed out: No activity detected for more than ${timeoutMs / 1000} seconds.`;
+        job.error_message = `Job timed out: No activity detected for more than ${timeoutMs / 1000} seconds.`;
         await this.crawlJobRepo.save(job);
       }
     }
   }
 
   async updateJobProgress(jobId: string, progress: number, total?: number) {
+    const job = await this.crawlJobRepo.findOne({
+      where: { crawl_job_id: jobId },
+      select: ['status'],
+    });
+    if (job?.status === CrawlJobStatus.ABANDONED) {
+      throw new Error('JOB_STOPPED');
+    }
+
     const updateData: any = {
       progress,
       last_activity_at: new Date(),
@@ -338,9 +350,15 @@ export class CrawlDataService implements OnModuleInit {
     page = 1,
     limit = 20,
     order = 'startdate',
-    direction = 'DESC'
+    direction = 'DESC',
   ): Promise<any> {
-    return this.apiClient.getExternalSurveys({ keyword, page, limit, order, direction });
+    return this.apiClient.getExternalSurveys({
+      keyword,
+      page,
+      limit,
+      order,
+      direction,
+    });
   }
 
   async getStagingDataSummary(jobId: string): Promise<CrawlStagingDataSummary> {
@@ -472,13 +490,15 @@ export class CrawlDataService implements OnModuleInit {
       const failedJob = await this.crawlJobRepo.findOne({
         where: { crawl_job_id: job.crawl_job_id },
       });
-      if (failedJob) {
+      if (failedJob && failedJob.status !== CrawlJobStatus.ABANDONED) {
         failedJob.status = CrawlJobStatus.FAILED;
         failedJob.completed_at = new Date();
         failedJob.error_message = error.message;
         await this.crawlJobRepo.save(failedJob);
       }
-      throw error;
+      if (error.message !== 'JOB_STOPPED') {
+        throw error;
+      }
     }
   }
 
@@ -491,61 +511,192 @@ export class CrawlDataService implements OnModuleInit {
       where: { crawl_job_id: jobId },
     });
     if (!job) throw new Error('Job not found');
-    if (job.status !== CrawlJobStatus.COMPLETED) {
-      throw new Error('Only completed jobs can be confirmed');
+    if (
+      job.status !== CrawlJobStatus.COMPLETED &&
+      job.status !== CrawlJobStatus.FAILED
+    ) {
+      throw new Error('Only completed or previously failed jobs can be confirmed');
     }
+
+    // Count total staging records to show progress
+    const totalStagingItems = await this.stagingRepo.count({
+      where: { crawl_job_id: jobId },
+    });
+
+    // Update job status and reset progress immediately
+    await this.crawlJobRepo.save({
+      ...job,
+      status: CrawlJobStatus.CONFIRMING,
+      progress: 0,
+      total_data: totalStagingItems,
+      last_activity_at: new Date(),
+    });
+
+    // Run in background
+    this.executeConfirm(jobId).catch((error) => {
+      this.logger.error(`Error in background confirmation for job ${jobId}: ${error.message}`);
+    });
+
+    return this.crawlJobRepo.findOne({ where: { crawl_job_id: jobId } });
+  }
+
+  private async executeConfirm(jobId: string): Promise<void> {
+    const job = await this.crawlJobRepo.findOne({ where: { crawl_job_id: jobId } });
+    if (!job) return;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Get all staging data for this job
-      const stagingData = await this.stagingRepo.find({
-        where: { crawl_job_id: jobId },
-        order: { created_at: 'ASC' },
-      });
+      this.logger.log(`Executing background confirmation for job ${jobId} of type ${job.type}`);
 
-      this.logger.log(
-        `Confirming job ${jobId}: ${stagingData.length} staging records`,
-      );
+      const checkCancellation = async () => {
+        const currentJob = await this.crawlJobRepo.findOne({
+          where: { crawl_job_id: jobId },
+          select: ['status'],
+        });
+        if (currentJob?.status !== CrawlJobStatus.CONFIRMING) {
+          throw new Error('CONFIRM_CANCELLED');
+        }
+      };
+
+      const updateConfirmProgress = async (processedItemsCount: number) => {
+        await checkCancellation();
+        const currentJob = await this.crawlJobRepo.findOne({
+          where: { crawl_job_id: jobId },
+          select: ['progress'],
+        });
+        const newProgress = (currentJob?.progress || 0) + processedItemsCount;
+        await this.crawlJobRepo.update(jobId, {
+          progress: newProgress,
+          last_activity_at: new Date(),
+        });
+      };
 
       // Process staging data based on job type
       switch (job.type) {
         case CrawlJobType.SUBJECT_SURVEY:
-          await this.confirmSubjectSurvey(queryRunner, stagingData);
+          await this.confirmSubjectSurvey(queryRunner, jobId, updateConfirmProgress);
           break;
         case CrawlJobType.LECTURER_SURVEY:
-          await this.confirmLecturerSurvey(queryRunner, stagingData);
+          await this.confirmLecturerSurvey(queryRunner, jobId, updateConfirmProgress);
           break;
         case CrawlJobType.STAFF_SURVEY:
           // Staff survey data is stored as JSON responses - confirm just updates status
           break;
         case CrawlJobType.AGGREGATE_POINTS:
-          await this.confirmAggregatePoints(queryRunner, stagingData);
+          await this.confirmAggregatePoints(queryRunner, jobId, updateConfirmProgress);
           break;
         case CrawlJobType.TRANSFER_DATA:
-          await this.confirmTransferData(queryRunner, stagingData);
+          await this.confirmTransferData(queryRunner, jobId, updateConfirmProgress);
           break;
       }
 
       await queryRunner.commitTransaction();
 
-      // Update job status
+      // Update job status to CONFIRMED
       await this.crawlJobRepo.update(jobId, {
         status: CrawlJobStatus.CONFIRMED,
+        completed_at: new Date(),
       });
 
       // Clean up staging data
       await this.stagingRepo.delete({ crawl_job_id: jobId });
 
-      return this.crawlJobRepo.findOne({ where: { crawl_job_id: jobId } });
+      this.logger.log(`Job ${jobId} confirmed successfully`);
     } catch (error: any) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Error confirming job ${jobId}: ${error.message}`);
-      throw error;
+
+      if (error.message === 'CONFIRM_CANCELLED') {
+        this.logger.log(`Job ${jobId} confirmation was cancelled by user`);
+        return;
+      }
+
+      this.logger.error(
+        `Error executing confirmation for job ${jobId}: ${error.message}`,
+      );
+
+      // Mark job as FAILED
+      const finalJobStatus = await this.crawlJobRepo.findOne({
+        where: { crawl_job_id: jobId },
+        select: ['status'],
+      });
+
+      if (finalJobStatus?.status === CrawlJobStatus.CONFIRMING) {
+        await this.crawlJobRepo.update(jobId, {
+          status: CrawlJobStatus.FAILED,
+          error_message: `Confirmation failed: ${error.message}`,
+          completed_at: new Date(),
+        });
+      }
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async processStagingInChunks(
+    queryRunner: any,
+    jobId: string,
+    callback: (items: CrawlStagingData[]) => Promise<void>,
+    options: { chunkSize?: number; orderByType?: boolean; dataType?: string; onProgress?: (count: number) => Promise<void> } = {},
+  ) {
+    const { chunkSize = 5000, orderByType = false, dataType, onProgress } = options;
+
+    const query = queryRunner.manager
+      .createQueryBuilder(CrawlStagingData, 's')
+      .where('s.crawl_job_id = :jobId', { jobId });
+
+    if (dataType) {
+      query.andWhere('s.data_type = :dataType', { dataType });
+    }
+
+    if (orderByType) {
+      query.orderBy(
+        `CASE s.data_type 
+          WHEN 'semester' THEN 1 
+          WHEN 'faculty' THEN 2 
+          WHEN 'subject' THEN 3 
+          WHEN 'lecturer' THEN 4 
+          WHEN 'criteria' THEN 5 
+          WHEN 'student' THEN 6 
+          WHEN 'class' THEN 7 
+          WHEN 'point_answer' THEN 8 
+          WHEN 'comment' THEN 9 
+          ELSE 99 END`,
+        'ASC',
+      );
+    } else {
+      query.orderBy('s.created_at', 'ASC');
+    }
+
+    query.addOrderBy('s.id', 'ASC');
+
+    let offset = 0;
+    while (true) {
+      // Check status periodically or at least at each chunk
+      if (onProgress) {
+        // onProgress already calls checkCancellation/updateConfirmProgress
+      } else {
+        const currentJob = await this.crawlJobRepo.findOne({
+          where: { crawl_job_id: jobId },
+          select: ['status'],
+        });
+        if (currentJob?.status !== CrawlJobStatus.CONFIRMING) {
+          throw new Error('CONFIRM_CANCELLED');
+        }
+      }
+
+      const items = await query.take(chunkSize).skip(offset).getMany();
+
+      if (items.length === 0) break;
+
+      await callback(items);
+      offset += items.length;
+
+      if (onProgress) {
+        await onProgress(items.length);
+      }
     }
   }
 
@@ -570,8 +721,17 @@ export class CrawlDataService implements OnModuleInit {
       where: { crawl_job_id: jobId },
     });
     if (!job) throw new Error('Job not found');
+    if (job.status === CrawlJobStatus.CONFIRMING) {
+      // If confirming, set back to COMPLETED so it can be re-confirmed
+      await this.crawlJobRepo.update(jobId, {
+        status: CrawlJobStatus.COMPLETED,
+        progress: 0, // Reset progress
+      });
+      return this.crawlJobRepo.findOne({ where: { crawl_job_id: jobId } });
+    }
+
     if (job.status !== CrawlJobStatus.RUNNING) {
-      throw new Error('Only running jobs can be stopped');
+      throw new Error('Only running or confirming jobs can be stopped');
     }
 
     await this.crawlJobRepo.update(jobId, {
@@ -595,7 +755,8 @@ export class CrawlDataService implements OnModuleInit {
 
   private async confirmSubjectSurvey(
     queryRunner: any,
-    stagingData: CrawlStagingData[],
+    jobId: string,
+    onProgress?: (count: number) => Promise<void>,
   ): Promise<void> {
     const cache = new Map<string, string>();
     const pointAverages = new Map<
@@ -610,34 +771,38 @@ export class CrawlDataService implements OnModuleInit {
     >();
 
     // 1. First Pass: Ensure semesters exist and identify them for truncation
-    const semesterNamesInJob = [
-      ...new Set(
-        stagingData
-          .filter((d) => d.data_type === 'semester')
-          .map((d) => d.data.display_name),
-      ),
-    ];
+    await onProgress?.(0);
+    const semestersResult = await queryRunner.query(
+      `SELECT DISTINCT (data->>'display_name') as name, data 
+       FROM crawl_staging_data 
+       WHERE crawl_job_id = $1 AND data_type = 'semester'`,
+      [jobId],
+    );
+    const semesterNamesInJob = semestersResult.map((r) => r.name);
 
-    for (const semesterName of semesterNamesInJob) {
-      const semData = stagingData.find(
-        (d) => d.data_type === 'semester' && d.data.display_name === semesterName,
-      )?.data;
-      if (!semData) continue;
-
+    for (const semRow of semestersResult) {
+      await onProgress?.(0);
+      const semData = semRow.data;
       const existing = await queryRunner.query(
         'SELECT semester_id FROM semester WHERE display_name = $1',
         [semData.display_name],
       );
       if (existing.length === 0) {
         await queryRunner.query(
-          'INSERT INTO semester (display_name, type, year, search_string) VALUES ($1, $2, $3, $4)',
-          [semData.display_name, semData.type, semData.year, semData.search_string],
+          'INSERT INTO semester (semester_id, display_name, type, year, search_string) VALUES (uuid_generate_v4(), $1, $2, $3, $4)',
+          [
+            semData.display_name,
+            semData.type,
+            semData.year,
+            semData.search_string,
+          ],
         );
       }
     }
 
     // 2. Perform Truncation for identified semesters
     for (const semesterName of semesterNamesInJob) {
+      await onProgress?.(0);
       const semesterRows = await queryRunner.query(
         'SELECT semester_id FROM semester WHERE display_name = $1',
         [semesterName],
@@ -661,291 +826,288 @@ export class CrawlDataService implements OnModuleInit {
       }
     }
 
-    // 3. Second Pass: Process all staging data sorted by constraints
-    const typeOrder: Record<string, number> = {
-      semester: 1,
-      faculty: 2,
-      subject: 3,
-      lecturer: 4,
-      criteria: 5,
-      student: 6,
-      class: 7,
-      point_answer: 8,
-      comment: 9,
-    };
-    const sortedStagingData = [...stagingData].sort(
-      (a, b) => (typeOrder[a.data_type] || 99) - (typeOrder[b.data_type] || 99),
+    // 3. Second Pass: Process all staging data in chunks, sorted by constraints
+    await this.processStagingInChunks(
+      queryRunner,
+      jobId,
+      async (items) => {
+        for (const item of items) {
+          const { data_type, data } = item;
+
+          switch (data_type) {
+            case 'semester':
+              // Already handled in first pass
+              break;
+            case 'faculty': {
+              const cacheKey = `faculty:${data.display_name}`;
+              if (!cache.has(cacheKey)) {
+                const existing = await queryRunner.query(
+                  'SELECT faculty_id FROM faculty WHERE display_name = $1',
+                  [data.display_name],
+                );
+                if (existing.length === 0) {
+                  const result = await queryRunner.query(
+                    'INSERT INTO faculty (faculty_id, display_name, full_name, is_displayed) VALUES (uuid_generate_v4(), $1, $2, $3) RETURNING faculty_id',
+                    [data.display_name, data.full_name, data.is_displayed],
+                  );
+                  cache.set(cacheKey, result[0].faculty_id);
+                } else {
+                  cache.set(cacheKey, existing[0].faculty_id);
+                }
+              }
+              break;
+            }
+            case 'subject': {
+              const cacheKey = `subject:${data.display_name}`;
+              if (!cache.has(cacheKey)) {
+                const existing = await queryRunner.query(
+                  'SELECT subject_id FROM subject WHERE display_name = $1',
+                  [data.display_name],
+                );
+                if (existing.length === 0) {
+                  const facultyId =
+                    cache.get(`faculty:${data.faculty_name}`) || null;
+                  const result = await queryRunner.query(
+                    'INSERT INTO subject (subject_id, display_name, faculty_id) VALUES (uuid_generate_v4(), $1, $2) RETURNING subject_id',
+                    [data.display_name, facultyId],
+                  );
+                  cache.set(cacheKey, result[0].subject_id);
+                } else {
+                  cache.set(cacheKey, existing[0].subject_id);
+                }
+              }
+              break;
+            }
+            case 'lecturer': {
+              const cacheKey = `lecturer:${data.display_name}`;
+              if (!cache.has(cacheKey)) {
+                const existing = await queryRunner.query(
+                  'SELECT lecturer_id FROM lecturer WHERE display_name = $1',
+                  [data.display_name],
+                );
+                if (existing.length === 0) {
+                  const result = await queryRunner.query(
+                    'INSERT INTO lecturer (lecturer_id, display_name) VALUES (uuid_generate_v4(), $1) RETURNING lecturer_id',
+                    [data.display_name],
+                  );
+                  cache.set(cacheKey, result[0].lecturer_id);
+                } else {
+                  cache.set(cacheKey, existing[0].lecturer_id);
+                }
+              }
+              break;
+            }
+            case 'criteria': {
+              const cacheKey = `criteria:${data.display_name}`;
+              if (!cache.has(cacheKey)) {
+                const existing = await queryRunner.query(
+                  'SELECT criteria_id FROM criteria WHERE display_name = $1',
+                  [data.display_name],
+                );
+                if (existing.length === 0) {
+                  const result = await queryRunner.query(
+                    'INSERT INTO criteria (criteria_id, display_name, "index", semester_id) VALUES (uuid_generate_v4(), $1, $2, $3) RETURNING criteria_id',
+                    [data.display_name, data.index, data.semester_id],
+                  );
+                  cache.set(cacheKey, result[0].criteria_id);
+                } else {
+                  cache.set(cacheKey, existing[0].criteria_id);
+                }
+              }
+              break;
+            }
+            case 'student': {
+              const studentData = data;
+
+              await queryRunner.query(
+                `INSERT INTO student (
+                  tid, sid, firstname, lastname, email, token, completed_at, usesleft, 
+                  mssv, khoa, k, hedt, malop, magv, tengv, tenmh, khoaql, nganh, tennganh, semester_name
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                ON CONFLICT (email) DO UPDATE SET 
+                  tid = EXCLUDED.tid,
+                  sid = EXCLUDED.sid,
+                  firstname = EXCLUDED.firstname,
+                  lastname = EXCLUDED.lastname,
+                  token = EXCLUDED.token,
+                  completed_at = EXCLUDED.completed_at,
+                  usesleft = EXCLUDED.usesleft,
+                  mssv = EXCLUDED.mssv,
+                  khoa = EXCLUDED.khoa,
+                  k = EXCLUDED.k,
+                  hedt = EXCLUDED.hedt,
+                  malop = EXCLUDED.malop,
+                  magv = EXCLUDED.magv,
+                  tengv = EXCLUDED.tengv,
+                  tenmh = EXCLUDED.tenmh,
+                  khoaql = EXCLUDED.khoaql,
+                  nganh = EXCLUDED.nganh,
+                  tennganh = EXCLUDED.tennganh,
+                  semester_name = EXCLUDED.semester_name`,
+                [
+                  studentData.tid,
+                  studentData.sid,
+                  studentData.firstname,
+                  studentData.lastname,
+                  studentData.email,
+                  studentData.token,
+                  (() => {
+                    const val = studentData.completed_at;
+                    if (!val || val === 'N') return null;
+                    try {
+                      const d = new Date(val);
+                      if (isNaN(d.getTime()) || d.getFullYear() < 1000)
+                        return null;
+                      return d;
+                    } catch (e) {
+                      return null;
+                    }
+                  })(),
+                  studentData.usesleft,
+                  studentData.mssv,
+                  studentData.khoa,
+                  studentData.k,
+                  studentData.hedt,
+                  studentData.malop,
+                  studentData.magv,
+                  studentData.tengv,
+                  studentData.tenmh,
+                  studentData.khoaql,
+                  studentData.nganh,
+                  studentData.tennganh,
+                  studentData.semester_name,
+                ],
+              );
+              break;
+            }
+            case 'class': {
+              const semesterRows = await queryRunner.query(
+                'SELECT semester_id FROM semester WHERE display_name = $1',
+                [data.semester_name],
+              );
+              const semesterId = semesterRows[0]?.semester_id || null;
+              let subjectId = cache.get(`subject:${data.subject_name}`) || null;
+              if (!subjectId) {
+                const subjName = data.subject_name || 'Khác';
+                const existingSubj = await queryRunner.query(
+                  'SELECT subject_id FROM subject WHERE display_name = $1',
+                  [subjName],
+                );
+                if (existingSubj.length === 0) {
+                  const res = await queryRunner.query(
+                    'INSERT INTO subject (subject_id, display_name) VALUES (uuid_generate_v4(), $1) RETURNING subject_id',
+                    [subjName],
+                  );
+                  subjectId = res[0].subject_id;
+                } else {
+                  subjectId = existingSubj[0].subject_id;
+                }
+                cache.set(`subject:${subjName}`, subjectId);
+              }
+
+              let lecturerId =
+                cache.get(`lecturer:${data.lecturer_name}`) || null;
+              if (!lecturerId) {
+                const lecName = data.lecturer_name || 'Khác';
+                const existingLec = await queryRunner.query(
+                  'SELECT lecturer_id FROM lecturer WHERE display_name = $1',
+                  [lecName],
+                );
+                if (existingLec.length === 0) {
+                  const res = await queryRunner.query(
+                    'INSERT INTO lecturer (lecturer_id, display_name) VALUES (uuid_generate_v4(), $1) RETURNING lecturer_id',
+                    [lecName],
+                  );
+                  lecturerId = res[0].lecturer_id;
+                } else {
+                  lecturerId = existingLec[0].lecturer_id;
+                }
+                cache.set(`lecturer:${lecName}`, lecturerId);
+              }
+
+              const existing = await queryRunner.query(
+                'SELECT class_id FROM class WHERE display_name = $1 AND semester_id = $2',
+                [data.display_name, semesterId],
+              );
+              if (existing.length === 0) {
+                const result = await queryRunner.query(
+                  `INSERT INTO class (class_id, display_name, semester_id, program, class_type, subject_id, lecturer_id, total_student, participating_student) 
+                   VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8) RETURNING class_id`,
+                  [
+                    data.display_name,
+                    semesterId,
+                    data.program,
+                    data.class_type,
+                    subjectId,
+                    lecturerId,
+                    data.total_student || 0,
+                    data.participating_student || 0,
+                  ],
+                );
+                cache.set(
+                  `class:${data.display_name}:${data.semester_name}`,
+                  result[0].class_id,
+                );
+              } else {
+                cache.set(
+                  `class:${data.display_name}:${data.semester_name}`,
+                  existing[0].class_id,
+                );
+              }
+              break;
+            }
+            case 'point_answer': {
+              const criteriaId =
+                cache.get(`criteria:${data.criteria_name}`) || null;
+              const classId =
+                cache.get(`class:${data.class_name}:${data.semester_name}`) ||
+                null;
+
+              if (criteriaId && classId) {
+                const key = `${criteriaId}:${classId}`;
+                const existingAvg = pointAverages.get(key);
+                if (existingAvg) {
+                  existingAvg.sum += data.point;
+                  existingAvg.count += 1;
+                } else {
+                  pointAverages.set(key, {
+                    sum: data.point,
+                    count: 1,
+                    max_point: data.max_point,
+                    criteria_id: criteriaId,
+                    class_id: classId,
+                  });
+                }
+              }
+              break;
+            }
+            case 'comment': {
+              const classIdForComment =
+                cache.get(`class:${data.class_name}:${data.semester_name}`) ||
+                null;
+
+              if (classIdForComment) {
+                await queryRunner.query(
+                  'INSERT INTO comment (comment_id, type, content, class_id, type_list, topic) VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5)',
+                  [
+                    data.type,
+                    data.content,
+                    classIdForComment,
+                    [data.type],
+                    'others',
+                  ],
+                );
+              }
+              break;
+            }
+          }
+        }
+      },
+      { orderByType: true, onProgress },
     );
 
-    for (const item of sortedStagingData) {
-      const { data_type, data } = item;
-
-      switch (data_type) {
-        case 'semester':
-          // Already handled in first pass
-          break;
-        case 'faculty': {
-
-          const cacheKey = `faculty:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT faculty_id FROM faculty WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const result = await queryRunner.query(
-                'INSERT INTO faculty (display_name, full_name, is_displayed) VALUES ($1, $2, $3) RETURNING faculty_id',
-                [data.display_name, data.full_name, data.is_displayed],
-              );
-              cache.set(cacheKey, result[0].faculty_id);
-            } else {
-              cache.set(cacheKey, existing[0].faculty_id);
-            }
-          }
-          break;
-        }
-        case 'subject': {
-          const cacheKey = `subject:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT subject_id FROM subject WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const facultyId = cache.get(`faculty:${data.faculty_name}`) || null;
-              const result = await queryRunner.query(
-                'INSERT INTO subject (display_name, faculty_id) VALUES ($1, $2) RETURNING subject_id',
-                [data.display_name, facultyId],
-              );
-              cache.set(cacheKey, result[0].subject_id);
-            } else {
-              cache.set(cacheKey, existing[0].subject_id);
-            }
-          }
-          break;
-        }
-        case 'lecturer': {
-          const cacheKey = `lecturer:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT lecturer_id FROM lecturer WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const result = await queryRunner.query(
-                'INSERT INTO lecturer (display_name) VALUES ($1) RETURNING lecturer_id',
-                [data.display_name],
-              );
-              cache.set(cacheKey, result[0].lecturer_id);
-            } else {
-              cache.set(cacheKey, existing[0].lecturer_id);
-            }
-          }
-          break;
-        }
-        case 'criteria': {
-          const cacheKey = `criteria:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT criteria_id FROM criteria WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const result = await queryRunner.query(
-                'INSERT INTO criteria (display_name, "index", semester_id) VALUES ($1, $2, $3) RETURNING criteria_id',
-                [data.display_name, data.index, data.semester_id],
-              );
-              cache.set(cacheKey, result[0].criteria_id);
-            } else {
-              cache.set(cacheKey, existing[0].criteria_id);
-            }
-          }
-          break;
-        }
-        case 'student': {
-          const studentData = data;
-
-          await queryRunner.query(
-            `INSERT INTO student (
-              tid, sid, firstname, lastname, email, token, completed_at, usesleft, 
-              mssv, khoa, k, hedt, malop, magv, tengv, tenmh, khoaql, nganh, tennganh, semester_name
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-            ON CONFLICT (email) DO UPDATE SET 
-              tid = EXCLUDED.tid,
-              sid = EXCLUDED.sid,
-              firstname = EXCLUDED.firstname,
-              lastname = EXCLUDED.lastname,
-              token = EXCLUDED.token,
-              completed_at = EXCLUDED.completed_at,
-              usesleft = EXCLUDED.usesleft,
-              mssv = EXCLUDED.mssv,
-              khoa = EXCLUDED.khoa,
-              k = EXCLUDED.k,
-              hedt = EXCLUDED.hedt,
-              malop = EXCLUDED.malop,
-              magv = EXCLUDED.magv,
-              tengv = EXCLUDED.tengv,
-              tenmh = EXCLUDED.tenmh,
-              khoaql = EXCLUDED.khoaql,
-              nganh = EXCLUDED.nganh,
-              tennganh = EXCLUDED.tennganh,
-              semester_name = EXCLUDED.semester_name`,
-            [
-              studentData.tid,
-              studentData.sid,
-              studentData.firstname,
-              studentData.lastname,
-              studentData.email,
-              studentData.token,
-              (() => {
-                const val = studentData.completed_at;
-                if (!val || val === 'N') return null;
-                try {
-                  const d = new Date(val);
-                  if (isNaN(d.getTime()) || d.getFullYear() < 1000) return null;
-                  return d;
-                } catch (e) {
-                  return null;
-                }
-              })(),
-              studentData.usesleft,
-              studentData.mssv,
-              studentData.khoa,
-              studentData.k,
-              studentData.hedt,
-              studentData.malop,
-              studentData.magv,
-              studentData.tengv,
-              studentData.tenmh,
-              studentData.khoaql,
-              studentData.nganh,
-              studentData.tennganh,
-              studentData.semester_name,
-            ],
-          );
-          break;
-        }
-        case 'class': {
-          const semesterRows = await queryRunner.query(
-            'SELECT semester_id FROM semester WHERE display_name = $1',
-            [data.semester_name],
-          );
-          const semesterId = semesterRows[0]?.semester_id || null;
-          let subjectId = cache.get(`subject:${data.subject_name}`) || null;
-          if (!subjectId) {
-            const subjName = data.subject_name || 'Khác';
-            const existingSubj = await queryRunner.query(
-              'SELECT subject_id FROM subject WHERE display_name = $1',
-              [subjName],
-            );
-            if (existingSubj.length === 0) {
-              const res = await queryRunner.query(
-                'INSERT INTO subject (display_name) VALUES ($1) RETURNING subject_id',
-                [subjName],
-              );
-              subjectId = res[0].subject_id;
-            } else {
-              subjectId = existingSubj[0].subject_id;
-            }
-            cache.set(`subject:${subjName}`, subjectId);
-          }
-
-          let lecturerId = cache.get(`lecturer:${data.lecturer_name}`) || null;
-          if (!lecturerId) {
-            const lecName = data.lecturer_name || 'Khác';
-            const existingLec = await queryRunner.query(
-              'SELECT lecturer_id FROM lecturer WHERE display_name = $1',
-              [lecName],
-            );
-            if (existingLec.length === 0) {
-              const res = await queryRunner.query(
-                'INSERT INTO lecturer (display_name) VALUES ($1) RETURNING lecturer_id',
-                [lecName],
-              );
-              lecturerId = res[0].lecturer_id;
-            } else {
-              lecturerId = existingLec[0].lecturer_id;
-            }
-            cache.set(`lecturer:${lecName}`, lecturerId);
-          }
-
-
-          const existing = await queryRunner.query(
-            'SELECT class_id FROM class WHERE display_name = $1 AND semester_id = $2',
-            [data.display_name, semesterId],
-          );
-          if (existing.length === 0) {
-            const result = await queryRunner.query(
-              `INSERT INTO class (display_name, semester_id, program, class_type, subject_id, lecturer_id, total_student, participating_student) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING class_id`,
-              [
-                data.display_name,
-                semesterId,
-                data.program,
-                data.class_type,
-                subjectId,
-                lecturerId,
-                data.total_student,
-                data.participating_student,
-              ],
-            );
-            cache.set(
-              `class:${data.display_name}:${data.semester_name}`,
-              result[0].class_id,
-            );
-          } else {
-            cache.set(
-              `class:${data.display_name}:${data.semester_name}`,
-              existing[0].class_id,
-            );
-          }
-          break;
-        }
-        case 'point_answer': {
-          const criteriaId = cache.get(`criteria:${data.criteria_name}`) || null;
-          const classId =
-            cache.get(`class:${data.class_name}:${data.semester_name}`) || null;
-
-          if (criteriaId && classId) {
-            const key = `${criteriaId}:${classId}`;
-            const existingAvg = pointAverages.get(key);
-            if (existingAvg) {
-              existingAvg.sum += data.point;
-              existingAvg.count += 1;
-            } else {
-              pointAverages.set(key, {
-                sum: data.point,
-                count: 1,
-                max_point: data.max_point,
-                criteria_id: criteriaId,
-                class_id: classId,
-              });
-            }
-          }
-          break;
-        }
-        case 'comment': {
-          const classIdForComment =
-            cache.get(`class:${data.class_name}:${data.semester_name}`) || null;
-
-          if (classIdForComment) {
-            await queryRunner.query(
-              'INSERT INTO comment (comment_id, type, content, class_id, type_list, topic) VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5)',
-              [
-                data.type,
-                data.content,
-                classIdForComment,
-                [data.type],
-                'others',
-              ],
-            );
-          }
-          break;
-        }
-      }
-    }
-
     // 4. Insert Aggregated Points
+    const classParticipatingCount = new Map<string, number>();
     for (const avg of pointAverages.values()) {
       const avgPoint = avg.sum / avg.count;
       await queryRunner.query(
@@ -953,18 +1115,32 @@ export class CrawlDataService implements OnModuleInit {
          VALUES ($1, $2, $3, $4, uuid_generate_v4())`,
         [avg.max_point, avg.criteria_id, avg.class_id, avgPoint],
       );
+
+      // Track max count per class to update participating_student
+      const current = classParticipatingCount.get(avg.class_id) || 0;
+      if (avg.count > current) {
+        classParticipatingCount.set(avg.class_id, avg.count);
+      }
+    }
+
+    // Update participating_student for each class based on point_answer counts
+    for (const [classId, count] of classParticipatingCount.entries()) {
+      await queryRunner.query(
+        'UPDATE class SET participating_student = $1 WHERE class_id = $2',
+        [count, classId],
+      );
     }
 
     // 5. Finalize Aggregate Student Counts
-    const jobSemesterSearchStrings = [
-      ...new Set(
-        stagingData
-          .filter((d) => d.data_type === 'semester')
-          .map((d) => d.data.search_string),
-      ),
-    ];
+    const searchStringResult = await queryRunner.query(
+      `SELECT DISTINCT (data->>'search_string') as search_string 
+       FROM crawl_staging_data 
+       WHERE crawl_job_id = $1 AND data_type = 'semester'`,
+      [jobId],
+    );
 
-    for (const searchString of jobSemesterSearchStrings) {
+    for (const row of searchStringResult) {
+      const searchString = row.search_string;
       const stats = await queryRunner.query(
         `SELECT 
           malop, 
@@ -976,16 +1152,14 @@ export class CrawlDataService implements OnModuleInit {
         [searchString],
       );
 
-      for (const row of stats) {
+      for (const statRow of stats) {
         await queryRunner.query(
           `UPDATE class 
-           SET total_student = $1, 
-               participating_student = $2 
-           WHERE display_name = $3 AND semester_id = (SELECT semester_id FROM semester WHERE search_string = $4)`,
+           SET total_student = $1
+           WHERE display_name = $2 AND semester_id = (SELECT semester_id FROM semester WHERE search_string = $3)`,
           [
-            parseInt(row.total_count),
-            parseInt(row.participating_count),
-            row.malop,
+            parseInt(statRow.total_count),
+            statRow.malop,
             searchString,
           ],
         );
@@ -993,118 +1167,123 @@ export class CrawlDataService implements OnModuleInit {
     }
   }
 
-
   private async confirmLecturerSurvey(
     queryRunner: any,
-    stagingData: CrawlStagingData[],
+    jobId: string,
+    onProgress?: (count: number) => Promise<void>,
   ): Promise<void> {
     const cache = new Map<string, string>();
 
-    for (const item of stagingData) {
-      const { data_type, data } = item;
+    await this.processStagingInChunks(queryRunner, jobId, async (items) => {
+      for (const item of items) {
+        const { data_type, data } = item;
 
-      switch (data_type) {
-        case 'staff_survey_batch': {
-          const cacheKey = `batch:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT staff_survey_batch_id FROM staff_survey_batch WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const result = await queryRunner.query(
-                'INSERT INTO staff_survey_batch (staff_survey_batch_id, display_name, semester) VALUES (uuid_generate_v4(), $1, $2) RETURNING staff_survey_batch_id',
-                [data.display_name, data.semester],
+        switch (data_type) {
+          case 'staff_survey_batch': {
+            const cacheKey = `batch:${data.display_name}`;
+            if (!cache.has(cacheKey)) {
+              const existing = await queryRunner.query(
+                'SELECT staff_survey_batch_id FROM staff_survey_batch WHERE display_name = $1',
+                [data.display_name],
               );
-              cache.set(cacheKey, result[0].staff_survey_batch_id);
-            } else {
-              cache.set(cacheKey, existing[0].staff_survey_batch_id);
+              if (existing.length === 0) {
+                const result = await queryRunner.query(
+                  'INSERT INTO staff_survey_batch (staff_survey_batch_id, display_name, semester) VALUES (uuid_generate_v4(), $1, $2) RETURNING staff_survey_batch_id',
+                  [data.display_name, data.semester],
+                );
+                cache.set(cacheKey, result[0].staff_survey_batch_id);
+              } else {
+                cache.set(cacheKey, existing[0].staff_survey_batch_id);
+              }
             }
+            break;
           }
-          break;
-        }
-        case 'staff_survey_sheet': {
-          const sheetId = uuidv4();
-          await queryRunner.query(
-            `INSERT INTO staff_survey_sheet (staff_survey_sheet_id, display_name) 
-             VALUES ($1, $2)`,
-            [sheetId, sheetId],
-          );
-          cache.set(`last_sheet`, sheetId);
-          break;
-        }
-        case 'staff_survey_criteria': {
-          const cacheKey = `criteria:${data.display_name}`;
-          if (!cache.has(cacheKey)) {
-            const existing = await queryRunner.query(
-              'SELECT staff_survey_criteria_id FROM staff_survey_criteria WHERE display_name = $1',
-              [data.display_name],
-            );
-            if (existing.length === 0) {
-              const result = await queryRunner.query(
-                'INSERT INTO staff_survey_criteria (staff_survey_criteria_id, display_name, category) VALUES (uuid_generate_v4(), $1, $2) RETURNING staff_survey_criteria_id',
-                [data.display_name, data.category],
-              );
-              cache.set(cacheKey, result[0].staff_survey_criteria_id);
-            } else {
-              cache.set(cacheKey, existing[0].staff_survey_criteria_id);
-            }
-          }
-          break;
-        }
-        case 'staff_survey_point': {
-          const criteriaId =
-            cache.get(`criteria:${data.criteria_name}`) || null;
-          const sheetId = cache.get('last_sheet') || null;
-          if (criteriaId && sheetId) {
+          case 'staff_survey_sheet': {
+            const sheetId = uuidv4();
             await queryRunner.query(
-              `INSERT INTO staff_survey_point (staff_survey_point_id, max_point, point, comment, staff_survey_criteria_id, staff_survey_sheet_id) 
-               VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5)`,
-              [data.max_point, data.point, data.comment, criteriaId, sheetId],
+              `INSERT INTO staff_survey_sheet (staff_survey_sheet_id, display_name) 
+               VALUES ($1, $2)`,
+              [sheetId, sheetId],
             );
+            cache.set(`last_sheet`, sheetId);
+            break;
           }
-          break;
+          case 'staff_survey_criteria': {
+            const cacheKey = `criteria:${data.display_name}`;
+            if (!cache.has(cacheKey)) {
+              const existing = await queryRunner.query(
+                'SELECT staff_survey_criteria_id FROM staff_survey_criteria WHERE display_name = $1',
+                [data.display_name],
+              );
+              if (existing.length === 0) {
+                const result = await queryRunner.query(
+                  'INSERT INTO staff_survey_criteria (staff_survey_criteria_id, display_name, category) VALUES (uuid_generate_v4(), $1, $2) RETURNING staff_survey_criteria_id',
+                  [data.display_name, data.category],
+                );
+                cache.set(cacheKey, result[0].staff_survey_criteria_id);
+              } else {
+                cache.set(cacheKey, existing[0].staff_survey_criteria_id);
+              }
+            }
+            break;
+          }
+          case 'staff_survey_point': {
+            const criteriaId =
+              cache.get(`criteria:${data.criteria_name}`) || null;
+            const sheetId = cache.get('last_sheet') || null;
+            if (criteriaId && sheetId) {
+              await queryRunner.query(
+                `INSERT INTO staff_survey_point (staff_survey_point_id, max_point, point, comment, staff_survey_criteria_id, staff_survey_sheet_id) 
+                 VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5)`,
+                [data.max_point, data.point, data.comment, criteriaId, sheetId],
+              );
+            }
+            break;
+          }
         }
       }
-    }
+    },
+    { onProgress },
+    );
   }
 
   private async confirmAggregatePoints(
     queryRunner: any,
-    stagingData: CrawlStagingData[],
+    jobId: string,
+    onProgress?: (count: number) => Promise<void>,
   ): Promise<void> {
-    for (const item of stagingData) {
-      if (item.data_type !== 'aggregated_point') continue;
-      const { criteria_id, class_id, max_point, avg_point, answer_count } =
-        item.data;
+    await this.processStagingInChunks(
+      queryRunner,
+      jobId,
+      async (items) => {
+        for (const item of items) {
+          if (item.data_type !== 'aggregated_point') continue;
+          const { criteria_id, class_id, max_point, avg_point, answer_count } =
+            item.data;
 
-      await queryRunner.query(
-        `INSERT INTO point (max_point, criteria_id, class_id, point) 
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (criteria_id, class_id) 
-         DO UPDATE SET max_point = EXCLUDED.max_point, point = EXCLUDED.point, created_at = CURRENT_TIMESTAMP`,
-        [max_point, criteria_id, class_id, avg_point],
-      );
+          await queryRunner.query(
+            `INSERT INTO point (point_id, max_point, criteria_id, class_id, point) 
+             VALUES (uuid_generate_v4(), $1, $2, $3, $4)
+             ON CONFLICT (criteria_id, class_id) 
+             DO UPDATE SET max_point = EXCLUDED.max_point, point = EXCLUDED.point`,
+            [max_point, criteria_id, class_id, avg_point],
+          );
 
-      await queryRunner.query(
-        'UPDATE class SET participating_student = $1 WHERE class_id = $2',
-        [answer_count, class_id],
-      );
-    }
+          await queryRunner.query(
+            'UPDATE class SET participating_student = $1 WHERE class_id = $2',
+            [answer_count || 0, class_id],
+          );
+        }
+      },
+      { dataType: 'aggregated_point', onProgress },
+    );
   }
 
   private async confirmTransferData(
     queryRunner: any,
-    stagingData: CrawlStagingData[],
+    jobId: string,
+    onProgress?: (count: number) => Promise<void>,
   ): Promise<void> {
-    // Group by table type
-    const byTable = new Map<string, any[]>();
-    for (const item of stagingData) {
-      const tableName = item.data_type.replace('transfer_', '');
-      if (!byTable.has(tableName)) byTable.set(tableName, []);
-      byTable.get(tableName).push(item.data);
-    }
-
     const tableOrder = [
       'semester',
       'faculty',
@@ -1117,30 +1296,33 @@ export class CrawlDataService implements OnModuleInit {
     ];
 
     for (const tableName of tableOrder) {
-      const rows = byTable.get(tableName);
-      if (!rows || rows.length === 0) continue;
+      this.logger.log(`Confirming transfer for ${tableName}`);
 
-      this.logger.log(
-        `Confirming transfer for ${tableName}: ${rows.length} rows`,
+      await this.processStagingInChunks(
+        queryRunner,
+        jobId,
+        async (items) => {
+          for (const item of items) {
+            const row = item.data;
+            const columns = Object.keys(row);
+            const values = Object.values(row);
+            const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+            const columnNames = columns.join(', ');
+
+            try {
+              await queryRunner.query(
+                `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`,
+                values,
+              );
+            } catch (error: any) {
+              this.logger.warn(
+                `Error inserting into ${tableName}: ${error.message}`,
+              );
+            }
+          }
+        },
+        { dataType: `transfer_${tableName}`, onProgress },
       );
-
-      for (const row of rows) {
-        const columns = Object.keys(row);
-        const values = Object.values(row);
-        const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-        const columnNames = columns.join(', ');
-
-        try {
-          await queryRunner.query(
-            `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`,
-            values,
-          );
-        } catch (error: any) {
-          this.logger.warn(
-            `Error inserting into ${tableName}: ${error.message}`,
-          );
-        }
-      }
     }
   }
 
@@ -1163,6 +1345,18 @@ export class CrawlDataService implements OnModuleInit {
   async addSurveyListConfig(
     input: SurveyListConfigInput,
   ): Promise<SurveyListConfig> {
+    const existing = await this.surveyListRepo.findOne({
+      where: { sid: input.sid, survey_type: input.survey_type },
+    });
+
+    if (existing) {
+      // Update existing record
+      const id = existing.id;
+      Object.assign(existing, input);
+      existing.id = id; // Ensure ID is preserved
+      return this.surveyListRepo.save(existing);
+    }
+
     return this.surveyListRepo.save(input);
   }
 

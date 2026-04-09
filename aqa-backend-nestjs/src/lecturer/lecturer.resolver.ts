@@ -1,4 +1,11 @@
-import { Args, Int, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Int,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { ClassService } from 'src/class/class.service';
 import { PaginatedClass } from 'src/class/dto/PaginatedClass';
 import { FilterArgs } from 'src/common/args/filter.arg';
@@ -44,7 +51,11 @@ export class LecturerResolver {
       'Get ranked lecturers by average point with rank change from previous year',
   })
   getLecturerRanking(
-    @Args('filter', { type: () => FilterArgs, nullable: true, defaultValue: {} })
+    @Args('filter', {
+      type: () => FilterArgs,
+      nullable: true,
+      defaultValue: {},
+    })
     filter: FilterArgs,
     @Args('minClasses', {
       type: () => Int,
@@ -89,4 +100,3 @@ export class LecturerResolver {
     return result;
   }
 }
-

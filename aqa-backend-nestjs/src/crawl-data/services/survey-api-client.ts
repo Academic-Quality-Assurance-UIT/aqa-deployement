@@ -84,21 +84,18 @@ export class SurveyApiClient {
       totalCount: number,
       batchData?: any[],
     ) => Promise<void>,
-  ): Promise<any[]> {
-    const allData: any[] = [];
-
+  ): Promise<void> {
     const firstResponse = await this.getSurveyAnswers(sid, 1, 3, jobId);
-    if (firstResponse.data?.length > 0) {
-      allData.push(...firstResponse.data);
-    }
-
     let totalItems = Number(firstResponse.meta?.pagination?.total || 0);
-    if (totalItems === 0) totalItems = allData.length;
+    let currentFetchedCount = 0;
 
-    if (onProgress && firstResponse.data?.length > 0) {
-      await onProgress(allData.length, totalItems, firstResponse.data);
+    if (firstResponse.data?.length > 0) {
+      currentFetchedCount = firstResponse.data.length;
+      if (onProgress) {
+        await onProgress(currentFetchedCount, totalItems, firstResponse.data);
+      }
     } else if (onProgress) {
-      await onProgress(allData.length, totalItems, []);
+      await onProgress(0, totalItems, []);
     }
 
     if (firstResponse.meta?.pagination) {
@@ -112,15 +109,15 @@ export class SurveyApiClient {
             batchPromises.push(this.getSurveyAnswers(sid, p, 3, jobId));
           }
           const results = await Promise.all(batchPromises);
-          let newBatchData: any[] = [];
+          const newBatchData: any[] = [];
           for (const res of results) {
             if (res.data?.length > 0) {
-                allData.push(...res.data);
-                newBatchData.push(...res.data);
+              newBatchData.push(...res.data);
             }
           }
+          currentFetchedCount += newBatchData.length;
           if (onProgress) {
-            await onProgress(allData.length, totalItems, newBatchData);
+            await onProgress(currentFetchedCount, totalItems, newBatchData);
           }
           if (end < pageCount) {
             await new Promise((r) => setTimeout(r, 500));
@@ -129,8 +126,7 @@ export class SurveyApiClient {
       }
     }
 
-    this.logger.log(`Fetched ${allData.length} total records for SID: ${sid}`);
-    return allData;
+    this.logger.log(`Fetched ${currentFetchedCount} total records for SID: ${sid}`);
   }
 
   async getSurveyDetail(
@@ -309,7 +305,13 @@ export class SurveyApiClient {
   }
 
   async getExternalSurveys(
-    options: { keyword?: string; page?: number; limit?: number; order?: string; direction?: string } = {},
+    options: {
+      keyword?: string;
+      page?: number;
+      limit?: number;
+      order?: string;
+      direction?: string;
+    } = {},
   ): Promise<any> {
     const action = 'getSurveys';
     const params = {

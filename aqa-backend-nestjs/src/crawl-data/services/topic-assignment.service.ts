@@ -68,9 +68,7 @@ export class TopicAssignmentService {
     const countParams: any[] = [];
 
     if (semesterIds && semesterIds.length > 0) {
-      const placeholders = semesterIds
-        .map((_, i) => `$${i + 1}`)
-        .join(', ');
+      const placeholders = semesterIds.map((_, i) => `$${i + 1}`).join(', ');
       countQuery += ` WHERE cl.semester_id IN (${placeholders})`;
       countParams.push(...semesterIds);
     }
@@ -104,9 +102,7 @@ export class TopicAssignmentService {
       const fetchParams: any[] = [];
 
       if (semesterIds && semesterIds.length > 0) {
-        const placeholders = semesterIds
-          .map((_, i) => `$${i + 1}`)
-          .join(', ');
+        const placeholders = semesterIds.map((_, i) => `$${i + 1}`).join(', ');
         fetchQuery += ` WHERE cl.semester_id IN (${placeholders})`;
         fetchParams.push(...semesterIds);
       }
@@ -141,8 +137,7 @@ export class TopicAssignmentService {
             result.sentiment.pred_bin,
           )) {
             if (value === 1) {
-              const mapped =
-                TopicAssignmentService.SENTIMENT_MAPPING[sentKey];
+              const mapped = TopicAssignmentService.SENTIMENT_MAPPING[sentKey];
               if (mapped) typeList.push(mapped);
             }
           }
@@ -205,9 +200,7 @@ export class TopicAssignmentService {
     const countParams: any[] = [];
 
     if (semesterIds && semesterIds.length > 0) {
-      const placeholders = semesterIds
-        .map((_, i) => `$${i + 1}`)
-        .join(', ');
+      const placeholders = semesterIds.map((_, i) => `$${i + 1}`).join(', ');
       countQuery += ` WHERE cl.semester_id IN (${placeholders})`;
       countParams.push(...semesterIds);
     }
@@ -226,9 +219,7 @@ export class TopicAssignmentService {
     const sampleParams: any[] = [];
 
     if (semesterIds && semesterIds.length > 0) {
-      const placeholders = semesterIds
-        .map((_, i) => `$${i + 1}`)
-        .join(', ');
+      const placeholders = semesterIds.map((_, i) => `$${i + 1}`).join(', ');
       sampleQuery += ` WHERE cl.semester_id IN (${placeholders})`;
       sampleParams.push(...semesterIds);
     }

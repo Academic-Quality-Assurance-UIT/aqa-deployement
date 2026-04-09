@@ -219,7 +219,11 @@ export class LecturerService extends BaseService<Lecturer> {
       .addSelect('Subject.display_name', 'display_name')
       .from('subject', 'Subject')
       .innerJoin('class', 'Class', 'Class.subject_id = Subject.subject_id')
-      .innerJoin('semester', 'Semester', 'Semester.semester_id = Class.semester_id')
+      .innerJoin(
+        'semester',
+        'Semester',
+        'Semester.semester_id = Class.semester_id',
+      )
       .innerJoin('point', 'Point', 'Point.class_id = Class.class_id')
       .where(
         '(Class.lecturer_id = :lecturerId OR Class.lecturer_1_id = :lecturerId OR Class.lecturer_2_id = :lecturerId)',
@@ -242,7 +246,11 @@ export class LecturerService extends BaseService<Lecturer> {
 
     if (filter.faculty_id) {
       query = query
-        .innerJoin('faculty', 'Faculty', 'Faculty.faculty_id = Subject.faculty_id')
+        .innerJoin(
+          'faculty',
+          'Faculty',
+          'Faculty.faculty_id = Subject.faculty_id',
+        )
         .andWhere('Faculty.faculty_id = :faculty_id', {
           faculty_id: filter.faculty_id,
         });
@@ -270,7 +278,7 @@ export class LecturerService extends BaseService<Lecturer> {
       filter.semester_id,
     );
 
-    let prevRankMap = new Map<string, number>();
+    const prevRankMap = new Map<string, number>();
     if (prevSemesterIds.length > 0) {
       const prevFilter: FilterArgs = {
         ...filter,

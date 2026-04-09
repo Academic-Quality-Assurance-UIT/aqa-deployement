@@ -1,7 +1,14 @@
 import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 import { Class } from 'src/class/entities/class.entity';
 import { Criteria } from 'src/criteria/entities/criteria.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 
 @Entity()
 @ObjectType()

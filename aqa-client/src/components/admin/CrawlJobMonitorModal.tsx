@@ -76,7 +76,9 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 	});
 
 	const currentJob = jobData?.crawlJob || job;
-	const isCurrentlyRunning = currentJob.status === CrawlJobStatus.Running;
+	const isCurrentlyRunning = 
+		currentJob.status === CrawlJobStatus.Running || 
+		currentJob.status === CrawlJobStatus.Confirming;
 
 	// Update polling intervals dynamically
 	useEffect(() => {
@@ -146,7 +148,12 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 	};
 
 	const handleStopJob = async () => {
-		if (window.confirm("Dừng quá trình thu thập đang chạy? Tất cả các dữ liệu đã thu thập sẽ được giữ lại, nhưng tiến trình sẽ stops ngay lập tức.")) {
+		const isConfirming = currentJob.status === CrawlJobStatus.Confirming;
+		const message = isConfirming 
+			? "Dừng quá trình lưu dữ liệu? Quá trình sẽ được hoàn tác (rollback) và bạn có thể thực hiện xác nhận lại sau."
+			: "Dừng quá trình thu thập đang chạy? Tất cả các dữ liệu đã thu thập sẽ được giữ lại, nhưng tiến trình sẽ dừng ngay lập tức.";
+		
+		if (window.confirm(message)) {
 			try {
 				await stopCrawlJob({ variables: { jobId: job.crawl_job_id } });
 				await handleReload();
@@ -184,6 +191,8 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 		switch (status) {
 			case CrawlJobStatus.Running:
 				return <AiOutlineClockCircle className="text-warning animate-pulse" size={24} />;
+			case CrawlJobStatus.Confirming:
+				return <Spinner size="sm" color="success" />;
 			case CrawlJobStatus.Completed:
 				return <AiOutlineCheckCircle className="text-primary" size={24} />;
 			case CrawlJobStatus.Confirmed:
@@ -232,7 +241,7 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
-								{currentJob.status === CrawlJobStatus.Running && (
+								{(currentJob.status === CrawlJobStatus.Running || currentJob.status === CrawlJobStatus.Confirming) && (
 									<Button 
 										size="sm" 
 										color="danger" 
@@ -242,7 +251,7 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 										startContent={<AiOutlineStop />}
 										className="font-bold text-[11px] h-8"
 									>
-										Dừng
+										{currentJob.status === CrawlJobStatus.Confirming ? "Hủy xác nhận" : "Dừng"}
 									</Button>
 								)}
 								<Button 
@@ -266,6 +275,8 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 											color={
 												currentJob.status === CrawlJobStatus.Running
 													? "warning"
+													: currentJob.status === CrawlJobStatus.Confirming
+													? "success"
 													: currentJob.status === CrawlJobStatus.Failed
 													? "danger"
 													: "success"
@@ -275,6 +286,11 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 										>
 											{currentJob.status}
 										</Chip>
+										{isCurrentlyRunning && (
+											<span className="text-xs font-bold font-mono text-primary animate-pulse ml-1">
+												{progress}%
+											</span>
+										)}
 									</div>
 								</div>
 								<div className="p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 flex flex-col gap-1">
@@ -308,7 +324,7 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 								<div className="flex flex-col gap-2">
 									<div className="flex justify-between items-end">
 										<span className="text-[10px] font-bold flex items-center gap-2 uppercase text-gray-500">
-											<AiOutlineDatabase /> Tiến trình câu trả lời
+											<AiOutlineDatabase /> {currentJob.status === CrawlJobStatus.Confirming ? "Tiến trình xác nhận (Lưu DB)" : "Tiến trình câu trả lời"}
 										</span>
 										<span className="text-xs font-bold text-primary">{progress}%</span>
 									</div>
@@ -468,7 +484,8 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 						</ModalBody>
 						<ModalFooter className="flex justify-between items-center">
 							<div className="flex gap-2">
-								{currentJob.status === CrawlJobStatus.Completed && (
+								{((currentJob.status === CrawlJobStatus.Completed) || 
+								  (currentJob.status === CrawlJobStatus.Failed && stagingSummary && stagingSummary.totalRecords > 0)) && (
 									<>
 										<Button 
 											color="success" 
@@ -478,7 +495,7 @@ export const CrawlJobMonitorModal = ({ job, isOpen, onOpenChange }: CrawlJobMoni
 											isLoading={confirming}
 											className="font-bold"
 										>
-											Xác nhận dữ liệu
+											{currentJob.status === CrawlJobStatus.Failed ? "Thử lại xác nhận" : "Xác nhận dữ liệu"}
 										</Button>
 										<Button 
 											color="danger" 

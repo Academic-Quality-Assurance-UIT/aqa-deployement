@@ -55,7 +55,7 @@ export class CrawlLecturerSurveyService {
 
         let currentAnswersTotal = 0;
         let currentAnswersFetched = 0;
-        
+
         const historyRecord = await this.surveyCrawlHistoryRepo.save({
           survey_list_config_id: surveyInfo.id,
           crawl_job_id: crawlJobId,
@@ -73,10 +73,17 @@ export class CrawlLecturerSurveyService {
 
             if (batchData && batchData.length > 0) {
               for (const responseData of batchData) {
-                const processed = this.processResponse(responseData, surveyInfo);
+                const processed = this.processResponse(
+                  responseData,
+                  surveyInfo,
+                );
                 const valuesToInsert = processed.map((item) => {
                   let key = item.data?.display_name || uuidv4();
-                  if (item.type === 'staff_survey_point' || item.type === 'staff_survey_comment' || item.type === 'staff_survey_sheet') {
+                  if (
+                    item.type === 'staff_survey_point' ||
+                    item.type === 'staff_survey_comment' ||
+                    item.type === 'staff_survey_sheet'
+                  ) {
                     key = uuidv4();
                   }
 
@@ -104,13 +111,15 @@ export class CrawlLecturerSurveyService {
               progress: globalProgress + fetched,
               total_data: globalTotalData + currentAnswersTotal,
             });
-          }
+          },
         );
         globalProgress += currentAnswersFetched;
         globalTotalData += currentAnswersTotal;
 
         // Update SurveyListConfig
-        await this.surveyListRepo.update(surveyInfo.id, { last_crawled_at: new Date() });
+        await this.surveyListRepo.update(surveyInfo.id, {
+          last_crawled_at: new Date(),
+        });
 
         // Update History
         await this.surveyCrawlHistoryRepo.update(historyRecord.id, {
@@ -123,7 +132,7 @@ export class CrawlLecturerSurveyService {
         await new Promise((r) => setTimeout(r, 2000));
       } catch (error: any) {
         errorCount++;
-        
+
         await this.surveyCrawlHistoryRepo.insert({
           survey_list_config_id: surveyInfo.id,
           crawl_job_id: crawlJobId,
@@ -155,7 +164,10 @@ export class CrawlLecturerSurveyService {
     return job?.status === 'RUNNING';
   }
 
-  private async getSurveyList(semester?: string, surveyConfigIds?: string[]): Promise<any[]> {
+  private async getSurveyList(
+    semester?: string,
+    surveyConfigIds?: string[],
+  ): Promise<any[]> {
     const query = this.surveyListRepo
       .createQueryBuilder('s')
       .where('s.survey_type = :type', {

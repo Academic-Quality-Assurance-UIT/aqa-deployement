@@ -36,7 +36,7 @@ export class CrawlSubjectSurveyService {
     let successCount = 0;
     let errorCount = 0;
     const errors: any[] = [];
-    
+
     let globalTotalData = 0;
     let globalProgress = 0;
     let globalDetailTotal = 0;
@@ -57,7 +57,7 @@ export class CrawlSubjectSurveyService {
         );
 
         let currentDetailTotal = 0;
-        
+
         const historyRecord = await this.surveyCrawlHistoryRepo.save({
           survey_list_config_id: surveyInfo.id,
           crawl_job_id: crawlJobId,
@@ -66,22 +66,24 @@ export class CrawlSubjectSurveyService {
           records_fetched: 0,
           started_at: new Date(),
         });
-        
+
         // --- 1. Fetch Student Details (Detailed invitations) ---
-        const { data: rawStudents, attributes } = await this.apiClient.getAllSurveyDetail(
-          surveyInfo.sid,
-          { limit: 50 },
-          crawlJobId,
-          async (fetched, total) => {
-            // During student data fetching, we update the detail progress.
-            currentDetailTotal = Number(total || 0);
-            await this.crawlJobRepo.update(crawlJobId, {
-              detail_progress: Number(globalDetailProgress) + Number(fetched || 0),
-              detail_total: Number(globalDetailTotal) + currentDetailTotal,
-              last_activity_at: new Date(),
-            });
-          }
-        );
+        const { data: rawStudents, attributes } =
+          await this.apiClient.getAllSurveyDetail(
+            surveyInfo.sid,
+            { limit: 50 },
+            crawlJobId,
+            async (fetched, total) => {
+              // During student data fetching, we update the detail progress.
+              currentDetailTotal = Number(total || 0);
+              await this.crawlJobRepo.update(crawlJobId, {
+                detail_progress:
+                  Number(globalDetailProgress) + Number(fetched || 0),
+                detail_total: Number(globalDetailTotal) + currentDetailTotal,
+                last_activity_at: new Date(),
+              });
+            },
+          );
         globalDetailProgress += rawStudents.length;
         globalDetailTotal += currentDetailTotal;
 
@@ -141,14 +143,14 @@ export class CrawlSubjectSurveyService {
           async (fetched, total, batchData) => {
             currentAnswersTotal = total;
             currentAnswersFetched = fetched;
-            
+
             // Process the batch immediately to save into staging database
             if (batchData && batchData.length > 0) {
               for (const responseData of batchData) {
                 const processed = this.processResponse(
                   responseData,
                   surveyInfo,
-                  studentStagingValues.map(s => s.data),
+                  studentStagingValues.map((s) => s.data),
                 );
                 const valuesToInsert = processed.map((item) => {
                   let key = item.data?.display_name || uuidv4();
@@ -175,17 +177,20 @@ export class CrawlSubjectSurveyService {
                 }
               }
             }
-            
+
             await this.crawlJobRepo.update(crawlJobId, {
               progress: Number(globalProgress) + Number(fetched || 0),
-              total_data: Number(globalTotalData) + Number(currentAnswersTotal || 0),
+              total_data:
+                Number(globalTotalData) + Number(currentAnswersTotal || 0),
             });
-          }
+          },
         );
         globalProgress += currentAnswersFetched;
         globalTotalData += currentAnswersTotal;
 
-        await this.surveyListRepo.update(surveyInfo.id, { last_crawled_at: new Date() });
+        await this.surveyListRepo.update(surveyInfo.id, {
+          last_crawled_at: new Date(),
+        });
 
         await this.surveyCrawlHistoryRepo.update(historyRecord.id, {
           status: 'SUCCESS',
@@ -203,7 +208,7 @@ export class CrawlSubjectSurveyService {
           title: surveyInfo.title,
           error: error.message,
         });
-        
+
         await this.surveyCrawlHistoryRepo.insert({
           survey_list_config_id: surveyInfo.id,
           crawl_job_id: crawlJobId,
@@ -214,7 +219,7 @@ export class CrawlSubjectSurveyService {
           started_at: new Date(),
           completed_at: new Date(),
         });
-        
+
         this.logger.error(
           `Error crawling SID ${surveyInfo.sid}: ${error.message}`,
         );
@@ -236,7 +241,10 @@ export class CrawlSubjectSurveyService {
     return job?.status === 'RUNNING';
   }
 
-  private async getSurveyList(semester?: string, surveyConfigIds?: string[]): Promise<any[]> {
+  private async getSurveyList(
+    semester?: string,
+    surveyConfigIds?: string[],
+  ): Promise<any[]> {
     const query = this.surveyListRepo
       .createQueryBuilder('s')
       .where('s.survey_type = :type', {
@@ -297,10 +305,10 @@ export class CrawlSubjectSurveyService {
     }
 
     // Extract semester
-    const semesterYear = surveyInfo.semester_name?.includes(', ') 
-      ? surveyInfo.semester_name.split(', ')[1] 
+    const semesterYear = surveyInfo.semester_name?.includes(', ')
+      ? surveyInfo.semester_name.split(', ')[1]
       : surveyInfo.year;
-    
+
     results.push({
       type: 'semester',
       data: {
@@ -332,8 +340,8 @@ export class CrawlSubjectSurveyService {
           class_type: surveyInfo.type,
           subject_name: subjectData?.value || null,
           lecturer_name: lecturerData?.value || null,
-          total_student: null,
-          participating_student: null,
+          total_student: 0,
+          participating_student: 0,
         },
       });
     }
@@ -415,7 +423,6 @@ export class CrawlSubjectSurveyService {
 
     return results;
   }
-
 
   private findQuestionByCode(responseData: any, targetCode: string): any {
     for (const [, questionData] of Object.entries(responseData)) {

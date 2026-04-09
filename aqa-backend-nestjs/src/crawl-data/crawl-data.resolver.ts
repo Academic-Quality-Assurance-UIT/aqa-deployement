@@ -74,7 +74,9 @@ export class CrawlDataResolver {
     nullable: true,
     description: 'Lấy chi tiết một cuộc gọi API qua ID',
   })
-  async crawlApiRequestLog(@Args('id') id: string): Promise<CrawlApiRequestLog | null> {
+  async crawlApiRequestLog(
+    @Args('id') id: string,
+  ): Promise<CrawlApiRequestLog | null> {
     return this.crawlDataService.getCrawlApiRequestLog(id);
   }
 
@@ -96,7 +98,12 @@ export class CrawlDataResolver {
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number,
     @Args('dataType', { nullable: true }) dataType?: string,
   ): Promise<CrawlStagingData[]> {
-    return this.crawlDataService.getCrawlStagingData(jobId, limit, offset, dataType);
+    return this.crawlDataService.getCrawlStagingData(
+      jobId,
+      limit,
+      offset,
+      dataType,
+    );
   }
 
   @Query(() => [SurveyListConfig], {
@@ -118,7 +125,12 @@ export class CrawlDataResolver {
     @Args('limit', { type: () => Int, defaultValue: 50 }) limit: number = 50,
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number = 0,
   ): Promise<SurveyCrawlHistory[]> {
-    return this.crawlDataService.getSurveyCrawlHistory(jobId, surveyConfigId, limit, offset);
+    return this.crawlDataService.getSurveyCrawlHistory(
+      jobId,
+      surveyConfigId,
+      limit,
+      offset,
+    );
   }
 
   @Query(() => GraphQLJSON, {
@@ -132,7 +144,13 @@ export class CrawlDataResolver {
     @Args('order', { defaultValue: 'startdate' }) order: string = 'startdate',
     @Args('direction', { defaultValue: 'DESC' }) direction: string = 'DESC',
   ): Promise<any> {
-    return this.crawlDataService.getExternalSurveys(keyword, page, limit, order, direction);
+    return this.crawlDataService.getExternalSurveys(
+      keyword,
+      page,
+      limit,
+      order,
+      direction,
+    );
   }
 
   // ========================
@@ -145,7 +163,8 @@ export class CrawlDataResolver {
   @UseGuards(JwtAuthGuard)
   async runCrawlSubjectSurvey(
     @Args('semester', { nullable: true }) semester?: string,
-    @Args('surveyConfigIds', { type: () => [String], nullable: true }) surveyConfigIds?: string[],
+    @Args('surveyConfigIds', { type: () => [String], nullable: true })
+    surveyConfigIds?: string[],
     @CurrentUser() user?: UserEntity,
   ): Promise<CrawlJob> {
     return this.crawlDataService.runCrawl(
@@ -161,7 +180,8 @@ export class CrawlDataResolver {
   @UseGuards(JwtAuthGuard)
   async runCrawlLecturerSurvey(
     @Args('semester', { nullable: true }) semester?: string,
-    @Args('surveyConfigIds', { type: () => [String], nullable: true }) surveyConfigIds?: string[],
+    @Args('surveyConfigIds', { type: () => [String], nullable: true })
+    surveyConfigIds?: string[],
     @CurrentUser() user?: UserEntity,
   ): Promise<CrawlJob> {
     return this.crawlDataService.runCrawl(
@@ -280,7 +300,8 @@ export class CrawlDataResolver {
   })
   @UseGuards(JwtAuthGuard)
   async runTopicAssignment(
-    @Args('semesterIds', { type: () => [String], nullable: true }) semesterIds?: string[],
+    @Args('semesterIds', { type: () => [String], nullable: true })
+    semesterIds?: string[],
     @CurrentUser() user?: UserEntity,
   ): Promise<CrawlJob> {
     return this.crawlDataService.runCrawl(
@@ -295,7 +316,8 @@ export class CrawlDataResolver {
   })
   @UseGuards(JwtAuthGuard)
   async topicAssignmentPreview(
-    @Args('semesterIds', { type: () => [String], nullable: true }) semesterIds?: string[],
+    @Args('semesterIds', { type: () => [String], nullable: true })
+    semesterIds?: string[],
     @Args('limit', { type: () => Int, defaultValue: 20 }) limit: number = 20,
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number = 0,
   ): Promise<TopicAssignmentPreview> {

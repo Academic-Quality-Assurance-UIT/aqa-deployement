@@ -4,7 +4,7 @@ import { CrawlJob, CrawlJobStatus, CrawlJobType } from "@/gql/graphql";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AiOutlineClockCircle, AiOutlineRight } from "react-icons/ai";
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { Chip } from "@heroui/react";
 
 interface CrawlJobRowProps {
@@ -24,13 +24,24 @@ export const CrawlJobRow = ({
 	onClick,
 	hideChevron = false,
 }: CrawlJobRowProps) => {
-// ... existing getStatusChip ...
+	const progress = useMemo(() => {
+		if (!latestJob?.total_data || latestJob?.total_data === 0) return 0;
+		const p = Math.round(((latestJob?.progress ?? 0) / latestJob.total_data) * 100);
+		return Math.min(p, 100);
+	}, [latestJob?.progress, latestJob?.total_data]);
+
 	const getStatusChip = (status: CrawlJobStatus | undefined) => {
 		switch (status) {
 			case CrawlJobStatus.Running:
 				return (
 					<Chip color="warning" variant="dot" size="sm">
-						Đang chạy
+						Đang chạy ({progress}%)
+					</Chip>
+				);
+			case CrawlJobStatus.Confirming:
+				return (
+					<Chip color="success" variant="dot" size="sm">
+						Đang lưu DB ({progress}%)
 					</Chip>
 				);
 			case CrawlJobStatus.Completed:
@@ -81,8 +92,13 @@ export const CrawlJobRow = ({
 
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2 mb-0.5">
-					<h3 className="font-bold text-foreground truncate">
+					<h3 className="font-bold text-foreground truncate flex items-center gap-2">
 						{title}
+						{(latestJob?.status === CrawlJobStatus.Running || latestJob?.status === CrawlJobStatus.Confirming) && (
+							<span className="text-primary text-sm font-mono animate-pulse">
+								{progress}%
+							</span>
+						)}
 					</h3>
 					{getStatusChip(latestJob?.status)}
 				</div>
