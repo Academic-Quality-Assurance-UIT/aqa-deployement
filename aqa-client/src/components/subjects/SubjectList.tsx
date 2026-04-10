@@ -29,7 +29,8 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useFilterUrlQuery } from "@/hooks/useFilterUrlQuery";
 
 export default function SubjectList() {
-	const { semester, keyword, program, faculty } = useFilter();
+	const filter = useFilter();
+	const { semester, keyword, program, faculty } = filter;
 
 	const { query, setUrlQuery } = useFilterUrlQuery();
 
@@ -48,6 +49,7 @@ export default function SubjectList() {
 			filter: {
 				keyword,
 				semester_id: semester?.semester_id,
+				semester_ids: filter?.semesterIds && filter.semesterIds.length > 0 ? filter.semesterIds : undefined,
 				program,
 				faculty_id: faculty?.faculty_id,
 				criteria_id: [

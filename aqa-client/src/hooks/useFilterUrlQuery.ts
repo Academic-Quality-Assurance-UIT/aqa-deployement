@@ -27,6 +27,7 @@ export function useFilterUrlQuery() {
 			: {
 					criteria_id: "",
 					semester_id: "",
+					semester_ids: undefined,
 					faculty_id: "",
 					subjects: undefined,
 					lecturer_id: "",

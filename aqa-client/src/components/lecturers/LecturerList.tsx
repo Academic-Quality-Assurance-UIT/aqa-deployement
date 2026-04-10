@@ -27,7 +27,8 @@ export default function LecturerList() {
 
 	const { query, setUrlQuery } = useFilterUrlQuery();
 
-	const { semester, keyword, program, faculty } = useFilter();
+	const filter = useFilter();
+	const { semester, keyword, program, faculty } = filter;
 	const [columns, setColumns] = useState(defaultColumns);
 	const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
 		column: "display_name",
@@ -55,6 +56,7 @@ export default function LecturerList() {
 			filter: {
 				keyword,
 				semester_id: semester?.semester_id,
+				semester_ids: filter?.semesterIds && filter.semesterIds.length > 0 ? filter.semesterIds : undefined,
 				program,
 				faculty_id: faculty?.faculty_id,
 				criteria_id: [

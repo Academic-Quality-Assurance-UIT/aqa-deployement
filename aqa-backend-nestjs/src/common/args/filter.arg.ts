@@ -6,6 +6,9 @@ export class FilterArgs {
   @Field({ nullable: true })
   semester_id?: string;
 
+  @Field(() => [String], { nullable: true })
+  semester_ids?: string[];
+
   @Field({ nullable: true })
   faculty_id?: string;
 

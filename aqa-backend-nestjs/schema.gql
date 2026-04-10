@@ -33,7 +33,7 @@ type Class {
   lecturer_1: Lecturer
   lecturer_2: Lecturer
   participating_student: Int
-  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): [GroupedPoint!]!
+  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, semester_ids: [String!], subjects: [String!]): [GroupedPoint!]!
   program: String!
   semester: Semester!
   subject: Subject!
@@ -179,9 +179,9 @@ type Faculty {
   full_name: String
   is_displayed: Boolean
   lecturers(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedLecturer
-  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): PaginatedGroupedPoint
+  points(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, semester_ids: [String!], subjects: [String!]): PaginatedGroupedPoint
   subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject
-  total_point(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, subjects: [String!]): GroupedPoint
+  total_point(class_id: String, class_type: String, criteria_id: String, faculty_id: String, keyword: String = "", lecturer_id: String, program: String, semester_id: String, semester_ids: [String!], subjects: [String!]): GroupedPoint
 }
 
 input FilterArgs {
@@ -193,6 +193,7 @@ input FilterArgs {
   lecturer_id: String
   program: String
   semester_id: String
+  semester_ids: [String!]
   subjects: [String!]
 }
 
@@ -437,7 +438,7 @@ type Query {
   getSurveySemesterList: [String!]!
 
   """List all points, group by a specific entity"""
-  groupedPoints(class_id: String, class_type: String, criteria_id: String, faculty_id: String, groupEntity: String = "Subject", keyword: String = "", lecturer_id: String, page: Int = 0, program: String, semester_id: String, size: Int = 10, subjects: [String!]): PaginatedGroupedPoint!
+  groupedPoints(class_id: String, class_type: String, criteria_id: String, faculty_id: String, groupEntity: String = "Subject", keyword: String = "", lecturer_id: String, page: Int = 0, program: String, semester_id: String, semester_ids: [String!], size: Int = 10, subjects: [String!]): PaginatedGroupedPoint!
 
   """View detail information of a specific lecturer"""
   lecturer(id: String!): Lecturer

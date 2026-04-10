@@ -14,6 +14,8 @@ export const FilterContext = createContext<IFilterContext>({
 	setProgram: (d: string) => {},
 	setFaculty: (d: Faculty) => {},
 	setSemester: (d: Semester | undefined) => {},
+	semesterIds: [],
+	setSemesterIds: (d: string[] | undefined) => {},
 	setSort: (d: ISortOptions) => {},
 });
 
@@ -37,6 +39,7 @@ export function FilterProvider({
 		display_name: "",
 		semester_id: "",
 	} as Semester,
+	semesterIds: default_semesterIds = [],
 	sort: default_sort = "desc",
 	setSort: default_setSort,
 	children,
@@ -48,6 +51,7 @@ export function FilterProvider({
 	program?: string;
 	faculty?: Faculty;
 	semester?: Semester;
+	semesterIds?: string[];
 	sort?: ISortOptions;
 	setSort?: (d: ISortOptions) => any;
 	children: ReactNode;
@@ -59,6 +63,7 @@ export function FilterProvider({
 	const [program, setProgram] = useState(default_program);
 	const [faculty, setFaculty] = useState(default_faculty);
 	const [semester, setSemester] = useState(default_semester);
+	const [semesterIds, setSemesterIds] = useState<string[]>(default_semesterIds);
 	const [sort, setSort] = useState<ISortOptions>(default_sort);
 
 	const { isFaculty, faculty: facultyData } = useIsFaculty();
@@ -84,6 +89,8 @@ export function FilterProvider({
 				setFaculty,
 				semester,
 				setSemester: (d: Semester | undefined) => setSemester(d as Semester),
+				semesterIds,
+				setSemesterIds: (d: string[] | undefined) => setSemesterIds(d || []),
 				sort,
 				setSort,
 			}}
@@ -108,6 +115,8 @@ export interface IFilterContext {
 	setFaculty: (d: Faculty) => any;
 	semester?: Semester;
 	setSemester: (d: Semester | undefined) => any;
+	semesterIds?: string[];
+	setSemesterIds: (d: string[] | undefined) => any;
 	sort?: ISortOptions;
 	setSort: (d: ISortOptions) => any;
 }

@@ -5,6 +5,7 @@ query PointsEachSemester(
 	$lecturer_id: String
 	$criteria_id: String
 	$semester_id: String
+	$semester_ids: [String!]
 	$program: String
 	$subjects: [String!]
 ) {
@@ -16,6 +17,7 @@ query PointsEachSemester(
 		lecturer_id: $lecturer_id
 		criteria_id: $criteria_id
 		semester_id: $semester_id
+		semester_ids: $semester_ids
 		program: $program
 		subjects: $subjects
 	) {
@@ -39,6 +41,7 @@ query PointsWithGroupBy(
 	$lecturer_id: String
 	$criteria_id: String
 	$semester_id: String
+	$semester_ids: [String!]
 	$program: String
 	$subjects: [String!]
 ) {
@@ -50,6 +53,7 @@ query PointsWithGroupBy(
 		lecturer_id: $lecturer_id
 		criteria_id: $criteria_id
 		semester_id: $semester_id
+		semester_ids: $semester_ids
 		program: $program
 		subjects: $subjects
 	) {

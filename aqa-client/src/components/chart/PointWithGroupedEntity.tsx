@@ -67,6 +67,7 @@ function InnerPointWithGroupedEntity({
 				? profile.profile.faculty?.faculty_id
 				: filter.faculty?.faculty_id,
 		semester_id: filter.semester?.semester_id,
+		semester_ids: filter.semesterIds && filter.semesterIds.length > 0 ? filter.semesterIds : undefined,
 		subjects: Array.from(filter.subjects.values()).length
 			? Array.from(filter.subjects.values()).map(
 				(subject) => subject.subject_id

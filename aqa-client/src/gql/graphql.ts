@@ -1511,6 +1511,7 @@ export type PointsEachSemesterQueryVariables = Exact<{
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   criteria_id?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   subjects?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
@@ -1525,6 +1526,7 @@ export type PointsWithGroupByQueryVariables = Exact<{
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   criteria_id?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   subjects?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
@@ -4285,7 +4287,7 @@ export type LoginIntegrationMutationHookResult = ReturnType<typeof useLoginInteg
 export type LoginIntegrationMutationResult = Apollo.MutationResult<LoginIntegrationMutation>;
 export type LoginIntegrationMutationOptions = Apollo.BaseMutationOptions<LoginIntegrationMutation, LoginIntegrationMutationVariables>;
 export const PointsEachSemesterDocument = gql`
-    query PointsEachSemester($groupEntity: String!, $class_type: String, $faculty_id: String, $lecturer_id: String, $criteria_id: String, $semester_id: String, $program: String, $subjects: [String!]) {
+    query PointsEachSemester($groupEntity: String!, $class_type: String, $faculty_id: String, $lecturer_id: String, $criteria_id: String, $semester_id: String, $semester_ids: [String!], $program: String, $subjects: [String!]) {
   groupedPoints(
     groupEntity: $groupEntity
     size: 30
@@ -4294,6 +4296,7 @@ export const PointsEachSemesterDocument = gql`
     lecturer_id: $lecturer_id
     criteria_id: $criteria_id
     semester_id: $semester_id
+    semester_ids: $semester_ids
     program: $program
     subjects: $subjects
   ) {
@@ -4357,7 +4360,7 @@ export function refetchPointsEachSemesterQuery(variables: PointsEachSemesterQuer
       return { query: PointsEachSemesterDocument, variables: variables }
     }
 export const PointsWithGroupByDocument = gql`
-    query PointsWithGroupBy($groupEntity: String!, $class_type: String, $faculty_id: String, $lecturer_id: String, $criteria_id: String, $semester_id: String, $program: String, $subjects: [String!]) {
+    query PointsWithGroupBy($groupEntity: String!, $class_type: String, $faculty_id: String, $lecturer_id: String, $criteria_id: String, $semester_id: String, $semester_ids: [String!], $program: String, $subjects: [String!]) {
   groupedPoints(
     groupEntity: $groupEntity
     size: 200
@@ -4366,6 +4369,7 @@ export const PointsWithGroupByDocument = gql`
     lecturer_id: $lecturer_id
     criteria_id: $criteria_id
     semester_id: $semester_id
+    semester_ids: $semester_ids
     program: $program
     subjects: $subjects
   ) {

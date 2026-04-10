@@ -71,13 +71,31 @@ export class FilterQueryService {
         keyword: filter.keyword,
       });
 
-    if (filter.semester_id)
+    if (filter.semester_id) {
+      if (filter.semester_id.includes(',')) {
+        const ids = filter.semester_id.split(',').filter(Boolean);
+        filteredQuery = filteredQuery.andWhere(
+          'Semester.semester_id IN (:...legacy_semester_ids)',
+          { legacy_semester_ids: ids },
+        );
+      } else {
+        filteredQuery = filteredQuery.andWhere(
+          'Semester.semester_id = :semester_id',
+          {
+            semester_id: filter.semester_id,
+          },
+        );
+      }
+    }
+
+    if (filter.semester_ids && filter.semester_ids.length > 0) {
       filteredQuery = filteredQuery.andWhere(
-        'Semester.semester_id = :semester_id',
+        'Semester.semester_id IN (:...semester_ids)',
         {
-          semester_id: filter.semester_id,
+          semester_ids: filter.semester_ids,
         },
       );
+    }
 
     if (filter.subjects)
       filteredQuery = filteredQuery.andWhere(
