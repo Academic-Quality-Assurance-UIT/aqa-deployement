@@ -52,7 +52,7 @@ export function CurrentLecturerOverallChart() {
 				selectors={
 					<>
 						<ProgramSelector />
-						<SubjectSelector />
+						<SubjectSelector lecturer_id={currentLecturerId} />
 					</>
 				}
 			/>
