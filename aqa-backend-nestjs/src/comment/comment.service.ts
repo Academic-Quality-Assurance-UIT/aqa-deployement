@@ -107,4 +107,97 @@ export class CommentService {
   findOne(id: string) {
     return this.repo.findOne({ where: { comment_id: id }, relations: {} });
   }
+
+  async getCommentStatistics(
+    filter: FilterArgs,
+    groupBy: 'semester' | 'year' = 'semester',
+    type?: string[],
+    topic?: string[],
+  ) {
+    const groupField =
+      groupBy === 'semester' ? 'Semester.display_name' : 'Semester.year';
+
+    const baseQuery = await this.filterQueryService.filterQuery<Comment>(
+      'Comment',
+      this.repo
+        .createQueryBuilder('Comment')
+        .innerJoin('Comment.class', 'Class')
+        .innerJoin('Class.subject', 'Subject')
+        .innerJoin('Subject.faculty', 'Faculty')
+        .innerJoin('Class.semester', 'Semester')
+        .innerJoin(
+          Lecturer,
+          'Lecturer',
+          'Lecturer.lecturer_id = Class.lecturer_id OR Lecturer.lecturer_id = Class.lecturer_1_id OR Lecturer.lecturer_id = Class.lecturer_2_id',
+        ),
+      filter,
+    );
+
+    baseQuery.andWhere('array_length(Comment.type_list, 1) > 0');
+
+    if (type && !type.includes('all') && type.length > 0) {
+      baseQuery.andWhere('Comment.type_list && ARRAY[:...type]', { type });
+    }
+
+    if (topic && !topic.includes('all') && topic.length > 0) {
+      baseQuery.andWhere('Comment.topic IN (:...topic)', { topic });
+    }
+
+    const totals = await baseQuery
+      .clone()
+      .select(`${groupField}`, 'label')
+      .addSelect('COUNT(DISTINCT Comment.comment_id)', 'total')
+      .groupBy(`${groupField}`)
+      .addGroupBy('Semester.year')
+      .orderBy('Semester.year', 'ASC')
+      .addOrderBy(`${groupField}`, 'ASC')
+      .getRawMany();
+
+    const sentiments = await baseQuery
+      .clone()
+      .select(`${groupField}`, 'label')
+      .addSelect('unnest(Comment.type_list)', 'sentiment')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy(`${groupField}`)
+      .addGroupBy('Semester.year')
+      .addGroupBy('sentiment')
+      .orderBy('Semester.year', 'ASC')
+      .addOrderBy(`${groupField}`, 'ASC')
+      .getRawMany();
+
+    const topics = await baseQuery
+      .clone()
+      .select(`${groupField}`, 'label')
+      .addSelect('Comment.topic', 'topic')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy(`${groupField}`)
+      .addGroupBy('Semester.year')
+      .addGroupBy('Comment.topic')
+      .orderBy('Semester.year', 'ASC')
+      .addOrderBy(`${groupField}`, 'ASC')
+      .getRawMany();
+
+    const result = totals.map((t) => ({
+      label: t.label,
+      total: parseInt(t.total, 10),
+      sentiments: {},
+      topics: {},
+    }));
+
+    sentiments.forEach((s) => {
+      const entry = result.find((r) => r.label === s.label);
+      if (entry) {
+        entry.sentiments[s.sentiment] = parseInt(s.count, 10);
+      }
+    });
+
+    topics.forEach((t) => {
+      const entry = result.find((r) => r.label === t.label);
+      if (entry) {
+        entry.topics[t.topic || 'Unknown'] = parseInt(t.count, 10);
+      }
+    });
+
+    return result;
+  }
 }

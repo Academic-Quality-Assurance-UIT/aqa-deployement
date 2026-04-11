@@ -7,6 +7,7 @@ import CommentSearchBar from "@/components/comments/CommentSearchBar";
 import { FacultySelectorWithSearchParams } from "@/components/selectors/FacultySelector";
 import { ProgramSelectorWithSearchParam } from "@/components/selectors/ProgramSelector";
 import { SingleSubjectSelectorWithSearchParam } from "@/components/selectors/SingleSubjectSelector";
+import CommentRatioCharts from "@/components/comments/CommentRatioCharts";
 import { FilterArgs, useCommentListLazyQuery, useProfileQuery } from "@/gql/graphql";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { Card } from "@heroui/react";
@@ -104,7 +105,12 @@ export default function CommentPage({ defaultFilter = {}, selectors = [] }: IPro
 						</div>
 					</div>
 				</div>
-				<div className=" mt-10 rounded-xl">
+				<CommentRatioCharts
+					query={query}
+					type={searchParams.get("type") ? [searchParams.get("type")!] : ["all"]}
+					topic={searchParams.get("topic") ? [searchParams.get("topic")!] : ["all"]}
+				/>
+				<div className=" mt-4 rounded-xl">
 					{_.uniqBy(comments, "comment_id").map(
 						({
 							comment_id,

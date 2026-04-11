@@ -111,3 +111,12 @@ query CommentList($filter: FilterArgs, $page: Int, $sort: SortArgs, $type: [Stri
 		}
 	}
 }
+
+query CommentStatistics($filter: FilterArgs, $groupBy: String, $type: [String!], $topic: [String!]) {
+    commentStatistics(filter: $filter, groupBy: $groupBy, type: $type, topic: $topic) {
+        label
+        total
+        sentiments
+        topics
+    }
+}

@@ -263,7 +263,7 @@ export default function ChartLayout({
 						<div className=" relative pb-5 h-full w-full overflow-x-auto flex flex-col justify-stretch flex-grow">
 							<div
 								id="chart"
-								className=" pt-1 pb-2 pr-2 lg:pr-4 lg:pl-4 flex flex-col flex-grow"
+								className=" pt-1 pb-4 pr-6 lg:pr-6 lg:pl-6 flex flex-col flex-grow"
 								style={{ width }}
 							>
 								{children}

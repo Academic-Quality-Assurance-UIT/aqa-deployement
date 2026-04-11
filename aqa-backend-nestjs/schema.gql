@@ -54,6 +54,13 @@ type CommentQuantity {
   type: String!
 }
 
+type CommentStatisticData {
+  label: String!
+  sentiments: JSON!
+  topics: JSON!
+  total: Int!
+}
+
 type CrawlApiRequestLog {
   crawl_job_id: String!
   created_at: DateTime!
@@ -385,6 +392,7 @@ type Query {
   """View particular comment information"""
   comment(id: String!): Comment
   commentQuantity(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: String, type: String): CommentQuantity!
+  commentStatistics(filter: FilterArgs = {}, groupBy: String = "semester", pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: [String!], type: [String!]): [CommentStatisticData!]!
 
   """List all comments"""
   comments(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}, topic: [String!], type: [String!]): PaginatedComment!

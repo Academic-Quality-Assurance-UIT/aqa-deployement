@@ -2,6 +2,7 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 import { QueryArgs } from 'src/common/args/query.arg';
 import { CommentService } from './comment.service';
 import { CommentQuantity } from './dto/CommentQuantity.dto';
+import { CommentStatisticData } from './dto/CommentStatistic.dto';
 import { PaginatedComment } from './dto/PaginatedComment';
 import { Comment } from './entities/comment.entity';
 
@@ -28,6 +29,22 @@ export class CommentResolver {
     @Args('topic', { nullable: true }) topic: string,
   ) {
     return this.commentService.getQuantity(filter, type, topic);
+  }
+
+  @Query(() => [CommentStatisticData], { name: 'commentStatistics' })
+  commentStatistics(
+    @Args() { filter }: QueryArgs,
+    @Args('groupBy', { nullable: true, defaultValue: 'semester' })
+    groupBy: 'semester' | 'year',
+    @Args('type', { type: () => [String], nullable: true }) type: string[],
+    @Args('topic', { type: () => [String], nullable: true }) topic: string[],
+  ) {
+    return this.commentService.getCommentStatistics(
+      filter,
+      groupBy,
+      type,
+      topic,
+    );
   }
 
   @Query(() => Comment, {

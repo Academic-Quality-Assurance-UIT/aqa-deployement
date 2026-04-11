@@ -15,7 +15,9 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: { input: any; output: any; }
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: any; output: any; }
 };
 
@@ -71,6 +73,7 @@ export type ClassPointsArgs = {
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   subjects?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -79,7 +82,7 @@ export type Comment = {
   class?: Maybe<Class>;
   comment_id: Scalars['String']['output'];
   display_name: Scalars['String']['output'];
-  topic: Scalars['String']['output'];
+  topic?: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
   type_list: Array<Scalars['String']['output']>;
 };
@@ -88,6 +91,14 @@ export type CommentQuantity = {
   __typename?: 'CommentQuantity';
   quantity: Scalars['Int']['output'];
   type: Scalars['String']['output'];
+};
+
+export type CommentStatisticData = {
+  __typename?: 'CommentStatisticData';
+  label: Scalars['String']['output'];
+  sentiments: Scalars['JSON']['output'];
+  topics: Scalars['JSON']['output'];
+  total: Scalars['Int']['output'];
 };
 
 export type CrawlApiRequestLog = {
@@ -242,6 +253,7 @@ export type FacultyPointsArgs = {
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   subjects?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -262,6 +274,7 @@ export type FacultyTotal_PointArgs = {
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   subjects?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -274,6 +287,7 @@ export type FilterArgs = {
   lecturer_id?: InputMaybe<Scalars['String']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   subjects?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -379,6 +393,8 @@ export type Mutation = {
   runCrawlStaffSurvey: CrawlJob;
   /** Chạy thu thập KS Môn học */
   runCrawlSubjectSurvey: CrawlJob;
+  /** Chạy phân loại chủ đề cho bình luận */
+  runTopicAssignment: CrawlJob;
   /** Chạy chuyển dữ liệu giữa các database */
   runTransferData: CrawlJob;
   stopCrawlJob: CrawlJob;
@@ -479,6 +495,11 @@ export type MutationRunCrawlStaffSurveyArgs = {
 export type MutationRunCrawlSubjectSurveyArgs = {
   semester?: InputMaybe<Scalars['String']['input']>;
   surveyConfigIds?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type MutationRunTopicAssignmentArgs = {
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -606,6 +627,7 @@ export type Query = {
   /** View particular comment information */
   comment?: Maybe<Comment>;
   commentQuantity: CommentQuantity;
+  commentStatistics: Array<CommentStatisticData>;
   /** List all comments */
   comments: PaginatedComment;
   /** Lấy chi tiết một cuộc gọi API qua ID */
@@ -667,6 +689,8 @@ export type Query = {
   surveyCrawlHistory: Array<SurveyCrawlHistory>;
   /** Lấy danh sách cấu hình khảo sát */
   surveyListConfigs: Array<SurveyListConfig>;
+  /** Xem trước dữ liệu bình luận trước khi phân loại chủ đề */
+  topicAssignmentPreview: TopicAssignmentPreview;
   users: Array<UserEntity>;
 };
 
@@ -694,6 +718,16 @@ export type QueryCommentQuantityArgs = {
   sort?: InputMaybe<SortArgs>;
   topic?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryCommentStatisticsArgs = {
+  filter?: InputMaybe<FilterArgs>;
+  groupBy?: InputMaybe<Scalars['String']['input']>;
+  pagination?: InputMaybe<PaginationArgs>;
+  sort?: InputMaybe<SortArgs>;
+  topic?: InputMaybe<Array<Scalars['String']['input']>>;
+  type?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -848,6 +882,7 @@ export type QueryGroupedPointsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   program?: InputMaybe<Scalars['String']['input']>;
   semester_id?: InputMaybe<Scalars['String']['input']>;
+  semester_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   size?: InputMaybe<Scalars['Int']['input']>;
   subjects?: InputMaybe<Array<Scalars['String']['input']>>;
 };
@@ -903,6 +938,13 @@ export type QuerySurveyCrawlHistoryArgs = {
 
 export type QuerySurveyListConfigsArgs = {
   type?: InputMaybe<CrawlJobType>;
+};
+
+
+export type QueryTopicAssignmentPreviewArgs = {
+  limit?: Scalars['Int']['input'];
+  offset?: Scalars['Int']['input'];
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -1093,6 +1135,14 @@ export type SurveyListConfigInput = {
   year?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type TopicAssignmentPreview = {
+  __typename?: 'TopicAssignmentPreview';
+  assignedComments: Scalars['Int']['output'];
+  samples: Array<Scalars['JSON']['output']>;
+  totalComments: Scalars['Int']['output'];
+  unassignedComments: Scalars['Int']['output'];
+};
+
 export type UpdateUserDto = {
   displayName?: InputMaybe<Scalars['String']['input']>;
   facultyId?: InputMaybe<Scalars['String']['input']>;
@@ -1187,7 +1237,17 @@ export type CommentListQueryVariables = Exact<{
 }>;
 
 
-export type CommentListQuery = { __typename?: 'Query', comments: { __typename?: 'PaginatedComment', data: Array<{ __typename?: 'Comment', comment_id: string, display_name: string, type: string, type_list: Array<string>, topic: string, class?: { __typename?: 'Class', class_id: string, class_type: string, display_name: string, participating_student?: number | null, program: string, total_student?: number | null, lecturer: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null }, subject: { __typename?: 'Subject', display_name?: string | null, faculty_id?: string | null, subject_id: string, total_point?: number | null, faculty?: { __typename?: 'Faculty', display_name: string, faculty_id: string, full_name?: string | null } | null }, semester: { __typename?: 'Semester', display_name: string, semester_id: string, type?: string | null, year?: string | null } } | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+export type CommentListQuery = { __typename?: 'Query', comments: { __typename?: 'PaginatedComment', data: Array<{ __typename?: 'Comment', comment_id: string, display_name: string, type: string, type_list: Array<string>, topic?: string | null, class?: { __typename?: 'Class', class_id: string, class_type: string, display_name: string, participating_student?: number | null, program: string, total_student?: number | null, lecturer: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null }, subject: { __typename?: 'Subject', display_name?: string | null, faculty_id?: string | null, subject_id: string, total_point?: number | null, faculty?: { __typename?: 'Faculty', display_name: string, faculty_id: string, full_name?: string | null } | null }, semester: { __typename?: 'Semester', display_name: string, semester_id: string, type?: string | null, year?: string | null } } | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+
+export type CommentStatisticsQueryVariables = Exact<{
+  filter?: InputMaybe<FilterArgs>;
+  groupBy?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type CommentStatisticsQuery = { __typename?: 'Query', commentStatistics: Array<{ __typename?: 'CommentStatisticData', label: string, total: number, sentiments: any, topics: any }> };
 
 export type GetCrawlJobsQueryVariables = Exact<{
   type?: InputMaybe<CrawlJobType>;
@@ -1311,7 +1371,7 @@ export type AddSurveyListConfigMutationVariables = Exact<{
 }>;
 
 
-export type AddSurveyListConfigMutation = { __typename?: 'Mutation', addSurveyListConfig: { __typename?: 'SurveyListConfig', id: string, survey_type: CrawlJobType, sid: string, title?: string | null, year?: string | null, is_active: boolean } };
+export type AddSurveyListConfigMutation = { __typename?: 'Mutation', addSurveyListConfig: { __typename?: 'SurveyListConfig', id: string, survey_type: CrawlJobType, sid: string, title?: string | null, type?: string | null, year?: string | null, semester_type?: string | null, semester_name?: string | null, is_active: boolean } };
 
 export type UpdateSurveyListConfigMutationVariables = Exact<{
   id: Scalars['String']['input'];
@@ -1348,6 +1408,22 @@ export type SearchExternalSurveysQueryVariables = Exact<{
 
 
 export type SearchExternalSurveysQuery = { __typename?: 'Query', searchExternalSurveys: any };
+
+export type RunTopicAssignmentMutationVariables = Exact<{
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type RunTopicAssignmentMutation = { __typename?: 'Mutation', runTopicAssignment: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null, progress?: number | null, total_data?: number | null } };
+
+export type TopicAssignmentPreviewQueryVariables = Exact<{
+  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type TopicAssignmentPreviewQuery = { __typename?: 'Query', topicAssignmentPreview: { __typename?: 'TopicAssignmentPreview', totalComments: number, assignedComments: number, unassignedComments: number, samples: Array<any> } };
 
 export type GetCriteriaMappingsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2234,6 +2310,63 @@ export type CommentListQueryResult = Apollo.QueryResult<CommentListQuery, Commen
 export function refetchCommentListQuery(variables?: CommentListQueryVariables) {
       return { query: CommentListDocument, variables: variables }
     }
+export const CommentStatisticsDocument = gql`
+    query CommentStatistics($filter: FilterArgs, $groupBy: String, $type: [String!], $topic: [String!]) {
+  commentStatistics(
+    filter: $filter
+    groupBy: $groupBy
+    type: $type
+    topic: $topic
+  ) {
+    label
+    total
+    sentiments
+    topics
+  }
+}
+    `;
+
+/**
+ * __useCommentStatisticsQuery__
+ *
+ * To run a query within a React component, call `useCommentStatisticsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCommentStatisticsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCommentStatisticsQuery({
+ *   variables: {
+ *      filter: // value for 'filter'
+ *      groupBy: // value for 'groupBy'
+ *      type: // value for 'type'
+ *      topic: // value for 'topic'
+ *   },
+ * });
+ */
+export function useCommentStatisticsQuery(baseOptions?: Apollo.QueryHookOptions<CommentStatisticsQuery, CommentStatisticsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<CommentStatisticsQuery, CommentStatisticsQueryVariables>(CommentStatisticsDocument, options);
+      }
+export function useCommentStatisticsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<CommentStatisticsQuery, CommentStatisticsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<CommentStatisticsQuery, CommentStatisticsQueryVariables>(CommentStatisticsDocument, options);
+        }
+// @ts-ignore
+export function useCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<CommentStatisticsQuery, CommentStatisticsQueryVariables>): Apollo.UseSuspenseQueryResult<CommentStatisticsQuery, CommentStatisticsQueryVariables>;
+export function useCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CommentStatisticsQuery, CommentStatisticsQueryVariables>): Apollo.UseSuspenseQueryResult<CommentStatisticsQuery | undefined, CommentStatisticsQueryVariables>;
+export function useCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CommentStatisticsQuery, CommentStatisticsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<CommentStatisticsQuery, CommentStatisticsQueryVariables>(CommentStatisticsDocument, options);
+        }
+export type CommentStatisticsQueryHookResult = ReturnType<typeof useCommentStatisticsQuery>;
+export type CommentStatisticsLazyQueryHookResult = ReturnType<typeof useCommentStatisticsLazyQuery>;
+export type CommentStatisticsSuspenseQueryHookResult = ReturnType<typeof useCommentStatisticsSuspenseQuery>;
+export type CommentStatisticsQueryResult = Apollo.QueryResult<CommentStatisticsQuery, CommentStatisticsQueryVariables>;
+export function refetchCommentStatisticsQuery(variables?: CommentStatisticsQueryVariables) {
+      return { query: CommentStatisticsDocument, variables: variables }
+    }
 export const GetCrawlJobsDocument = gql`
     query GetCrawlJobs($type: CrawlJobType) {
   crawlJobs(type: $type) {
@@ -2974,7 +3107,10 @@ export const AddSurveyListConfigDocument = gql`
     survey_type
     sid
     title
+    type
     year
+    semester_type
+    semester_name
     is_active
   }
 }
@@ -3190,6 +3326,99 @@ export type SearchExternalSurveysSuspenseQueryHookResult = ReturnType<typeof use
 export type SearchExternalSurveysQueryResult = Apollo.QueryResult<SearchExternalSurveysQuery, SearchExternalSurveysQueryVariables>;
 export function refetchSearchExternalSurveysQuery(variables?: SearchExternalSurveysQueryVariables) {
       return { query: SearchExternalSurveysDocument, variables: variables }
+    }
+export const RunTopicAssignmentDocument = gql`
+    mutation RunTopicAssignment($semesterIds: [String!]) {
+  runTopicAssignment(semesterIds: $semesterIds) {
+    crawl_job_id
+    type
+    status
+    started_at
+    progress
+    total_data
+  }
+}
+    `;
+export type RunTopicAssignmentMutationFn = Apollo.MutationFunction<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
+
+/**
+ * __useRunTopicAssignmentMutation__
+ *
+ * To run a mutation, you first call `useRunTopicAssignmentMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRunTopicAssignmentMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [runTopicAssignmentMutation, { data, loading, error }] = useRunTopicAssignmentMutation({
+ *   variables: {
+ *      semesterIds: // value for 'semesterIds'
+ *   },
+ * });
+ */
+export function useRunTopicAssignmentMutation(baseOptions?: Apollo.MutationHookOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>(RunTopicAssignmentDocument, options);
+      }
+export type RunTopicAssignmentMutationHookResult = ReturnType<typeof useRunTopicAssignmentMutation>;
+export type RunTopicAssignmentMutationResult = Apollo.MutationResult<RunTopicAssignmentMutation>;
+export type RunTopicAssignmentMutationOptions = Apollo.BaseMutationOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
+export const TopicAssignmentPreviewDocument = gql`
+    query TopicAssignmentPreview($semesterIds: [String!], $limit: Int, $offset: Int) {
+  topicAssignmentPreview(
+    semesterIds: $semesterIds
+    limit: $limit
+    offset: $offset
+  ) {
+    totalComments
+    assignedComments
+    unassignedComments
+    samples
+  }
+}
+    `;
+
+/**
+ * __useTopicAssignmentPreviewQuery__
+ *
+ * To run a query within a React component, call `useTopicAssignmentPreviewQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTopicAssignmentPreviewQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useTopicAssignmentPreviewQuery({
+ *   variables: {
+ *      semesterIds: // value for 'semesterIds'
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useTopicAssignmentPreviewQuery(baseOptions?: Apollo.QueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
+      }
+export function useTopicAssignmentPreviewLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
+        }
+// @ts-ignore
+export function useTopicAssignmentPreviewSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>): Apollo.UseSuspenseQueryResult<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>;
+export function useTopicAssignmentPreviewSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>): Apollo.UseSuspenseQueryResult<TopicAssignmentPreviewQuery | undefined, TopicAssignmentPreviewQueryVariables>;
+export function useTopicAssignmentPreviewSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
+        }
+export type TopicAssignmentPreviewQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewQuery>;
+export type TopicAssignmentPreviewLazyQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewLazyQuery>;
+export type TopicAssignmentPreviewSuspenseQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewSuspenseQuery>;
+export type TopicAssignmentPreviewQueryResult = Apollo.QueryResult<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>;
+export function refetchTopicAssignmentPreviewQuery(variables?: TopicAssignmentPreviewQueryVariables) {
+      return { query: TopicAssignmentPreviewDocument, variables: variables }
     }
 export const GetCriteriaMappingsDocument = gql`
     query GetCriteriaMappings {
@@ -4332,6 +4561,7 @@ export const PointsEachSemesterDocument = gql`
  *      lecturer_id: // value for 'lecturer_id'
  *      criteria_id: // value for 'criteria_id'
  *      semester_id: // value for 'semester_id'
+ *      semester_ids: // value for 'semester_ids'
  *      program: // value for 'program'
  *      subjects: // value for 'subjects'
  *   },
@@ -4405,6 +4635,7 @@ export const PointsWithGroupByDocument = gql`
  *      lecturer_id: // value for 'lecturer_id'
  *      criteria_id: // value for 'criteria_id'
  *      semester_id: // value for 'semester_id'
+ *      semester_ids: // value for 'semester_ids'
  *      program: // value for 'program'
  *      subjects: // value for 'subjects'
  *   },
@@ -5744,76 +5975,3 @@ export function useRemoveUserMutation(baseOptions?: Apollo.MutationHookOptions<R
 export type RemoveUserMutationHookResult = ReturnType<typeof useRemoveUserMutation>;
 export type RemoveUserMutationResult = Apollo.MutationResult<RemoveUserMutation>;
 export type RemoveUserMutationOptions = Apollo.BaseMutationOptions<RemoveUserMutation, RemoveUserMutationVariables>;
-
-// ========================
-// Topic Assignment - Types
-// ========================
-
-export type TopicAssignmentPreview = {
-  __typename?: 'TopicAssignmentPreview';
-  totalComments: Scalars['Int']['output'];
-  assignedComments: Scalars['Int']['output'];
-  unassignedComments: Scalars['Int']['output'];
-  samples: Array<Scalars['JSON']['output']>;
-};
-
-export type RunTopicAssignmentMutationVariables = Exact<{
-  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-}>;
-
-export type RunTopicAssignmentMutation = { __typename?: 'Mutation', runTopicAssignment: { __typename?: 'CrawlJob', crawl_job_id: string, type: CrawlJobType, status: CrawlJobStatus, started_at?: any | null, progress?: number | null, total_data?: number | null } };
-
-export type TopicAssignmentPreviewQueryVariables = Exact<{
-  semesterIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-}>;
-
-export type TopicAssignmentPreviewQuery = { __typename?: 'Query', topicAssignmentPreview: { __typename?: 'TopicAssignmentPreview', totalComments: number, assignedComments: number, unassignedComments: number, samples: Array<any> } };
-
-// ========================
-// Topic Assignment - Documents
-// ========================
-
-export const RunTopicAssignmentDocument = gql`
-    mutation RunTopicAssignment($semesterIds: [String!]) {
-  runTopicAssignment(semesterIds: $semesterIds) {
-    crawl_job_id
-    type
-    status
-    started_at
-    progress
-    total_data
-  }
-}
-    `;
-export type RunTopicAssignmentMutationFn = Apollo.MutationFunction<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
-export function useRunTopicAssignmentMutation(baseOptions?: Apollo.MutationHookOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>(RunTopicAssignmentDocument, options);
-      }
-export type RunTopicAssignmentMutationHookResult = ReturnType<typeof useRunTopicAssignmentMutation>;
-export type RunTopicAssignmentMutationResult = Apollo.MutationResult<RunTopicAssignmentMutation>;
-export type RunTopicAssignmentMutationOptions = Apollo.BaseMutationOptions<RunTopicAssignmentMutation, RunTopicAssignmentMutationVariables>;
-
-export const TopicAssignmentPreviewDocument = gql`
-    query TopicAssignmentPreview($semesterIds: [String!], $limit: Int, $offset: Int) {
-  topicAssignmentPreview(semesterIds: $semesterIds, limit: $limit, offset: $offset) {
-    totalComments
-    assignedComments
-    unassignedComments
-    samples
-  }
-}
-    `;
-export function useTopicAssignmentPreviewQuery(baseOptions?: Apollo.QueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
-      }
-export function useTopicAssignmentPreviewLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>(TopicAssignmentPreviewDocument, options);
-        }
-export type TopicAssignmentPreviewQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewQuery>;
-export type TopicAssignmentPreviewLazyQueryHookResult = ReturnType<typeof useTopicAssignmentPreviewLazyQuery>;
-export type TopicAssignmentPreviewQueryResult = Apollo.QueryResult<TopicAssignmentPreviewQuery, TopicAssignmentPreviewQueryVariables>;
