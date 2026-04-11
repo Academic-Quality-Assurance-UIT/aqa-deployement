@@ -116,7 +116,7 @@ export class CrawlSubjectSurveyService {
             crawl_job_id: crawlJobId,
             data_type: 'student',
             data: mappedData,
-            key: student.tid,
+            key: `${student.email}_${mappedData.malop}_${surveyInfo.semester_name}`,
           };
         });
 

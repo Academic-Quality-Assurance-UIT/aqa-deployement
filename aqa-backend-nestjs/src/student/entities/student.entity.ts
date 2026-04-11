@@ -1,9 +1,14 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
-import { Column, Entity, PrimaryColumn, Index } from 'typeorm';
+import { Column, Entity, PrimaryColumn, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @ObjectType()
 @Entity({ name: 'student' })
+@Unique(['email', 'malop', 'semester_name'])
 export class Student {
+  @PrimaryGeneratedColumn('uuid')
+  @Field(() => String)
+  id: string;
+
   @Column({ nullable: true })
   @Field({ nullable: true })
   @Index()
@@ -22,7 +27,7 @@ export class Student {
   @Field({ nullable: true })
   lastname: string;
 
-  @PrimaryColumn()
+  @Column()
   @Field(() => String)
   email: string;
 

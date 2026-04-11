@@ -51,13 +51,19 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 	const [getSubjects, { data, loading: isLoading }] = useSubjectsLazyQuery();
 	const { dataList, bottomRef } = useInfiniteScroll({
 		queryFunction: getSubjects,
-		variables: { keyword: debouncedKeyword, isAscending: sort != "desc" },
+		variables: {
+			filter: {
+				keyword: debouncedKeyword,
+				faculty_id: faculty?.faculty_id || undefined,
+			},
+			isAscending: sort != "desc",
+		},
 		isLoading,
 		data: data?.subjects.data,
 		meta: data?.subjects.meta,
 		enabled: isOpen,
 	});
-	const items = useRememberValue(dataList);
+	const items = useRememberValue(dataList.length > 0 ? dataList : undefined);
 
 	return (
         <>
@@ -103,11 +109,11 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 									onPress={() => {
 										onOpenDetail();
 									}}
-									className="mt-3"
+									className="mt-3 bg-primary-100 text-primary-900 font-semibold"
 								>{`Đã chọn ${subjects.size} môn`}</Button>
 							</ModalHeader>
 							<ModalBody className="mb-5">
-								{items?.length || 0 > 0 || !isLoading ? (
+								{(items && items.length > 0) || !isLoading ? (
 									<>
 										{items?.map(
 											({
@@ -128,7 +134,7 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 															base: cn(
 																"inline-flex w-full max-w-7xl bg-content1",
 																"hover:bg-content2 items-center justify-start",
-																"cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-transparent",
+																"cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-default-200",
 																"data-[selected=true]:border-primary"
 															),
 															label: "w-full",
@@ -196,27 +202,28 @@ export default function SubjectSelector({ isNoBorder }: SubjectSelectorPropTypes
 											</div>
 										))
 								)}
-								{/* {hasMore ? (
-									<div
-										// ref={bottomRef}
-										className=" w-full py-4 flex flex-row justify-center gap-2 items-center"
-									>
-										<Spinner size="sm" />
-										<p className=" text-md font-semibold">
-											Đang tải...
-										</p>
-									</div>
-								) : (
-									<div
-										// ref={bottomRef}
-										className=" w-full py-4 flex flex-row justify-center gap-2 items-center"
-									>
-										<p className=" text-md font-semibold">
-											Không còn môn học nào
-										</p>
-									</div>
+								{items && items.length > 0 && (
+									<>
+										{data?.subjects?.meta?.hasNext ? (
+											<div
+												className=" w-full py-4 flex flex-row justify-center gap-2 items-center"
+											>
+												<p className=" text-md font-semibold">
+													Đang tải...
+												</p>
+											</div>
+										) : (
+											<div
+												className=" w-full py-4 flex flex-row justify-center gap-2 items-center"
+											>
+												<p className=" text-md font-semibold">
+													Không còn môn học nào
+												</p>
+											</div>
+										)}
+									</>
 								)}
-								<div ref={bottomRef} /> */}
+								<div ref={bottomRef} />
 							</ModalBody>
 							<ModalFooter>
 								<Button

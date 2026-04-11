@@ -6,7 +6,10 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import useNavigate from "@/hooks/useNavigate";
 import { useRememberValue } from "@/hooks/useRememberValue";
 import {
+	Button,
 	Card,
+	Checkbox,
+	cn,
 	Input,
 	Modal,
 	ModalBody,
@@ -101,24 +104,37 @@ function SingleSubjectSelector_({ subjectId, setSubject, defaultFilter }: Props)
 										</FilterProvider>
 									</div>
 								</div>
+								<div className="flex justify-center w-full mt-2">
+									<p className="text-sm font-medium text-default-500">
+										Đã chọn {hasValue ? 1 : 0} môn
+									</p>
+								</div>
 							</ModalHeader>
 							<ModalBody className="mb-5">
 								<div className="w-full mb-2">
-									<Card
-										isPressable
-										onPress={() => {
+									<Checkbox
+										isSelected={subjectId === ""}
+										onValueChange={() => {
 											onClose();
 											setSubject({
 												subject_id: "",
 												display_name: "",
 											} as Subject);
 										}}
-										className="w-full flex flex-col justify-between cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-transparent"
+										classNames={{
+											base: cn(
+												"inline-flex w-full max-w-none bg-content1",
+												"hover:bg-content2 items-center justify-start",
+												"cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-default-200",
+												"data-[selected=true]:border-primary"
+											),
+											label: "w-full",
+										}}
 									>
-										<p className=" text-md font-semibold mb-1 text-start">
+										<p className="text-md font-semibold text-start">
 											Tất cả môn học
 										</p>
-									</Card>
+									</Checkbox>
 								</div>
 								{items?.map(
 									({
@@ -131,9 +147,9 @@ function SingleSubjectSelector_({ subjectId, setSubject, defaultFilter }: Props)
 											key={subject_id}
 											className="w-full mb-2"
 										>
-											<Card
-												isPressable
-												onPress={() => {
+											<Checkbox
+												isSelected={subjectId === subject_id}
+												onValueChange={() => {
 													onClose();
 													setSubject({
 														subject_id,
@@ -141,15 +157,25 @@ function SingleSubjectSelector_({ subjectId, setSubject, defaultFilter }: Props)
 														faculty_id,
 													} as Subject);
 												}}
-												className="w-full flex flex-col justify-between cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-transparent"
+												classNames={{
+													base: cn(
+														"inline-flex w-full max-w-none bg-content1",
+														"hover:bg-content2 items-center justify-start",
+														"cursor-pointer rounded-lg gap-2 px-4 py-3 border-2 border-default-200",
+														"data-[selected=true]:border-primary"
+													),
+													label: "w-full",
+												}}
 											>
-												<p className=" text-md font-semibold mb-1 text-start">
-													{display_name}
-												</p>
-												<p className=" text-sm w-full font-normal text-start">
-													{faculty?.display_name}
-												</p>
-											</Card>
+												<div className="w-full flex flex-col justify-between gap-0">
+													<p className=" text-md font-semibold mb-1 text-start">
+														{display_name}
+													</p>
+													<p className=" text-sm w-full font-normal text-start">
+														{faculty?.display_name}
+													</p>
+												</div>
+											</Checkbox>
 										</div>
 									)
 								)}

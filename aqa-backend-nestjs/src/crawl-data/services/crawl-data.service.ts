@@ -924,7 +924,7 @@ export class CrawlDataService implements OnModuleInit {
                   tid, sid, firstname, lastname, email, token, completed_at, usesleft, 
                   mssv, khoa, k, hedt, malop, magv, tengv, tenmh, khoaql, nganh, tennganh, semester_name
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-                ON CONFLICT (email) DO UPDATE SET 
+                ON CONFLICT (email, malop, semester_name) DO UPDATE SET 
                   tid = EXCLUDED.tid,
                   sid = EXCLUDED.sid,
                   firstname = EXCLUDED.firstname,
@@ -936,14 +936,12 @@ export class CrawlDataService implements OnModuleInit {
                   khoa = EXCLUDED.khoa,
                   k = EXCLUDED.k,
                   hedt = EXCLUDED.hedt,
-                  malop = EXCLUDED.malop,
                   magv = EXCLUDED.magv,
                   tengv = EXCLUDED.tengv,
                   tenmh = EXCLUDED.tenmh,
                   khoaql = EXCLUDED.khoaql,
                   nganh = EXCLUDED.nganh,
-                  tennganh = EXCLUDED.tennganh,
-                  semester_name = EXCLUDED.semester_name`,
+                  tennganh = EXCLUDED.tennganh`,
                 [
                   studentData.tid,
                   studentData.sid,

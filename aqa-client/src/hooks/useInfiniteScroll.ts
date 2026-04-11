@@ -1,14 +1,12 @@
 import { PaginatedMetaData } from "@/gql/graphql";
-import _ from "lodash";
 import { useEffect, useRef, useState } from "react";
 import { useDeepCompareEffect } from "react-use";
-import { useRememberValue } from "./useRememberValue";
 
 export function useInfiniteScroll<T>({
 	queryFunction,
 	variables,
 	isLoading,
-	data,
+	data: _data,
 	meta,
 	enabled = true,
 }: {
@@ -26,56 +24,64 @@ export function useInfiniteScroll<T>({
 	const [dataList, setDataList] = useState<T[]>([]);
 	const isQuerying = useRef(false);
 
-	const memoizedData = useRememberValue(dataList || []);
-
+	// Reset and fetch first page when variables or enabled change
 	useDeepCompareEffect(() => {
+		if (!enabled) return;
+
+		let isCancelled = false;
 		isQuerying.current = true;
+		setDataList([]);
+
 		queryFunction({
 			variables: { page: 0, ...variables },
 		}).then((result: any) => {
+			if (isCancelled) return;
 			const value = result.data;
 			if (value) {
-				setDataList((prev) => [
-					...prev,
-					...((Object.values(value)?.[0] as any).data || []),
-				]);
+				const newData = (Object.values(value)?.[0] as any).data || [];
+				setDataList(newData);
 			}
+			isQuerying.current = false;
+		}).catch(() => {
+			if (!isCancelled) isQuerying.current = false;
 		});
-		setDataList([]);
+
+		return () => {
+			isCancelled = true;
+		};
 	}, [variables, enabled]);
 
+	// Fetch next page when bottom element is intersecting
 	useEffect(() => {
-		if (bottomRef.current && dataList.length) {
-			const observer = new IntersectionObserver(([entry]) => {
-				if (entry.isIntersecting) {
-					if (meta?.hasNext && isQuerying.current == false && !isLoading) {
-						isQuerying.current = true;
-						queryFunction({
-							variables: { page: meta.page + 1, ...variables },
-						}).then((result: any) => {
-							const value = result.data;
-							if (value) {
-								setDataList((prev) => [
-									...prev,
-									...((Object.values(value)?.[0] as any).data ||
-										[]),
-								]);
-							}
-						});
+		if (!enabled || !bottomRef.current || !meta?.hasNext || isQuerying.current || isLoading) {
+			return;
+		}
+
+		const observer = new IntersectionObserver(([entry]) => {
+			if (entry.isIntersecting) {
+				isQuerying.current = true;
+				queryFunction({
+					variables: { page: (meta.page || 0) + 1, ...variables },
+				}).then((result: any) => {
+					const value = result.data;
+					if (value) {
+						const newData = (Object.values(value)?.[0] as any).data || [];
+						setDataList((prev) => [...prev, ...newData]);
 					}
-					observer.unobserve(entry.target);
-				}
-			});
+					isQuerying.current = false;
+				}).catch(() => {
+					isQuerying.current = false;
+				});
+				observer.unobserve(entry.target);
+			}
+		});
 
-			observer.observe(bottomRef.current);
-		}
-	}, [dataList, enabled]);
+		observer.observe(bottomRef.current);
 
-	useDeepCompareEffect(() => {
-		if (meta) {
-			isQuerying.current = false;
-		}
-	}, [meta, enabled]);
+		return () => {
+			observer.disconnect();
+		};
+	}, [dataList, enabled, meta, variables, isLoading]);
 
-	return { data: memoizedData as T[], dataList, bottomRef };
+	return { dataList, bottomRef };
 }
