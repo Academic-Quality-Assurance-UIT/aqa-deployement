@@ -4,6 +4,13 @@ export class InitialSchema1775576177706 implements MigrationInterface {
   name = 'InitialSchema1775576177706';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    const table = await queryRunner.getTable('semester');
+    if (table) return;
+
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "unaccent"`);
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "btree_gin"`);
     await queryRunner.query(
       `CREATE TABLE "semester" ("semester_id" character varying NOT NULL, "display_name" character varying NOT NULL, "type" character varying, "year" character varying, "search_string" character varying, CONSTRAINT "PK_06f44a368424d5968fb2da79e18" PRIMARY KEY ("semester_id"))`,
     );

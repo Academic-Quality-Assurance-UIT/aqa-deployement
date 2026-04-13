@@ -11,14 +11,18 @@ export class AdminSettingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const filterYearSetting = await this.adminSettingRepository.findOne({
-      where: { key: 'filter_year' },
-    });
-    if (!filterYearSetting) {
-      await this.adminSettingRepository.save({
-        key: 'filter_year',
-        value: '5',
+    try {
+      const filterYearSetting = await this.adminSettingRepository.findOne({
+        where: { key: 'filter_year' },
       });
+      if (!filterYearSetting) {
+        await this.adminSettingRepository.save({
+          key: 'filter_year',
+          value: '5',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to initialize AdminSetting:', error.message);
     }
   }
 

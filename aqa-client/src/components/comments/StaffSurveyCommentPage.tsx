@@ -19,9 +19,7 @@ export default function StaffSurveyCommentPage({
 	displayName,
 }: IProps) {
 	const [getCommentList, { data, loading: isLoading }] =
-		useGetPointWithCommentByCriteriaLazyQuery({
-			fetchPolicy: "network-only",
-		});
+		useGetPointWithCommentByCriteriaLazyQuery();
 
 	const { dataList: comments, bottomRef } = useInfiniteScroll({
 		queryFunction: getCommentList,

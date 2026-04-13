@@ -6,7 +6,8 @@ RUN apk add --no-cache libc6-compat git python3 make g++
 WORKDIR /app
 
 COPY . .
-RUN npm install --legacy-peer-deps
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+RUN pnpm install
 
 # Environment variables for build time
 ARG NEXT_PUBLIC_API_URL_V2
@@ -16,9 +17,9 @@ ENV BACKEND_URL=$BACKEND_URL
 ARG BACKEND_API_URL=http://host.docker.internal:8000
 ENV BACKEND_API_URL=$BACKEND_API_URL
 
-# Use the hoisted next binary directly instead of npm workspace bin script
+# Use pnpm to build the application
 WORKDIR /app/aqa-client
-RUN /app/node_modules/.bin/next build
+RUN pnpm build
 
 # 2. Production image, copy all the files and run next
 FROM base AS runner
@@ -30,6 +31,7 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
 # Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/aqa-client/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/aqa-client/.next/static ./aqa-client/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/aqa-client/public ./aqa-client/public

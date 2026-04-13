@@ -23,9 +23,7 @@ export default function StaffSurveyAllCommentsPage({
 	const [searchKeyword, setSearchKeyword] = useState("");
 
 	const [getCommentList, { data, loading: isLoading }] =
-		useGetAllCommentsLazyQuery({
-			fetchPolicy: "network-only",
-		});
+		useGetAllCommentsLazyQuery();
 
 	const { dataList: comments, bottomRef } = useInfiniteScroll({
 		queryFunction: getCommentList,
@@ -44,9 +42,7 @@ export default function StaffSurveyAllCommentsPage({
 		fetchPolicy: "network-only",
 	});
 
-	const [getExportCommentList] = useGetAllCommentsLazyQuery({
-		fetchPolicy: "no-cache",
-	});
+	const [getExportCommentList] = useGetAllCommentsLazyQuery();
 
 	const handleExportExcel = async () => {
 		setIsExporting(true);

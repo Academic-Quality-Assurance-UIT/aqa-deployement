@@ -69,9 +69,7 @@ export const TopicAssignmentManager = () => {
 	const [
 		fetchPreview,
 		{ data: previewData, loading: previewLoading },
-	] = useTopicAssignmentPreviewLazyQuery({
-		fetchPolicy: "network-only",
-	});
+	] = useTopicAssignmentPreviewLazyQuery();
 
 	const [runTopicAssignment, { loading: runLoading }] =
 		useRunTopicAssignmentMutation();

@@ -52,6 +52,8 @@ import { StudentModule } from './student/student.module';
         database: configService.get<string>('DB_DATABASE'),
         synchronize: false,
         autoLoadEntities: true,
+        migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
+        migrationsRun: false,
         logging: false,
         logger: new FileLogger(),
         extra: {

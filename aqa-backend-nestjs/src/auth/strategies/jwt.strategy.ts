@@ -22,8 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const userId = payload.id;
 
     try {
-      this.userService.update(userId, { lastAccess: new Date() });
-    } catch (e) {}
+      await this.userService.update(userId, { lastAccess: new Date() });
+    } catch (e) {
+      // Ignore error if user is deleted or not found
+    }
 
     return payload;
   }

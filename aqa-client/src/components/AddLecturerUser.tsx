@@ -59,7 +59,7 @@ export default function AddLecturerUser() {
 	const [mutate] = useRegisterUserMutation();
 
 	const handleAddUser = useCallback(
-		async (lecturer: Partial<Lecturer>) => {
+		async (lecturer: any) => {
 			try {
 				if (!lecturer.email) return;
 				await mutate({

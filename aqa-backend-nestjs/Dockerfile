@@ -6,11 +6,12 @@ RUN apk add --no-cache libc6-compat git python3 make g++
 WORKDIR /app
 
 COPY . .
-RUN npm install --legacy-peer-deps
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+RUN pnpm install
 
-# Use the hoisted nest binary directly instead of broken workspace bin script
+# Use pnpm to build the application
 WORKDIR /app/aqa-backend-nestjs
-RUN /app/node_modules/.bin/nest build
+RUN pnpm build
 
 # 2. Final image
 FROM base AS runner
@@ -19,10 +20,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy node_modules (full) and built output
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/aqa-backend-nestjs ./aqa-backend-nestjs
+# Copy necessary files for pnpm install
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/aqa-backend-nestjs/package.json ./aqa-backend-nestjs/
+
+# Install production dependencies
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy built output
+COPY --from=builder /app/aqa-backend-nestjs/dist ./aqa-backend-nestjs/dist
 
 WORKDIR /app/aqa-backend-nestjs
 CMD ["node", "dist/main"]
