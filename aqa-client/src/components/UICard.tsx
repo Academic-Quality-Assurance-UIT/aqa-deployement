@@ -10,7 +10,7 @@ export function UICard({
 	return (
 		<div className={twMerge("ui-card p-6", className)} {...props}>
 			{title && (
-				<h2 className="text-xl font-bold text-[var(--sidebar-green-dark)] mb-4">{title}</h2>
+				<h2 className="text-xl font-bold text-primary-dark mb-4 font-display">{title}</h2>
 			)}
 			{children}
 		</div>

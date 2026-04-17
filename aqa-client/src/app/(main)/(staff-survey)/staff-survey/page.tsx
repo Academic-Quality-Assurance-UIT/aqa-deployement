@@ -187,6 +187,9 @@ export default function Page() {
 							index="name"
 							enableBiaxial={false}
 							showLegend={false}
+							interval={0}
+							tickGap={0}
+							xAxisTickAngle={10}
 							barSeries={{
 								categories: ["Điểm đánh giá"],
 								yAxisLabel: "",

@@ -15,9 +15,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: { input: any; output: any; }
-  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: any; output: any; }
 };
 
@@ -683,6 +681,8 @@ export type Query = {
   searchExternalSurveys: Scalars['JSON']['output'];
   /** List all semester */
   semesters?: Maybe<Array<Semester>>;
+  staffSurveyCommentQuantity: CommentQuantity;
+  staffSurveyCommentStatistics: Array<CommentStatisticData>;
   subject?: Maybe<Subject>;
   subjects: PaginatedSubject;
   /** Lấy lịch sử crawl của các survey config */
@@ -817,12 +817,16 @@ export type QueryGetAllCommentsArgs = {
   pagination?: InputMaybe<PaginationArgs>;
   semester?: InputMaybe<Scalars['String']['input']>;
   sort?: InputMaybe<SortArgs>;
+  topic?: InputMaybe<Array<Scalars['String']['input']>>;
+  type?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
 export type QueryGetAllCommentsCountArgs = {
   keyword?: InputMaybe<Scalars['String']['input']>;
   semester?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']>>;
+  type?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -916,6 +920,20 @@ export type QuerySearchExternalSurveysArgs = {
 };
 
 
+export type QueryStaffSurveyCommentQuantityArgs = {
+  semester?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryStaffSurveyCommentStatisticsArgs = {
+  semester?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']>>;
+  type?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
 export type QuerySubjectArgs = {
   id: Scalars['String']['input'];
 };
@@ -983,6 +1001,8 @@ export type StaffSurveyAdditionalCommentDto = {
   additional_comment?: Maybe<Scalars['String']['output']>;
   display_name?: Maybe<Scalars['String']['output']>;
   faculty?: Maybe<Scalars['String']['output']>;
+  sentiment?: Maybe<Scalars['String']['output']>;
+  topic?: Maybe<Scalars['String']['output']>;
 };
 
 export type StaffSurveyBatch = {
@@ -1026,6 +1046,8 @@ export type StaffSurveyPointDto = {
   criteria_name?: InputMaybe<Scalars['String']['input']>;
   max_point: Scalars['Int']['input'];
   point: Scalars['Int']['input'];
+  sentiment?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type StaffSurveyPointResponseDto = {
@@ -1040,6 +1062,8 @@ export type StaffSurveyPointResponseItemDto = {
   criteria: Scalars['String']['output'];
   index: Scalars['Float']['output'];
   point: Scalars['Int']['output'];
+  sentiment?: Maybe<Scalars['String']['output']>;
+  topic?: Maybe<Scalars['String']['output']>;
 };
 
 export type StaffSurveySheet = {
@@ -1053,7 +1077,10 @@ export type StaffSurveySheet = {
   faculty?: Maybe<Scalars['String']['output']>;
   gender?: Maybe<Scalars['Boolean']['output']>;
   mscb?: Maybe<Scalars['String']['output']>;
+  sentiment?: Maybe<Scalars['String']['output']>;
   staff_survey_sheet_id: Scalars['String']['output'];
+  topic?: Maybe<Scalars['String']['output']>;
+  working_year?: Maybe<Scalars['String']['output']>;
 };
 
 export type StaffSurveySheetDto = {
@@ -1067,7 +1094,10 @@ export type StaffSurveySheetDto = {
   mscb?: InputMaybe<Scalars['String']['input']>;
   points: Array<StaffSurveyPointDto>;
   semester?: InputMaybe<Scalars['String']['input']>;
+  sentiment?: InputMaybe<Scalars['String']['input']>;
   survey_name?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Scalars['String']['input']>;
+  working_year?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type StagingDataTypeCount = {
@@ -1537,7 +1567,7 @@ export type DetailLecturerQueryVariables = Exact<{
 }>;
 
 
-export type DetailLecturerQuery = { __typename?: 'Query', lecturer?: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', display_name: string } } | null };
+export type DetailLecturerQuery = { __typename?: 'Query', lecturer?: { __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', faculty_id: string, display_name: string } } | null };
 
 export type AllLecturersQueryVariables = Exact<{
   filter?: InputMaybe<FilterArgs>;
@@ -1545,7 +1575,7 @@ export type AllLecturersQueryVariables = Exact<{
 }>;
 
 
-export type AllLecturersQuery = { __typename?: 'Query', lecturers: { __typename?: 'PaginatedLecturer', data: Array<{ __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', display_name: string } }> } };
+export type AllLecturersQuery = { __typename?: 'Query', lecturers: { __typename?: 'PaginatedLecturer', data: Array<{ __typename?: 'Lecturer', birth_date?: any | null, display_name?: string | null, email?: string | null, faculty_id?: string | null, gender?: boolean | null, learning?: string | null, learning_position?: string | null, lecturer_id: string, mscb?: number | null, ngach?: string | null, phone?: string | null, position?: string | null, total_point?: number | null, username?: string | null, faculty: { __typename?: 'Faculty', faculty_id: string, display_name: string } }> } };
 
 export type LecturerRankingQueryVariables = Exact<{
   filter?: InputMaybe<FilterArgs>;
@@ -1681,7 +1711,7 @@ export type GetPointWithCommentByCriteriaQueryVariables = Exact<{
 }>;
 
 
-export type GetPointWithCommentByCriteriaQuery = { __typename?: 'Query', getPointWithCommentByCriteria: { __typename?: 'StaffSurveyPointResponseDTO', data: Array<{ __typename?: 'StaffSurveyPointResponseItemDTO', criteria: string, index: number, point: number, comment?: string | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+export type GetPointWithCommentByCriteriaQuery = { __typename?: 'Query', getPointWithCommentByCriteria: { __typename?: 'StaffSurveyPointResponseDTO', data: Array<{ __typename?: 'StaffSurveyPointResponseItemDTO', criteria: string, index: number, point: number, comment?: string | null, topic?: string | null, sentiment?: string | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
 
 export type GetStaffSurveyCommentCountQueryVariables = Exact<{
   category?: InputMaybe<Scalars['String']['input']>;
@@ -1696,14 +1726,18 @@ export type GetAllCommentsQueryVariables = Exact<{
   page?: InputMaybe<Scalars['Int']['input']>;
   semester?: InputMaybe<Scalars['String']['input']>;
   keyword?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
-export type GetAllCommentsQuery = { __typename?: 'Query', getAllComments: { __typename?: 'StaffSurveyPointResponseDTO', data: Array<{ __typename?: 'StaffSurveyPointResponseItemDTO', criteria: string, index: number, point: number, comment?: string | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
+export type GetAllCommentsQuery = { __typename?: 'Query', getAllComments: { __typename?: 'StaffSurveyPointResponseDTO', data: Array<{ __typename?: 'StaffSurveyPointResponseItemDTO', criteria: string, index: number, point: number, comment?: string | null, topic?: string | null, sentiment?: string | null }>, meta: { __typename?: 'PaginatedMetaData', hasNext: boolean, hasPrev: boolean, page: number, size: number, total_item: number, total_page: number } } };
 
 export type GetAllCommentsCountQueryVariables = Exact<{
   semester?: InputMaybe<Scalars['String']['input']>;
   keyword?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
@@ -1726,6 +1760,39 @@ export type UpdateStaffSurveyCriteriaMutationVariables = Exact<{
 
 
 export type UpdateStaffSurveyCriteriaMutation = { __typename?: 'Mutation', updateStaffSurveyCriteria: { __typename?: 'StaffSurveyCriteria', staff_survey_criteria_id: string, is_shown: boolean } };
+
+export type StaffSurveyCommentQuantityQueryVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  topic?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type StaffSurveyCommentQuantityQuery = { __typename?: 'Query', staffSurveyCommentQuantity: { __typename?: 'CommentQuantity', quantity: number, type: string } };
+
+export type StaffSurveyCommentQuantityEachTopicQueryVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+  type: Scalars['String']['input'];
+}>;
+
+
+export type StaffSurveyCommentQuantityEachTopicQuery = { __typename?: 'Query', it_infrastructure: { __typename?: 'CommentQuantity', quantity: number, type: string }, facilities: { __typename?: 'CommentQuantity', quantity: number, type: string }, working_environment: { __typename?: 'CommentQuantity', quantity: number, type: string }, training_program: { __typename?: 'CommentQuantity', quantity: number, type: string }, training_fostering: { __typename?: 'CommentQuantity', quantity: number, type: string }, unknown: { __typename?: 'CommentQuantity', quantity: number, type: string }, all: { __typename?: 'CommentQuantity', quantity: number, type: string } };
+
+export type StaffSurveyCommentSummaryQueryVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type StaffSurveyCommentSummaryQuery = { __typename?: 'Query', positive: { __typename?: 'CommentQuantity', quantity: number, type: string }, negative: { __typename?: 'CommentQuantity', quantity: number, type: string }, neutral: { __typename?: 'CommentQuantity', quantity: number, type: string }, all: { __typename?: 'CommentQuantity', quantity: number, type: string } };
+
+export type StaffSurveyCommentStatisticsQueryVariables = Exact<{
+  semester?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  topic?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type StaffSurveyCommentStatisticsQuery = { __typename?: 'Query', staffSurveyCommentStatistics: Array<{ __typename?: 'CommentStatisticData', label: string, total: number, sentiments: any, topics: any }> };
 
 export type DetailSubjectQueryVariables = Exact<{
   id: Scalars['String']['input'];
@@ -4127,6 +4194,7 @@ export const DetailLecturerDocument = gql`
     email
     faculty_id
     faculty {
+      faculty_id
       display_name
     }
     gender
@@ -4190,6 +4258,7 @@ export const AllLecturersDocument = gql`
       email
       faculty_id
       faculty {
+        faculty_id
         display_name
       }
       gender
@@ -5134,6 +5203,8 @@ export const GetPointWithCommentByCriteriaDocument = gql`
       index
       point
       comment
+      topic
+      sentiment
     }
     meta {
       hasNext
@@ -5239,17 +5310,21 @@ export function refetchGetStaffSurveyCommentCountQuery(variables?: GetStaffSurve
       return { query: GetStaffSurveyCommentCountDocument, variables: variables }
     }
 export const GetAllCommentsDocument = gql`
-    query GetAllComments($page: Int, $semester: String, $keyword: String) {
+    query GetAllComments($page: Int, $semester: String, $keyword: String, $type: [String!], $topic: [String!]) {
   getAllComments(
     pagination: {page: $page}
     semester: $semester
     keyword: $keyword
+    type: $type
+    topic: $topic
   ) {
     data {
       criteria
       index
       point
       comment
+      topic
+      sentiment
     }
     meta {
       hasNext
@@ -5278,6 +5353,8 @@ export const GetAllCommentsDocument = gql`
  *      page: // value for 'page'
  *      semester: // value for 'semester'
  *      keyword: // value for 'keyword'
+ *      type: // value for 'type'
+ *      topic: // value for 'topic'
  *   },
  * });
  */
@@ -5304,8 +5381,13 @@ export function refetchGetAllCommentsQuery(variables?: GetAllCommentsQueryVariab
       return { query: GetAllCommentsDocument, variables: variables }
     }
 export const GetAllCommentsCountDocument = gql`
-    query GetAllCommentsCount($semester: String, $keyword: String) {
-  getAllCommentsCount(semester: $semester, keyword: $keyword)
+    query GetAllCommentsCount($semester: String, $keyword: String, $type: [String!], $topic: [String!]) {
+  getAllCommentsCount(
+    semester: $semester
+    keyword: $keyword
+    type: $type
+    topic: $topic
+  )
 }
     `;
 
@@ -5323,6 +5405,8 @@ export const GetAllCommentsCountDocument = gql`
  *   variables: {
  *      semester: // value for 'semester'
  *      keyword: // value for 'keyword'
+ *      type: // value for 'type'
+ *      topic: // value for 'topic'
  *   },
  * });
  */
@@ -5476,6 +5560,261 @@ export function useUpdateStaffSurveyCriteriaMutation(baseOptions?: Apollo.Mutati
 export type UpdateStaffSurveyCriteriaMutationHookResult = ReturnType<typeof useUpdateStaffSurveyCriteriaMutation>;
 export type UpdateStaffSurveyCriteriaMutationResult = Apollo.MutationResult<UpdateStaffSurveyCriteriaMutation>;
 export type UpdateStaffSurveyCriteriaMutationOptions = Apollo.BaseMutationOptions<UpdateStaffSurveyCriteriaMutation, UpdateStaffSurveyCriteriaMutationVariables>;
+export const StaffSurveyCommentQuantityDocument = gql`
+    query StaffSurveyCommentQuantity($semester: String, $type: String, $topic: String) {
+  staffSurveyCommentQuantity(semester: $semester, type: $type, topic: $topic) {
+    quantity
+    type
+  }
+}
+    `;
+
+/**
+ * __useStaffSurveyCommentQuantityQuery__
+ *
+ * To run a query within a React component, call `useStaffSurveyCommentQuantityQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStaffSurveyCommentQuantityQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStaffSurveyCommentQuantityQuery({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *      type: // value for 'type'
+ *      topic: // value for 'topic'
+ *   },
+ * });
+ */
+export function useStaffSurveyCommentQuantityQuery(baseOptions?: Apollo.QueryHookOptions<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>(StaffSurveyCommentQuantityDocument, options);
+      }
+export function useStaffSurveyCommentQuantityLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>(StaffSurveyCommentQuantityDocument, options);
+        }
+// @ts-ignore
+export function useStaffSurveyCommentQuantitySuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>;
+export function useStaffSurveyCommentQuantitySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentQuantityQuery | undefined, StaffSurveyCommentQuantityQueryVariables>;
+export function useStaffSurveyCommentQuantitySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>(StaffSurveyCommentQuantityDocument, options);
+        }
+export type StaffSurveyCommentQuantityQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantityQuery>;
+export type StaffSurveyCommentQuantityLazyQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantityLazyQuery>;
+export type StaffSurveyCommentQuantitySuspenseQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantitySuspenseQuery>;
+export type StaffSurveyCommentQuantityQueryResult = Apollo.QueryResult<StaffSurveyCommentQuantityQuery, StaffSurveyCommentQuantityQueryVariables>;
+export function refetchStaffSurveyCommentQuantityQuery(variables?: StaffSurveyCommentQuantityQueryVariables) {
+      return { query: StaffSurveyCommentQuantityDocument, variables: variables }
+    }
+export const StaffSurveyCommentQuantityEachTopicDocument = gql`
+    query StaffSurveyCommentQuantityEachTopic($semester: String, $type: String!) {
+  it_infrastructure: staffSurveyCommentQuantity(
+    type: $type
+    topic: "hạ tầng CNTT"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  facilities: staffSurveyCommentQuantity(
+    type: $type
+    topic: "cơ sở vật chất"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  working_environment: staffSurveyCommentQuantity(
+    type: $type
+    topic: "môi trường/điều kiện làm việc"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  training_program: staffSurveyCommentQuantity(
+    type: $type
+    topic: "CTĐT"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  training_fostering: staffSurveyCommentQuantity(
+    type: $type
+    topic: "đào tạo, bồi dưỡng"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  unknown: staffSurveyCommentQuantity(
+    type: $type
+    topic: "không xác định/không liên quan"
+    semester: $semester
+  ) {
+    quantity
+    type
+  }
+  all: staffSurveyCommentQuantity(semester: $semester) {
+    quantity
+    type
+  }
+}
+    `;
+
+/**
+ * __useStaffSurveyCommentQuantityEachTopicQuery__
+ *
+ * To run a query within a React component, call `useStaffSurveyCommentQuantityEachTopicQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStaffSurveyCommentQuantityEachTopicQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStaffSurveyCommentQuantityEachTopicQuery({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *      type: // value for 'type'
+ *   },
+ * });
+ */
+export function useStaffSurveyCommentQuantityEachTopicQuery(baseOptions: Apollo.QueryHookOptions<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables> & ({ variables: StaffSurveyCommentQuantityEachTopicQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>(StaffSurveyCommentQuantityEachTopicDocument, options);
+      }
+export function useStaffSurveyCommentQuantityEachTopicLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>(StaffSurveyCommentQuantityEachTopicDocument, options);
+        }
+// @ts-ignore
+export function useStaffSurveyCommentQuantityEachTopicSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>;
+export function useStaffSurveyCommentQuantityEachTopicSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentQuantityEachTopicQuery | undefined, StaffSurveyCommentQuantityEachTopicQueryVariables>;
+export function useStaffSurveyCommentQuantityEachTopicSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>(StaffSurveyCommentQuantityEachTopicDocument, options);
+        }
+export type StaffSurveyCommentQuantityEachTopicQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantityEachTopicQuery>;
+export type StaffSurveyCommentQuantityEachTopicLazyQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantityEachTopicLazyQuery>;
+export type StaffSurveyCommentQuantityEachTopicSuspenseQueryHookResult = ReturnType<typeof useStaffSurveyCommentQuantityEachTopicSuspenseQuery>;
+export type StaffSurveyCommentQuantityEachTopicQueryResult = Apollo.QueryResult<StaffSurveyCommentQuantityEachTopicQuery, StaffSurveyCommentQuantityEachTopicQueryVariables>;
+export function refetchStaffSurveyCommentQuantityEachTopicQuery(variables: StaffSurveyCommentQuantityEachTopicQueryVariables) {
+      return { query: StaffSurveyCommentQuantityEachTopicDocument, variables: variables }
+    }
+export const StaffSurveyCommentSummaryDocument = gql`
+    query StaffSurveyCommentSummary($semester: String) {
+  positive: staffSurveyCommentQuantity(type: "positive", semester: $semester) {
+    quantity
+    type
+  }
+  negative: staffSurveyCommentQuantity(type: "negative", semester: $semester) {
+    quantity
+    type
+  }
+  neutral: staffSurveyCommentQuantity(type: "neutral", semester: $semester) {
+    quantity
+    type
+  }
+  all: staffSurveyCommentQuantity(semester: $semester) {
+    quantity
+    type
+  }
+}
+    `;
+
+/**
+ * __useStaffSurveyCommentSummaryQuery__
+ *
+ * To run a query within a React component, call `useStaffSurveyCommentSummaryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStaffSurveyCommentSummaryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStaffSurveyCommentSummaryQuery({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *   },
+ * });
+ */
+export function useStaffSurveyCommentSummaryQuery(baseOptions?: Apollo.QueryHookOptions<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>(StaffSurveyCommentSummaryDocument, options);
+      }
+export function useStaffSurveyCommentSummaryLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>(StaffSurveyCommentSummaryDocument, options);
+        }
+// @ts-ignore
+export function useStaffSurveyCommentSummarySuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>;
+export function useStaffSurveyCommentSummarySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentSummaryQuery | undefined, StaffSurveyCommentSummaryQueryVariables>;
+export function useStaffSurveyCommentSummarySuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>(StaffSurveyCommentSummaryDocument, options);
+        }
+export type StaffSurveyCommentSummaryQueryHookResult = ReturnType<typeof useStaffSurveyCommentSummaryQuery>;
+export type StaffSurveyCommentSummaryLazyQueryHookResult = ReturnType<typeof useStaffSurveyCommentSummaryLazyQuery>;
+export type StaffSurveyCommentSummarySuspenseQueryHookResult = ReturnType<typeof useStaffSurveyCommentSummarySuspenseQuery>;
+export type StaffSurveyCommentSummaryQueryResult = Apollo.QueryResult<StaffSurveyCommentSummaryQuery, StaffSurveyCommentSummaryQueryVariables>;
+export function refetchStaffSurveyCommentSummaryQuery(variables?: StaffSurveyCommentSummaryQueryVariables) {
+      return { query: StaffSurveyCommentSummaryDocument, variables: variables }
+    }
+export const StaffSurveyCommentStatisticsDocument = gql`
+    query StaffSurveyCommentStatistics($semester: String, $type: [String!], $topic: [String!]) {
+  staffSurveyCommentStatistics(semester: $semester, type: $type, topic: $topic) {
+    label
+    total
+    sentiments
+    topics
+  }
+}
+    `;
+
+/**
+ * __useStaffSurveyCommentStatisticsQuery__
+ *
+ * To run a query within a React component, call `useStaffSurveyCommentStatisticsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useStaffSurveyCommentStatisticsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStaffSurveyCommentStatisticsQuery({
+ *   variables: {
+ *      semester: // value for 'semester'
+ *      type: // value for 'type'
+ *      topic: // value for 'topic'
+ *   },
+ * });
+ */
+export function useStaffSurveyCommentStatisticsQuery(baseOptions?: Apollo.QueryHookOptions<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>(StaffSurveyCommentStatisticsDocument, options);
+      }
+export function useStaffSurveyCommentStatisticsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>(StaffSurveyCommentStatisticsDocument, options);
+        }
+// @ts-ignore
+export function useStaffSurveyCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>;
+export function useStaffSurveyCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>): Apollo.UseSuspenseQueryResult<StaffSurveyCommentStatisticsQuery | undefined, StaffSurveyCommentStatisticsQueryVariables>;
+export function useStaffSurveyCommentStatisticsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>(StaffSurveyCommentStatisticsDocument, options);
+        }
+export type StaffSurveyCommentStatisticsQueryHookResult = ReturnType<typeof useStaffSurveyCommentStatisticsQuery>;
+export type StaffSurveyCommentStatisticsLazyQueryHookResult = ReturnType<typeof useStaffSurveyCommentStatisticsLazyQuery>;
+export type StaffSurveyCommentStatisticsSuspenseQueryHookResult = ReturnType<typeof useStaffSurveyCommentStatisticsSuspenseQuery>;
+export type StaffSurveyCommentStatisticsQueryResult = Apollo.QueryResult<StaffSurveyCommentStatisticsQuery, StaffSurveyCommentStatisticsQueryVariables>;
+export function refetchStaffSurveyCommentStatisticsQuery(variables?: StaffSurveyCommentStatisticsQueryVariables) {
+      return { query: StaffSurveyCommentStatisticsDocument, variables: variables }
+    }
 export const DetailSubjectDocument = gql`
     query DetailSubject($id: String!) {
   subject(id: $id) {

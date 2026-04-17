@@ -1,6 +1,6 @@
 "use client";
 
-import { Tooltip, Avatar } from "@heroui/react";
+import { Tooltip, Avatar, Popover, PopoverTrigger, PopoverContent, Button } from "@heroui/react";
 
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -42,20 +42,22 @@ export default function NavigationDrawer({ children }: { children?: ReactNode })
 				/* Desktop: single text sidebar */
 				<div className="flex flex-row h-screen flex-shrink-0 relative">
 					<div
-						className={`sidebar-text-panel flex flex-col h-full transition-sidebar overflow-hidden ${open ? "w-[260px]" : "w-0 border-0"}`}
+						className={`sidebar-text-panel flex flex-col h-full transition-sidebar overflow-hidden ${open ? "w-[var(--sidebar-text-width)]" : "w-0 border-0"}`}
 					>
 						{/* Header with brand + toggle */}
-						<div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-							<div className="flex items-center gap-2.5">
-								<div className="w-8 h-8 rounded-lg bg-navbar-selected flex items-center justify-center">
-									<span className="text-white font-bold text-xs">A</span>
-								</div>
-								<span className="font-semibold text-sm text-gray-800">AQA System</span>
-							</div>
+						<div className="flex flex-col items-start gap-2 px-6 py-8">
+							<span
+								className="text-base text-primary select-none cursor-pointer hover:opacity-80 transition-opacity"
+								style={{ fontFamily: "'Pacifico', cursive" }}
+								onClick={() => router.push("/")}
+							>
+								UIT - AQA
+							</span>
+							<span className="text-xs text-primary transition-opacity">Hệ thống trực quan hóa dữ liệu khảo sát</span>
 						</div>
 
 						{/* Navigation items */}
-						<div className="flex-1 flex flex-col overflow-y-auto py-3">
+						<div className="flex-1 flex flex-col overflow-y-auto py-2 custom-scrollbar">
 							{children}
 						</div>
 
@@ -86,24 +88,24 @@ function SidebarUserProfile() {
 	const roleLabel = data?.profile?.role === "ADMIN" ? "Admin" : data?.profile?.role === "FULL_ACCESS" ? "Quản lý" : data?.profile?.role === "FACULTY" ? "Cán bộ khoa" : "Giảng viên";
 
 	return (
-		<div className="border-t border-gray-100 p-3">
-			<div className="flex items-center gap-3 px-2 py-2">
+		<div className="border-t border-gray-100 p-3 bg-primary-light/30">
+			<div className="flex items-center gap-2.5 px-1.5 py-1.5 mb-1.5">
 				<Avatar
 					name={displayName.charAt(0)}
 					size="sm"
-					className="bg-gray-200 text-gray-600 flex-shrink-0"
+					className="w-7 h-7 bg-primary text-white flex-shrink-0 font-bold text-[10px]"
 				/>
 				<div className="flex-1 min-w-0">
-					<p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
-					<p className="text-xs text-gray-400 truncate">{roleLabel}</p>
+					<p className="text-xs font-bold text-primary-dark truncate">{displayName}</p>
+					<p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider truncate">{roleLabel}</p>
 				</div>
 			</div>
 			<button
 				onClick={() => router.push("/sign-out")}
-				className="sidebar-nav-item w-full mt-1 text-gray-500 hover:text-red-600 hover:bg-red-50"
+				className="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
 			>
-				<IoLogOutOutline size={18} />
-				<span className="text-sm">Đăng xuất</span>
+				<IoLogOutOutline size={16} />
+				<span className="text-xs font-semibold">Đăng xuất</span>
 			</button>
 		</div>
 	);
@@ -118,6 +120,55 @@ export function NavSectionHeader({ label }: { label: string }) {
 	if (isMobile) return null;
 
 	return <div className="sidebar-section-label">{label}</div>;
+}
+
+export function NavGroup({ label, icon: Icon, children }: { label?: string; icon?: any; children: ReactNode }) {
+	const isMobile = useContext(MobileContext);
+	const pathname = usePathname();
+	const isMobileView = useMediaQuery({ maxWidth: 1024 });
+
+	if (isMobile) {
+		return (
+			<Popover placement="top" showArrow offset={20} classNames={{
+				content: "p-0 min-w-[220px] bg-white shadow-2xl border border-slate-100 rounded-2xl overflow-hidden"
+			}}>
+				<PopoverTrigger>
+					<button
+						className={twMerge(
+							"flex flex-col items-center justify-center w-20 px-2 py-2 rounded-xl transition-all outline-none",
+							"text-slate-400 hover:bg-slate-50 active:scale-95"
+						)}
+					>
+						{Icon && (
+							<Icon
+								size={22}
+							/>
+						)}
+						<span className="text-[10px] mt-1 font-bold tracking-tight opacity-80 whitespace-nowrap">{label || "Menu"}</span>
+					</button>
+				</PopoverTrigger>
+				<PopoverContent>
+					<div className="w-full flex flex-col p-2">
+						{label && (
+							<div className="px-4 py-2 border-b border-slate-50 mb-1">
+								<p className="text-[10px] uppercase font-black tracking-widest text-slate-400">{label}</p>
+							</div>
+						)}
+						<div className="flex flex-col gap-1">
+							{children}
+						</div>
+					</div>
+				</PopoverContent>
+			</Popover>
+		);
+	}
+
+	return (
+		<div className="flex flex-col">
+			{label && <NavSectionHeader label={label} />}
+			{children}
+		</div>
+	);
 }
 
 export function NavItem({
@@ -144,31 +195,29 @@ export function NavItem({
 		router.prefetch(link);
 	}, [link, router]);
 
-	// Mobile bottom bar
+	// Mobile bottom bar / Popover Item
 	if (isMobileCtx) {
 		return (
-			<Tooltip placement="top" content={title} color="primary">
-				<button
-					onClick={() => router.push(link)}
-					className={twMerge(
-						"flex flex-col items-center justify-center w-16 py-2 rounded-xl transition-all",
-						isSelected ? "bg-navbar-selected text-white" : "text-gray-500 hover:bg-gray-100",
-						className
-					)}
-				>
-					{Icon && (
-						<Icon
-							color={isSelected ? "white" : "#6b7280"}
-							width={iconSize}
-							size={iconSize}
-						/>
-					)}
-					<span className={twMerge(
-						"text-[10px] mt-1 font-medium",
-						isSelected ? "text-white" : "text-gray-500"
-					)}>{title.length > 6 ? title.substring(0, 6) + ".." : title}</span>
-				</button>
-			</Tooltip>
+			<button
+				onClick={() => router.push(link)}
+				className={twMerge(
+					"w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all active:bg-primary-light/50 text-left",
+					isSelected ? "bg-primary-light text-primary font-bold shadow-sm shadow-primary/10" : "text-slate-600 hover:bg-slate-50"
+				)}
+			>
+				{Icon && (
+					<div className={twMerge(
+						"flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+						isSelected ? "bg-primary text-white" : "bg-slate-100 text-slate-400"
+					)}>
+						<Icon size={18} />
+					</div>
+				)}
+				<div className="flex flex-col min-w-0">
+					<span className="text-sm truncate">{title}</span>
+					{description && <span className="text-[10px] opacity-60 font-medium truncate">{description}</span>}
+				</div>
+			</button>
 		);
 	}
 

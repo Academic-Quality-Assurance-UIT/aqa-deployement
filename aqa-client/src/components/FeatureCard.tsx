@@ -22,21 +22,24 @@ export default function FeatureCard({
 						alt="feature card illustration"
 					/>
 					<div>
-						<h2 className="text-lg font-semibold mb-2 text-gray-900">
+						<h2 className="text-xl font-bold mb-2 text-primary-dark font-display leading-tight">
 							{title.displayName}
 						</h2>
-						<p className="text-gray-500 -mt-1 text-sm">{description}</p>
+						<p className="text-slate-500 font-medium text-sm leading-relaxed">{description}</p>
 					</div>
 				</CardHeader>
 				{navigation_links.length != 0 ? (
 					<CardBody className="pt-2 pb-4">
-						<ul className="list-disc pl-3">
+						<ul className="space-y-2">
 							{navigation_links.map(({ displayName, link }) => (
 								<li
 									key={link}
-									className="hover:underline cursor-pointer py-1 text-gray-700"
+									className="group"
 								>
-									<Link href={link}>{displayName}</Link>
+									<Link href={link} className="flex items-center text-sm text-slate-600 hover:text-primary font-medium transition-colors">
+										<span className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-primary mr-2 transition-colors"></span>
+										{displayName}
+									</Link>
 								</li>
 							))}
 						</ul>
@@ -45,9 +48,9 @@ export default function FeatureCard({
 				<CardFooter>
 					<Link
 						href={title.link}
-						className="text-sm font-medium text-navbar-selected hover:underline duration-200"
+						className="text-sm font-bold text-primary hover:text-primary-dark duration-200 flex items-center gap-1 group"
 					>
-						Xem chi tiết →
+						Xem chi tiết <span className="group-hover:translate-x-1 transition-transform">→</span>
 					</Link>
 				</CardFooter>
 			</Card>

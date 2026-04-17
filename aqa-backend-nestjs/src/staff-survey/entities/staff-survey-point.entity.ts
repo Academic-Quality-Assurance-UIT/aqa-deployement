@@ -22,6 +22,14 @@ export class StaffSurveyPoint {
   @Field({ nullable: true })
   comment: string;
 
+  @Column({ nullable: true })
+  @Field({ nullable: true })
+  topic: string;
+
+  @Column({ nullable: true })
+  @Field({ nullable: true })
+  sentiment: string;
+
   @ManyToOne(() => StaffSurveyCriteria, { cascade: false })
   @JoinColumn({ name: 'staff_survey_criteria_id' })
   @Field(() => StaffSurveyCriteria, { nullable: true })

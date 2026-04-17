@@ -12,6 +12,10 @@ import { StaffSurveyCriteria } from './entities/staff-survey-criteria.entity';
 import { StaffSurveySheet } from './entities/staff-survey-sheet.entity';
 import { StaffSurveyService } from './staff-survey.service';
 
+import { CommentQuantity } from 'src/comment/dto/CommentQuantity.dto';
+import { CommentStatisticData } from 'src/comment/dto/CommentStatistic.dto';
+import { StaffSurveyResolver as StaffSurveyResolverClass } from './staff-survey.resolver';
+
 @Resolver(() => StaffSurveySheet)
 export class StaffSurveyResolver {
   constructor(private readonly staffSurveyService: StaffSurveyService) {}
@@ -133,11 +137,15 @@ export class StaffSurveyResolver {
     @Args() { pagination }: QueryArgs,
     @Args('semester', { type: () => String, nullable: true }) semester?: string,
     @Args('keyword', { type: () => String, nullable: true }) keyword?: string,
+    @Args('type', { type: () => [String], nullable: true }) type?: string[],
+    @Args('topic', { type: () => [String], nullable: true }) topic?: string[],
   ) {
     return await this.staffSurveyService.getAllComments(
       pagination,
       semester,
       keyword,
+      type,
+      topic,
     );
   }
 
@@ -145,8 +153,28 @@ export class StaffSurveyResolver {
   async getAllCommentsCount(
     @Args('semester', { type: () => String, nullable: true }) semester?: string,
     @Args('keyword', { type: () => String, nullable: true }) keyword?: string,
+    @Args('type', { type: () => [String], nullable: true }) type?: string[],
+    @Args('topic', { type: () => [String], nullable: true }) topic?: string[],
   ) {
-    return await this.staffSurveyService.getAllCommentsCount(semester, keyword);
+    return await this.staffSurveyService.getAllCommentsCount(semester, keyword, type, topic);
+  }
+
+  @Query(() => CommentQuantity, { name: 'staffSurveyCommentQuantity' })
+  async getStaffSurveyCommentQuantity(
+    @Args('semester', { type: () => String, nullable: true }) semester?: string,
+    @Args('type', { type: () => String, nullable: true }) type?: string,
+    @Args('topic', { type: () => String, nullable: true }) topic?: string,
+  ) {
+    return await this.staffSurveyService.getStaffSurveyCommentQuantity(semester, type, topic);
+  }
+
+  @Query(() => [CommentStatisticData], { name: 'staffSurveyCommentStatistics' })
+  async getStaffSurveyCommentStatistics(
+    @Args('semester', { type: () => String, nullable: true }) semester?: string,
+    @Args('type', { type: () => [String], nullable: true }) type?: string[],
+    @Args('topic', { type: () => [String], nullable: true }) topic?: string[],
+  ) {
+    return await this.staffSurveyService.getStaffSurveyCommentStatistics(semester, type, topic);
   }
 
   @Query(() => [StaffSurveyAdditionalCommentDTO])

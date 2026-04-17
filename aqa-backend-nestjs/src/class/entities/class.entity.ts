@@ -76,7 +76,7 @@ export class Class {
   @Field(() => Int, { nullable: true, defaultValue: 0 })
   total_student: number;
 
-  @Column()
+  @Column({ nullable: true })
   @Field(() => Int, { nullable: true, defaultValue: 0 })
   participating_student: number;
 

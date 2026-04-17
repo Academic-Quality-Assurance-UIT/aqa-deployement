@@ -197,11 +197,13 @@ export class CrawlDataResolver {
   @UseGuards(JwtAuthGuard)
   async runCrawlStaffSurvey(
     @Args('year', { nullable: true }) year?: string,
+    @Args('surveyConfigIds', { type: () => [String], nullable: true })
+    surveyConfigIds?: string[],
     @CurrentUser() user?: UserEntity,
   ): Promise<CrawlJob> {
     return this.crawlDataService.runCrawl(
       CrawlJobType.STAFF_SURVEY,
-      year ? { year } : undefined,
+      { year, surveyConfigIds },
       user?.username,
     );
   }

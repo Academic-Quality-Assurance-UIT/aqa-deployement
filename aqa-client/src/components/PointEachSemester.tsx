@@ -150,7 +150,7 @@ function InnerPointEachSemester({
 							? ["Điểm", "Trung bình toàn trường"]
 							: ["Điểm"]
 					}
-					colors={["sky", "purple"]}
+					colors={["cyan", "slate"]}
 					yAxisWidth={50}
 					minValue={1}
 					maxValue={4}

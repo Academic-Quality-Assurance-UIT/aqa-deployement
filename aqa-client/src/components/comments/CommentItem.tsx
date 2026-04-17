@@ -15,6 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { ReactNode, useState } from "react";
 import { IoCopyOutline, IoEllipsisVertical } from "react-icons/io5";
+import { twMerge } from "tailwind-merge";
 import CommentModalItem from "./CommentModalItem";
 
 const TOPIC_MAP = {
@@ -22,6 +23,13 @@ const TOPIC_MAP = {
 	training_program: "Chương trình đào tạo",
 	facility: "Cơ sở vật chất",
 	others: "Khác",
+	// Staff survey topics
+	"môi trường/điều kiện làm việc": "Môi trường làm việc",
+	"đào tạo, bồi dưỡng": "Đào tạo & Bồi dưỡng",
+	"cơ sở vật chất": "Cơ sở vật chất",
+	"hạ tầng CNTT": "Hạ tầng CNTT",
+	"CTĐT": "Chương trình đào tạo",
+	"không xác định/không liên quan": "Khác",
 };
 
 export default function CommentItem({
@@ -54,80 +62,76 @@ export default function CommentItem({
 	return (
 		<>
 			<motion.div
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
+				initial={{ opacity: 0, y: 10 }}
+				animate={{ opacity: 1, y: 0 }}
 				transition={{
 					ease: "easeOut",
-					duration: 0.6,
+					duration: 0.4,
 				}}
-				className="w-full py-3 flex items-center gap-4 border-b-1 border-b-slate-400"
+				className="w-full py-5 px-4 flex items-start gap-5 border-b border-slate-100 hover:bg-slate-50/50 transition-colors group"
 			>
 				<div
-					className={` flex h-16 w-2 rounded-md ${
+					className={twMerge(
+						"flex-shrink-0 w-1 self-stretch rounded-full transition-all duration-300 group-hover:w-1.5",
 						type_list?.[0] === "positive"
-							? "bg-green-300"
+							? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
 							: type_list?.[0] === "negative"
-							? "bg-red-300"
+							? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]"
 							: "bg-slate-300"
-					}`}
+					)}
 				></div>
-				<div className=" mr-auto w-full flex flex-col gap-2">
-					<p className="font-bold text-sm text-left whitespace-pre-wrap	">
+				<div className="flex-1 min-w-0 flex flex-col gap-3">
+					<p className="font-medium text-primary-dark text-sm leading-relaxed whitespace-pre-wrap">
 						{content}
 					</p>
 					{secondary ? secondary : null}
-					<div className=" flex gap-2">
-						{topic ? <Chip
-							size="sm"
-							className={`w-24 ${
-								topic == "lecturer"
-									? "bg-blue-200"
-									: topic == "training_program"
-									? "bg-yellow-200"
-									: topic == "facility"
-									? "bg-purple-200"
-									: "bg-slate-200"
-							}`}
-						>
-							<p className=" px-1 py-1 capitalize font-medium text-xs">
-								Chủ đề:{" "}
-								<span>
-									{TOPIC_MAP[topic as keyof typeof TOPIC_MAP] ||
-										topic}
+					<div className="flex flex-wrap gap-2 items-center mt-1">
+						{topic ? (
+							<Chip
+								size="sm"
+								variant="flat"
+								className={twMerge(
+									"border-none h-6",
+									topic.toLowerCase().includes("viên") || topic === "lecturer" ? "bg-blue-100/50 text-blue-700" :
+									topic.toLowerCase().includes("đào tạo") || topic === "training_program" || topic === "CTĐT" ? "bg-amber-100/50 text-amber-700" :
+									topic.toLowerCase().includes("vật chất") || topic === "facility" || topic.toLowerCase().includes("cntt") ? "bg-indigo-100/50 text-indigo-700" :
+									topic.toLowerCase().includes("môi trường") ? "bg-cyan-100/50 text-cyan-700" :
+									"bg-slate-100 text-slate-600"
+								)}
+							>
+								<span className="font-bold text-[10px] uppercase tracking-wider">
+									{TOPIC_MAP[topic.toLowerCase() as keyof typeof TOPIC_MAP] || topic}
 								</span>
-							</p>
-						</Chip> : null}
+							</Chip>
+						) : null}
 						{type_list?.map((t) => (
 							<Chip
 								size="sm"
 								key={t}
-								className={`w-24 ${
-									t === "positive"
-										? "bg-green-300 dark:bg-green-700"
-										: t === "negative"
-										? "bg-red-300 dark:bg-red-700"
-										: "bg-slate-200"
-								}`}
+								variant="flat"
+								className={twMerge(
+									"border-none h-6",
+									t === "positive" ? "bg-emerald-100/50 text-emerald-700" :
+									t === "negative" ? "bg-rose-100/50 text-rose-700" :
+									"bg-slate-100 text-slate-600"
+								)}
 							>
-								<p className=" px-1 py-1 capitalize font-medium text-xs">
-									{t == "positive"
-										? "Tích cực"
-										: t == "negative"
-										? "Tiêu cực"
-										: "Trung tính"}
-								</p>
+								<span className="font-bold text-[10px] uppercase tracking-wider">
+									{t == "positive" ? "Tích cực" : t == "negative" ? "Tiêu cực" : "Trung tính"}
+								</span>
 							</Chip>
 						))}
 					</div>
 				</div>
 				<Button
 					isIconOnly
-					aria-label="Like"
-					variant="flat"
+					aria-label="More options"
+					variant="light"
+					size="sm"
 					onPress={() => setIsOpen(true)}
-					className={clickable ? "" : "hidden"}
+					className={twMerge("text-slate-400 hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity", !clickable && "hidden")}
 				>
-					<IoEllipsisVertical />
+					<IoEllipsisVertical size={18} />
 				</Button>
 			</motion.div>
 			<Modal isOpen={isOpen} onOpenChange={setIsOpen}>

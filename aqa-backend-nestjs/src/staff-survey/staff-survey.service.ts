@@ -258,7 +258,9 @@ export class StaffSurveyService {
         COALESCE(cm.display_name, criteria.display_name) AS criteria,
         criteria.index AS index,
         point.point,
-        point.comment
+        point.comment,
+        point.topic,
+        point.sentiment
       FROM staff_survey_point AS point
       JOIN staff_survey_criteria AS criteria
         ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
@@ -322,6 +324,8 @@ export class StaffSurveyService {
     pagination: PaginationArgs,
     semester?: string,
     keyword?: string,
+    type?: string[],
+    topic?: string[],
   ) {
     // Recalculate params for the whole query
     const queryParams: any[] = [];
@@ -339,6 +343,40 @@ export class StaffSurveyService {
       qSheetKeywordCondition = `AND sheet.additional_comment ILIKE $${queryParams.length}`;
     }
 
+    let qTypeCondition = '';
+    let qSheetTypeCondition = '';
+    if (type && !type.includes('all') && type.length > 0) {
+      const typeList = type.map(t => {
+        if (t === 'positive') return 'tích cực';
+        if (t === 'negative') return 'tiêu cực';
+        if (t === 'neutral') return 'trung lập';
+        return t;
+      });
+      queryParams.push(typeList);
+      qTypeCondition = `AND point.sentiment = ANY($${queryParams.length})`;
+      qSheetTypeCondition = `AND sheet.sentiment = ANY($${queryParams.length})`;
+    }
+
+    let qTopicCondition = '';
+    let qSheetTopicCondition = '';
+    if (topic && !topic.includes('all') && topic.length > 0) {
+      if (topic.includes('ĐƠN VỊ')) {
+        const topicsWithoutUnit = topic.filter(t => t !== 'ĐƠN VỊ');
+        if (topicsWithoutUnit.length > 0) {
+          queryParams.push(topicsWithoutUnit);
+          qTopicCondition = `AND (point.topic = ANY($${queryParams.length}) OR criteria.category = 'ĐƠN VỊ')`;
+          qSheetTopicCondition = `AND sheet.topic = ANY($${queryParams.length})`;
+        } else {
+          qTopicCondition = `AND criteria.category = 'ĐƠN VỊ'`;
+          qSheetTopicCondition = `AND false`;
+        }
+      } else {
+        queryParams.push(topic);
+        qTopicCondition = `AND point.topic = ANY($${queryParams.length})`;
+        qSheetTopicCondition = `AND sheet.topic = ANY($${queryParams.length})`;
+      }
+    }
+
     const limitParamIndex = queryParams.length + 1;
     const offsetParamIndex = queryParams.length + 2;
     queryParams.push(pagination.size, (pagination.page || 0) * pagination.size);
@@ -350,7 +388,9 @@ export class StaffSurveyService {
           COALESCE(cm.display_name, criteria.display_name) AS criteria,
           criteria.index AS index,
           point.point AS point,
-          point.comment AS comment
+          point.comment AS comment,
+          point.topic AS topic,
+          point.sentiment AS sentiment
         FROM staff_survey_point AS point
         JOIN staff_survey_criteria AS criteria
           ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
@@ -360,7 +400,7 @@ export class StaffSurveyService {
           ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${qSemesterCondition} ${qKeywordCondition}
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${qSemesterCondition} ${qKeywordCondition} ${qTypeCondition} ${qTopicCondition}
         
         UNION ALL
         
@@ -368,11 +408,13 @@ export class StaffSurveyService {
           'Ý kiến khác' AS criteria,
           999 AS index,
           0 AS point,
-          sheet.additional_comment AS comment
+          sheet.additional_comment AS comment,
+          sheet.topic AS topic,
+          sheet.sentiment AS sentiment
         FROM staff_survey_sheet AS sheet
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${qSemesterCondition} ${qSheetKeywordCondition}
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${qSemesterCondition} ${qSheetKeywordCondition} ${qSheetTypeCondition} ${qSheetTopicCondition}
       ) AS combined
       ORDER BY index
       LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
@@ -395,6 +437,40 @@ export class StaffSurveyService {
       mSheetKeywordCondition = `AND sheet.additional_comment ILIKE $${metaParams.length}`;
     }
 
+    let mTypeCondition = '';
+    let mSheetTypeCondition = '';
+    if (type && !type.includes('all') && type.length > 0) {
+      const typeList = type.map(t => {
+        if (t === 'positive') return 'tích cực';
+        if (t === 'negative') return 'tiêu cực';
+        if (t === 'neutral') return 'trung lập';
+        return t;
+      });
+      metaParams.push(typeList);
+      mTypeCondition = `AND point.sentiment = ANY($${metaParams.length})`;
+      mSheetTypeCondition = `AND sheet.sentiment = ANY($${metaParams.length})`;
+    }
+
+    let mTopicCondition = '';
+    let mSheetTopicCondition = '';
+    if (topic && !topic.includes('all') && topic.length > 0) {
+      if (topic.includes('ĐƠN VỊ')) {
+        const topicsWithoutUnit = topic.filter(t => t !== 'ĐƠN VỊ');
+        if (topicsWithoutUnit.length > 0) {
+          metaParams.push(topicsWithoutUnit);
+          mTopicCondition = `AND (point.topic = ANY($${metaParams.length}) OR criteria.category = 'ĐƠN VỊ')`;
+          mSheetTopicCondition = `AND sheet.topic = ANY($${metaParams.length})`;
+        } else {
+          mTopicCondition = `AND criteria.category = 'ĐƠN VỊ'`;
+          mSheetTopicCondition = `AND false`;
+        }
+      } else {
+        metaParams.push(topic);
+        mTopicCondition = `AND point.topic = ANY($${metaParams.length})`;
+        mSheetTopicCondition = `AND sheet.topic = ANY($${metaParams.length})`;
+      }
+    }
+
     const metaResult = await this.staffSurveyPointRepo.query(
       `
       SELECT SUM(total_item) AS total_item FROM (
@@ -407,7 +483,7 @@ export class StaffSurveyService {
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
         JOIN staff_survey_criteria AS criteria
           ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
-        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${mSemesterCondition} ${mKeywordCondition}
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${mSemesterCondition} ${mKeywordCondition} ${mTypeCondition} ${mTopicCondition}
         
         UNION ALL
         
@@ -416,7 +492,7 @@ export class StaffSurveyService {
         FROM staff_survey_sheet AS sheet
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${mSemesterCondition} ${mSheetKeywordCondition}
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${mSemesterCondition} ${mSheetKeywordCondition} ${mSheetTypeCondition} ${mSheetTopicCondition}
       ) AS total_combined
     `,
       metaParams,
@@ -440,7 +516,7 @@ export class StaffSurveyService {
     };
   }
 
-  async getAllCommentsCount(semester?: string, keyword?: string) {
+  async getAllCommentsCount(semester?: string, keyword?: string, type?: string[], topic?: string[]) {
     const params: any[] = [];
     let semesterCondition = '';
     if (semester) {
@@ -456,6 +532,40 @@ export class StaffSurveyService {
       sheetKeywordCondition = `AND sheet.additional_comment ILIKE $${params.length}`;
     }
 
+    let typeCondition = '';
+    let sheetTypeCondition = '';
+    if (type && !type.includes('all') && type.length > 0) {
+      const typeList = type.map(t => {
+        if (t === 'positive') return 'tích cực';
+        if (t === 'negative') return 'tiêu cực';
+        if (t === 'neutral') return 'trung lập';
+        return t;
+      });
+      params.push(typeList);
+      typeCondition = `AND point.sentiment = ANY($${params.length})`;
+      sheetTypeCondition = `AND sheet.sentiment = ANY($${params.length})`;
+    }
+
+    let topicCondition = '';
+    let sheetTopicCondition = '';
+    if (topic && !topic.includes('all') && topic.length > 0) {
+      if (topic.includes('ĐƠN VỊ')) {
+        const topicsWithoutUnit = topic.filter(t => t !== 'ĐƠN VỊ');
+        if (topicsWithoutUnit.length > 0) {
+          params.push(topicsWithoutUnit);
+          topicCondition = `AND (point.topic = ANY($${params.length}) OR criteria.category = 'ĐƠN VỊ')`;
+          sheetTopicCondition = `AND sheet.topic = ANY($${params.length})`;
+        } else {
+          topicCondition = `AND criteria.category = 'ĐƠN VỊ'`;
+          sheetTopicCondition = `AND false`;
+        }
+      } else {
+        params.push(topic);
+        topicCondition = `AND point.topic = ANY($${params.length})`;
+        sheetTopicCondition = `AND sheet.topic = ANY($${params.length})`;
+      }
+    }
+
     const result = await this.staffSurveyPointRepo.query(
       `
       SELECT SUM(total_item) AS total_item FROM (
@@ -468,7 +578,7 @@ export class StaffSurveyService {
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
         JOIN staff_survey_criteria AS criteria
           ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
-        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${keywordCondition}
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${keywordCondition} ${typeCondition} ${topicCondition}
         
         UNION ALL
         
@@ -477,7 +587,7 @@ export class StaffSurveyService {
         FROM staff_survey_sheet AS sheet
         JOIN staff_survey_batch AS batch
           ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
-        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetKeywordCondition}
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetKeywordCondition} ${sheetTypeCondition} ${sheetTopicCondition}
       ) AS total_combined
     `,
       params,
@@ -486,6 +596,242 @@ export class StaffSurveyService {
     console.log({ count: parseInt(result[0].total_item || '0') });
 
     return parseInt(result[0].total_item || '0');
+  }
+
+  async getStaffSurveyCommentQuantity(semester?: string, type?: string, topic?: string) {
+    const params: any[] = [];
+    let semesterCondition = '';
+    if (semester) {
+      params.push(semester);
+      semesterCondition = `AND batch.display_name = $${params.length}`;
+    }
+
+    let typeCondition = '';
+    let sheetTypeCondition = '';
+    if (type && type !== 'all') {
+      let mappedType = type;
+      if (type === 'positive') mappedType = 'tích cực';
+      if (type === 'negative') mappedType = 'tiêu cực';
+      if (type === 'neutral') mappedType = 'trung lập';
+      params.push(mappedType);
+      typeCondition = `AND point.sentiment = $${params.length}`;
+      sheetTypeCondition = `AND sheet.sentiment = $${params.length}`;
+    }
+
+    let topicCondition = '';
+    let sheetTopicCondition = '';
+    if (topic && topic !== 'all') {
+      if (topic === 'ĐƠN VỊ') {
+        topicCondition = `AND criteria.category = 'ĐƠN VỊ'`;
+        sheetTopicCondition = `AND false`;
+      } else {
+        params.push(topic);
+        topicCondition = `AND point.topic = $${params.length}`;
+        sheetTopicCondition = `AND sheet.topic = $${params.length}`;
+      }
+    }
+
+    const result = await this.staffSurveyPointRepo.query(
+      `
+      SELECT SUM(total_item) AS total_item FROM (
+        SELECT
+          COUNT(*) AS total_item
+        FROM staff_survey_point AS point
+        JOIN staff_survey_sheet AS sheet
+          ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${typeCondition} ${topicCondition}
+        
+        UNION ALL
+        
+        SELECT
+          COUNT(*) AS total_item
+        FROM staff_survey_sheet AS sheet
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetTypeCondition} ${sheetTopicCondition}
+      ) AS total_combined
+    `,
+      params,
+    );
+
+    return {
+      type: type || 'all',
+      quantity: parseInt(result[0].total_item || '0')
+    };
+  }
+
+  async getStaffSurveyCommentStatistics(semester?: string, type?: string[], topic?: string[]) {
+    const params: any[] = [];
+    let semesterCondition = '';
+    if (semester) {
+      params.push(semester);
+      semesterCondition = `AND batch.display_name = $${params.length}`;
+    }
+
+    let typeCondition = '';
+    let sheetTypeCondition = '';
+    if (type && !type.includes('all') && type.length > 0) {
+      const typeList = type.map(t => {
+        if (t === 'positive') return 'tích cực';
+        if (t === 'negative') return 'tiêu cực';
+        if (t === 'neutral') return 'trung lập';
+        return t;
+      });
+      params.push(typeList);
+      typeCondition = `AND point.sentiment = ANY($${params.length})`;
+      sheetTypeCondition = `AND sheet.sentiment = ANY($${params.length})`;
+    }
+
+    let topicCondition = '';
+    let sheetTopicCondition = '';
+    if (topic && !topic.includes('all') && topic.length > 0) {
+      if (topic.includes('ĐƠN VỊ')) {
+        const topicsWithoutUnit = topic.filter(t => t !== 'ĐƠN VỊ');
+        if (topicsWithoutUnit.length > 0) {
+          params.push(topicsWithoutUnit);
+          topicCondition = `AND (point.topic = ANY($${params.length}) OR criteria.category = 'ĐƠN VỊ')`;
+          sheetTopicCondition = `AND sheet.topic = ANY($${params.length})`;
+        } else {
+          topicCondition = `AND criteria.category = 'ĐƠN VỊ'`;
+          sheetTopicCondition = `AND false`;
+        }
+      } else {
+        params.push(topic);
+        topicCondition = `AND point.topic = ANY($${params.length})`;
+        sheetTopicCondition = `AND sheet.topic = ANY($${params.length})`;
+      }
+    }
+
+    const totals = await this.staffSurveyPointRepo.query(
+      `
+      SELECT label, SUM(total) as total FROM (
+        SELECT
+          batch.display_name as label,
+          COUNT(*) AS total
+        FROM staff_survey_point AS point
+        JOIN staff_survey_sheet AS sheet
+          ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${typeCondition} ${topicCondition}
+        GROUP BY batch.display_name
+        
+        UNION ALL
+        
+        SELECT
+          batch.display_name as label,
+          COUNT(*) AS total
+        FROM staff_survey_sheet AS sheet
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetTypeCondition} ${sheetTopicCondition}
+        GROUP BY batch.display_name
+      ) as combined
+      GROUP BY label
+      ORDER BY label ASC
+      `, params
+    );
+
+    const sentiments = await this.staffSurveyPointRepo.query(
+      `
+      SELECT label, sentiment, SUM(count) as count FROM (
+        SELECT
+          batch.display_name as label,
+          point.sentiment as sentiment,
+          COUNT(*) AS count
+        FROM staff_survey_point AS point
+        JOIN staff_survey_sheet AS sheet
+          ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${typeCondition} ${topicCondition} AND point.sentiment IS NOT NULL
+        GROUP BY batch.display_name, point.sentiment
+        
+        UNION ALL
+        
+        SELECT
+          batch.display_name as label,
+          sheet.sentiment as sentiment,
+          COUNT(*) AS count
+        FROM staff_survey_sheet AS sheet
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetTypeCondition} ${sheetTopicCondition} AND sheet.sentiment IS NOT NULL
+        GROUP BY batch.display_name, sheet.sentiment
+      ) as combined
+      GROUP BY label, sentiment
+      ORDER BY label ASC
+      `, params
+    );
+
+    const topics = await this.staffSurveyPointRepo.query(
+      `
+      SELECT label, topic, SUM(count) as count FROM (
+        SELECT
+          batch.display_name as label,
+          point.topic as topic,
+          COUNT(*) AS count
+        FROM staff_survey_point AS point
+        JOIN staff_survey_sheet AS sheet
+          ON point.staff_survey_sheet_id = sheet.staff_survey_sheet_id
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        JOIN staff_survey_criteria AS criteria
+          ON point.staff_survey_criteria_id = criteria.staff_survey_criteria_id
+        WHERE criteria.is_shown = true AND point.comment IS NOT NULL AND point.comment != '' ${semesterCondition} ${typeCondition} ${topicCondition} AND point.topic IS NOT NULL
+        GROUP BY batch.display_name, point.topic
+        
+        UNION ALL
+        
+        SELECT
+          batch.display_name as label,
+          sheet.topic as topic,
+          COUNT(*) AS count
+        FROM staff_survey_sheet AS sheet
+        JOIN staff_survey_batch AS batch
+          ON sheet.staff_survey_batch_id = batch.staff_survey_batch_id
+        WHERE sheet.additional_comment IS NOT NULL AND sheet.additional_comment != '' ${semesterCondition} ${sheetTypeCondition} ${sheetTopicCondition} AND sheet.topic IS NOT NULL
+        GROUP BY batch.display_name, sheet.topic
+      ) as combined
+      GROUP BY label, topic
+      ORDER BY label ASC
+      `, params
+    );
+
+    const result = totals.map((t: any) => ({
+      label: t.label,
+      total: parseInt(t.total, 10),
+      sentiments: {} as any,
+      topics: {} as any,
+    }));
+
+    sentiments.forEach((s: any) => {
+      let mappedSentiment = 'neutral';
+      if (s.sentiment === 'tích cực') mappedSentiment = 'positive';
+      if (s.sentiment === 'tiêu cực') mappedSentiment = 'negative';
+      
+      const entry = result.find((r) => r.label === s.label);
+      if (entry) {
+        entry.sentiments[mappedSentiment] = parseInt(s.count, 10);
+      }
+    });
+
+    topics.forEach((t: any) => {
+      const entry = result.find((r) => r.label === t.label);
+      if (entry) {
+        entry.topics[t.topic || 'Unknown'] = parseInt(t.count, 10);
+      }
+    });
+
+    return result;
   }
 
   async getPointWithCommentByCriteriaCount(
@@ -535,6 +881,8 @@ export class StaffSurveyService {
         'sheet.display_name',
         'sheet.faculty',
         'sheet.additional_comment',
+        'sheet.topic',
+        'sheet.sentiment',
       ])
       .where(
         "sheet.additional_comment IS NOT NULL AND sheet.additional_comment != ''",

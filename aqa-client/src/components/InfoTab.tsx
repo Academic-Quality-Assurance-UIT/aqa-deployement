@@ -46,23 +46,23 @@ export default function InfoTab({
 					onChange={() => {}}
 				/>
 				<div className="px-2 lg:px-4 grid place-items-center lg:place-items-start">
-					<div className="flex flex-row items-start gap-2 pr-5 ">
-						<Image src={icon} width={15} height={15} alt="icon" />
-						<p className="text-sm font-medium text-gray-500 dark:text-gray-300">
+					<div className="flex flex-row items-center gap-2 pr-5">
+						<Image src={icon} width={16} height={16} alt="icon" className="opacity-70" />
+						<p className="text-xs font-bold uppercase tracking-wider text-slate-500">
 							{title}
 						</p>
 					</div>
 					<div className="">
 						{number === undefined ? (
-							<Spinner className="mt-2 w-fit" />
+							<Spinner size="sm" className="mt-2 w-fit" color="primary" />
 						) : (
-							<p className="text-xl lg:text-2xl font-bold mt-2 pr-1 lg:pr-5 text-start">
-								{number.toLocaleString("en-US") || 0}
+							<p className="text-2xl lg:text-3xl font-black mt-2 pr-1 lg:pr-5 text-start font-display text-primary-dark">
+								{number.toLocaleString("vi-VN") || 0}
 							</p>
 						)}
 					</div>
 				</div>
-				<div className="w-full h-1 mt-1 bg-transparent peer-checked:bg-sky-900 transition-all" />
+				<div className="w-full h-1 mt-2 bg-transparent peer-checked:bg-primary transition-all rounded-full" />
 			</label>
 		</Card>
 	);

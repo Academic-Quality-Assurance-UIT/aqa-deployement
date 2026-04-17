@@ -50,7 +50,7 @@ import { StudentModule } from './student/student.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        synchronize: false,
+        synchronize: true,
         autoLoadEntities: true,
         migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
         migrationsRun: false,

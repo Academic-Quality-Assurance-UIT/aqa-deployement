@@ -187,7 +187,12 @@ export const LecturerSurveySelectModal = ({
     onRun(allSelectedIds);
   };
 
-  const titleText = type === CrawlJobType.LecturerSurvey ? "Chọn Khảo sát Giảng viên để thu thập" : "Chọn Khảo sát Môn học để thu thập";
+  const titleText = useMemo(() => {
+    if (type === CrawlJobType.LecturerSurvey) return "Chọn Khảo sát Giảng viên để thu thập";
+    if (type === CrawlJobType.SubjectSurvey) return "Chọn Khảo sát Môn học để thu thập";
+    if (type === CrawlJobType.StaffSurvey) return "Chọn Khảo sát CBNV để thu thập";
+    return "Chọn Khảo sát để thu thập";
+  }, [type]);
 
   return (
     <>

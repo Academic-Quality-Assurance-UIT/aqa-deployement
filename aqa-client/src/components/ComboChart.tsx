@@ -595,7 +595,8 @@ interface ComboChartProps extends React.HTMLAttributes<HTMLDivElement> {
 	showXAxis?: boolean;
 	xAxisLabel?: string;
 	showGridLines?: boolean;
-	intervalType?: "preserveStartEnd" | "equidistantPreserveStart";
+	interval?: "preserveStart" | "preserveEnd" | "preserveStartEnd" | number;
+	xAxisTickAngle?: number;
 	showLegend?: boolean;
 	showTooltip?: boolean;
 	onValueChange?: (value: ComboChartEventProps) => void;
@@ -641,7 +642,7 @@ const ComboChart = React.forwardRef<HTMLDivElement, ComboChartProps>(
 			startEndOnly = false,
 			showXAxis = true,
 			showGridLines = true,
-			intervalType = "equidistantPreserveStart",
+			interval = "preserveStartEnd",
 			showTooltip = true,
 			showLegend = true,
 			legendPosition = "right",
@@ -649,6 +650,7 @@ const ComboChart = React.forwardRef<HTMLDivElement, ComboChartProps>(
 			onValueChange,
 			tickGap = 5,
 			xAxisLabel,
+			xAxisTickAngle,
 			enableBiaxial = false,
 
 			barSeries = defaultBarSeries,
@@ -806,9 +808,9 @@ const ComboChart = React.forwardRef<HTMLDivElement, ComboChartProps>(
 								: undefined
 						}
 						margin={{
-							bottom: xAxisLabel ? 30 : undefined,
-							left: mergedBarSeries.yAxisLabel ? 20 : undefined,
-							right: mergedLineSeries.yAxisLabel ? 20 : undefined,
+							bottom: (xAxisTickAngle ? Math.abs(xAxisTickAngle) * 2 : 0) + (xAxisLabel ? 30 : 20),
+							left: mergedBarSeries.showYAxis ? (mergedBarSeries.yAxisWidth ?? 56) : 0,
+							right: mergedLineSeries.showYAxis ? (mergedLineSeries.yAxisWidth ?? 56) : 0,
 							top: 5,
 						}}
 					>
@@ -823,7 +825,13 @@ const ComboChart = React.forwardRef<HTMLDivElement, ComboChartProps>(
 						) : null}
 						<XAxis
 							hide={!showXAxis}
-							tick={{
+							tick={xAxisTickAngle ? {
+								angle: xAxisTickAngle,
+								textAnchor: Math.abs(xAxisTickAngle) < 20 ? 'middle' : (xAxisTickAngle < 0 ? 'end' : 'start'),
+								dy: 10,
+								dx: xAxisTickAngle > 0 && Math.abs(xAxisTickAngle) < 20 ? 10 : 0,
+								fontSize: 11,
+							} : {
 								transform: "translate(0, 6)",
 							}}
 							fill=""
@@ -843,7 +851,7 @@ const ComboChart = React.forwardRef<HTMLDivElement, ComboChartProps>(
 							}}
 							dataKey={index}
 							interval={
-								startEndOnly ? "preserveStartEnd" : intervalType
+								startEndOnly ? "preserveStartEnd" : interval
 							}
 							ticks={
 								startEndOnly

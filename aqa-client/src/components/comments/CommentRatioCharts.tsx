@@ -189,7 +189,7 @@ export default function CommentRatioCharts({
 					data={processedData}
 					index="label"
 					categories={["Tổng số ý kiến"]}
-					colors={["emerald"]}
+					colors={["cyan"]}
 					valueFormatter={(number: number) => Intl.NumberFormat("vi-VN").format(number)}
 					showAnimation
 					yAxisWidth={56}
@@ -249,8 +249,8 @@ export default function CommentRatioCharts({
 					aria-label="Biểu đồ thống kê ý kiến"
 					title={
 						<div className="flex items-center gap-2">
-							<span className="font-bold text-lg">Thống kê ý kiến phản hồi</span>
-							<Chip size="sm" color="primary" variant="flat">Mới</Chip>
+							<span className="font-bold text-lg pb-2 text-primary-dark">Thống kê ý kiến phản hồi</span>
+							<Chip size="sm" color="primary" variant="flat" className="font-bold uppercase tracking-wider text-[10px]">Mới</Chip>
 						</div>
 					}
 					subtitle="Xem thống kê tổng quan, tỉ lệ cảm xúc và khía cạnh theo thời gian"
@@ -277,7 +277,7 @@ export default function CommentRatioCharts({
 							<ChartLayout
 								primaryTitle={chartTitles[activeTab]}
 								legends={[]}
-								colors={activeTab === "total" ? ["emerald"] : (activeTab === "sentiment" ? sentimentCategories.map(c => SENTIMENT_COLORS[c] || "gray") : topicCategories.map(c => TOPIC_COLORS[c] || "gray"))}
+								colors={activeTab === "total" ? ["cyan"] : (activeTab === "sentiment" ? sentimentCategories.map(c => SENTIMENT_COLORS[c] || "gray") : topicCategories.map(c => TOPIC_COLORS[c] || "gray"))}
 								handlerButtons={handlerButtons}
 								showLegend={true}
                                 isFullWidth

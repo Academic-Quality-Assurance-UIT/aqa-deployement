@@ -104,7 +104,7 @@ export class CrawlDataService implements OnModuleInit {
           ? 600000 // 10 minutes for ML inference
           : job.status === CrawlJobStatus.CONFIRMING
           ? 300000 // 5 minutes for confirming large datasets
-          : 15000; // 15 seconds for crawl jobs
+          : 120000; // 2 minutes for crawl jobs
       const lastActivity =
         job.last_activity_at || job.started_at || job.created_at;
       if (now.getTime() - lastActivity.getTime() > timeoutMs) {
@@ -449,6 +449,7 @@ export class CrawlDataService implements OnModuleInit {
           result = await this.staffSurveyService.crawl(
             job.crawl_job_id,
             job.parameters?.year,
+            job.parameters?.surveyConfigIds,
           );
           break;
         case CrawlJobType.AGGREGATE_POINTS:
@@ -583,7 +584,7 @@ export class CrawlDataService implements OnModuleInit {
           await this.confirmLecturerSurvey(queryRunner, jobId, updateConfirmProgress);
           break;
         case CrawlJobType.STAFF_SURVEY:
-          // Staff survey data is stored as JSON responses - confirm just updates status
+          await this.confirmStaffSurvey(queryRunner, jobId, updateConfirmProgress);
           break;
         case CrawlJobType.AGGREGATE_POINTS:
           await this.confirmAggregatePoints(queryRunner, jobId, updateConfirmProgress);
@@ -1243,6 +1244,104 @@ export class CrawlDataService implements OnModuleInit {
     },
     { onProgress },
     );
+  }
+
+  private async confirmStaffSurvey(
+    queryRunner: any,
+    jobId: string,
+    onProgress?: (count: number) => Promise<void>,
+  ): Promise<void> {
+    const batchCache = new Map<string, string>();
+    const criteriaCache = new Map<string, string>();
+    const sheetCache = new Map<string, string>(); // Maps "sid:response_id" to sheet_id
+
+    // 1. Process Batches
+    await this.processStagingInChunks(queryRunner, jobId, async (items) => {
+      for (const item of items) {
+        const data = item.data;
+        const cacheKey = data.display_name;
+        if (!batchCache.has(cacheKey)) {
+          const existing = await queryRunner.query(
+            'SELECT staff_survey_batch_id FROM staff_survey_batch WHERE display_name = $1',
+            [data.display_name],
+          );
+          if (existing.length > 0) {
+            batchCache.set(cacheKey, existing[0].staff_survey_batch_id);
+          } else {
+            const res = await queryRunner.query(
+              'INSERT INTO staff_survey_batch (staff_survey_batch_id, display_name, semester) VALUES (uuid_generate_v4(), $1, $2) RETURNING staff_survey_batch_id',
+              [data.display_name, data.semester],
+            );
+            batchCache.set(cacheKey, res[0].staff_survey_batch_id);
+          }
+        }
+      }
+    }, { dataType: 'staff_survey_batch', onProgress });
+
+    // 2. Process Criteria
+    await this.processStagingInChunks(queryRunner, jobId, async (items) => {
+      for (const item of items) {
+        const data = item.data;
+        const cacheKey = `${data.display_name}:${data.category}`;
+        if (!criteriaCache.has(cacheKey)) {
+          const existing = await queryRunner.query(
+            'SELECT staff_survey_criteria_id FROM staff_survey_criteria WHERE display_name = $1 AND category = $2',
+            [data.display_name, data.category],
+          );
+          if (existing.length > 0) {
+            criteriaCache.set(cacheKey, existing[0].staff_survey_criteria_id);
+          } else {
+            const res = await queryRunner.query(
+              'INSERT INTO staff_survey_criteria (staff_survey_criteria_id, display_name, category, "index", semesters) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING staff_survey_criteria_id',
+              [data.display_name, data.category, data.index || 0, [data.semester]],
+            );
+            criteriaCache.set(cacheKey, res[0].staff_survey_criteria_id);
+          }
+        }
+      }
+    }, { dataType: 'staff_survey_criteria', onProgress });
+
+    // 3. Process Sheets
+    await this.processStagingInChunks(queryRunner, jobId, async (items) => {
+      for (const item of items) {
+        const data = item.data;
+        const batchId = batchCache.get(data.sid);
+        
+        const sheetRes = await queryRunner.query(
+          `INSERT INTO staff_survey_sheet (
+            staff_survey_sheet_id, display_name, academic_degree, faculty, working_year, additional_comment, staff_survey_batch_id
+          ) VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6) RETURNING staff_survey_sheet_id`,
+          [
+            data.display_name,
+            data.academic_degree,
+            data.faculty,
+            data.working_year,
+            data.additional_comment,
+            batchId,
+          ],
+        );
+        const sheetId = sheetRes[0].staff_survey_sheet_id;
+        sheetCache.set(`${data.sid}:${data.response_id}`, sheetId);
+      }
+    }, { dataType: 'staff_survey_sheet', onProgress });
+
+    // 4. Process Points
+    await this.processStagingInChunks(queryRunner, jobId, async (items) => {
+      for (const item of items) {
+        const data = item.data;
+        const sheetId = sheetCache.get(`${data.sid}:${data.response_id}`);
+        const criteriaId = criteriaCache.get(`${data.criteria_name}:${data.criteria_category}`);
+
+        if (sheetId && criteriaId) {
+          await queryRunner.query(
+            `INSERT INTO staff_survey_point (
+              staff_survey_point_id, point, comment, max_point, staff_survey_criteria_id, staff_survey_sheet_id
+            ) VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5)`,
+            [data.point, data.comment, data.max_point || 5, criteriaId, sheetId],
+          );
+        }
+      }
+    }, { dataType: 'staff_survey_point', onProgress });
   }
 
   private async confirmAggregatePoints(

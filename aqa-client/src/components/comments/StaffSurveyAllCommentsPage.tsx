@@ -8,26 +8,33 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useRememberValue } from "@/hooks/useRememberValue";
 import { Card, Input, Button, Spinner } from "@heroui/react";
 import Loading from "../Loading";
+import { useSearchParams } from "next/navigation";
 import CommentItem from "./CommentItem";
+import StaffSurveyCommentRatioCharts from "./StaffSurveyCommentRatioCharts";
+import StaffSurveyCommentQuantityInfo from "./StaffSurveyCommentQuantityInfo";
+import StaffSurveySemesterSelector from "@/components/selectors/StaffSurveySemesterSelector";
 import { useState, useEffect } from "react";
 import { AiOutlineSearch, AiOutlineDownload } from "react-icons/ai";
 import { IoIosSearch } from "react-icons/io";
 import * as XLSX from "xlsx";
 
-export default function StaffSurveyAllCommentsPage({
-	semester,
-}: {
-	semester?: string;
-}) {
+export default function StaffSurveyAllCommentsPage() {
+	const searchParams = useSearchParams();
+	const [semester, setSemester] = useState<string | undefined>(undefined);
 	const [keyword, setKeyword] = useState("");
 	const [searchKeyword, setSearchKeyword] = useState("");
+
+    const typeParam = searchParams.get("type");
+    const topicParam = searchParams.get("topic");
+    const typeFilter = typeParam ? [typeParam] : ["all"];
+    const topicFilter = topicParam ? [topicParam] : ["all"];
 
 	const [getCommentList, { data, loading: isLoading }] =
 		useGetAllCommentsLazyQuery();
 
 	const { dataList: comments, bottomRef } = useInfiniteScroll({
 		queryFunction: getCommentList,
-		variables: { semester, keyword: searchKeyword },
+		variables: { semester, keyword: searchKeyword, type: typeFilter, topic: topicFilter },
 		isLoading,
 		data: data?.getAllComments.data,
 		meta: data?.getAllComments.meta,
@@ -55,7 +62,7 @@ export default function StaffSurveyAllCommentsPage({
 
 			while (hasNext) {
 				const res = await getExportCommentList({
-					variables: { semester, keyword: searchKeyword, page },
+					variables: { semester, keyword: searchKeyword, page, type: typeFilter, topic: topicFilter },
 				});
 				const resData = res.data?.getAllComments.data || [];
 				const meta = res.data?.getAllComments.meta;
@@ -76,6 +83,8 @@ export default function StaffSurveyAllCommentsPage({
 					"Nhận xét": item.comment || "",
 					"Tiêu chí": isUnit ? "" : (item.criteria || ""),
 					"Đơn vị": isUnit ? (item.criteria || "") : "",
+					"Khía cạnh": item.topic || "",
+					"Cảm xúc": item.sentiment || "",
 				};
 			});
 
@@ -110,7 +119,13 @@ export default function StaffSurveyAllCommentsPage({
 				<p className="text-xl font-bold text-gray-800">
 					Tổng số nhận xét: {data?.getAllComments.meta.total_item ?? 0}
 				</p>
-				<div className="flex flex-row items-center gap-2 lg:gap-4 w-full md:max-w-2xl">
+				<div className="flex flex-row items-center gap-2 lg:gap-4 w-full md:max-w-3xl">
+					<div className="min-w-fit">
+						<StaffSurveySemesterSelector
+							semester={semester}
+							setSemester={setSemester}
+						/>
+					</div>
 					<Input
 						value={keyword}
 						onValueChange={setKeyword}
@@ -170,15 +185,28 @@ export default function StaffSurveyAllCommentsPage({
 					</Button>
 				</div>
 			</div>
-			<Card className="mt-0 mb-20 w-full p-6 shadow-sm border border-divider">
+			
+			<div className="flex flex-col gap-4 items-start w-full">
+				<div className="w-full rounded-none flex flex-row overflow-hidden">
+					<StaffSurveyCommentQuantityInfo semester={semester} />
+				</div>
+			</div>
+			
+			<StaffSurveyCommentRatioCharts
+				semester={semester}
+				type={typeFilter}
+				topic={topicFilter}
+			/>
+
+			<Card className="mt-4 mb-20 w-full p-6 shadow-sm border border-divider">
 				<div className=" mt-0 rounded-xl space-y-2">
-					{comments.map(({ comment, criteria, point }, i) => (
+					{comments.map(({ comment, criteria, point, topic, sentiment }, i) => (
 						<CommentItem
 							key={`${comment}-${i}`}
 							content={comment ?? ""}
-							type={"neutral"}
-							type_list={[]}
-							topic={""}
+							type={sentiment === "tích cực" ? "positive" : sentiment === "tiêu cực" ? "negative" : "neutral"}
+							type_list={sentiment ? [sentiment === "tích cực" ? "positive" : sentiment === "tiêu cực" ? "negative" : "neutral"] : []}
+							topic={topic ?? ""}
 							comment_id={comment ?? i.toString()}
 							isLast={false}
 							clickable={false}

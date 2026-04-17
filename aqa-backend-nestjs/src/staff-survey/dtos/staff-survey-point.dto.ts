@@ -13,6 +13,12 @@ export class StaffSurveyPointDTO {
   comment: string;
 
   @Field({ nullable: true })
+  topic: string;
+
+  @Field({ nullable: true })
+  sentiment: string;
+
+  @Field({ nullable: true })
   criteria_name: string;
 
   @Field({ nullable: true })
@@ -29,6 +35,12 @@ export class StaffSurveyPointResponseItemDTO {
 
   @Field({ nullable: true })
   comment: string;
+
+  @Field({ nullable: true })
+  topic: string;
+
+  @Field({ nullable: true })
+  sentiment: string;
 
   @Field()
   criteria: string;

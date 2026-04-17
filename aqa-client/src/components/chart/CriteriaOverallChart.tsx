@@ -23,7 +23,7 @@ export default function CriteriaOverallChart() {
 	return (
 		<PointEachSemester
 			query={query}
-			title={<span className=" flex items-center gap-2">{`Điểm đánh giá trung bình của ${currentRoleName} qua từng học kỳ`} <Chip color="success"><span className=" font-semibold">{_.capitalize(currentRoleName)}</span></Chip></span>}
+			title={<span className=" flex items-center gap-2 font-display">{`Điểm đánh giá trung bình của ${currentRoleName} qua từng học kỳ`} <Chip color="primary"><span className=" font-semibold text-white">{_.capitalize(currentRoleName)}</span></Chip></span>}
 			legend="Điểm đánh giá"
 			selectors={
 				<>

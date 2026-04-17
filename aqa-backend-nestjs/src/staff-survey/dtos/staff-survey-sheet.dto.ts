@@ -12,6 +12,9 @@ export class StaffSurveySheetDTO {
   display_name: string;
 
   @Field({ nullable: true })
+  working_year: string;
+
+  @Field({ nullable: true })
   mscb: string;
 
   @Field({ nullable: true })
@@ -31,6 +34,12 @@ export class StaffSurveySheetDTO {
 
   @Field({ nullable: true })
   additional_comment: string;
+
+  @Field({ nullable: true })
+  topic: string;
+
+  @Field({ nullable: true })
+  sentiment: string;
 
   @Field({ nullable: true })
   semester: string;

@@ -4,12 +4,12 @@ import BaseChart from "@components/chart/BaseChart";
 import { Button } from "@heroui/react";
 import { Color, Legend } from "@tremor/react";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { AiOutlineCloudDownload, AiOutlineSetting } from "react-icons/ai";
+import { AiOutlineCloudDownload, AiOutlineSetting, AiOutlineBarChart } from "react-icons/ai";
 import MediaQuery, { useMediaQuery } from "react-responsive";
 import Extensible from "../Extensible";
 import { useGetSettingQuery } from "@/gql/graphql";
 
-import { FcComboChart } from "react-icons/fc";
+// Remove FcComboChart for more professional look
 
 import {
 	Modal,
@@ -96,16 +96,20 @@ export default function ChartLayout({
 			<div className=" h-full flex-shrink-0">
 				<Extensible isOpen={isOpen} setIsOpen={setIsOpen}>
 					<div className="w-full px-2 lg:px-8">
-						<div className="  w-full mb-2 pl-2 pr-0 pt-5 flex flex-col lg:flex-row gap-1 lg:gap-5 justify-between items-start xl:items-center">
-							<div className=" lg:w-3/4 mt-2 flex gap-2">
-								<FcComboChart className=" mt-0" size={24} />
+						<div className="w-full mb-6 pl-2 pr-0 pt-6 flex flex-col lg:flex-row gap-6 justify-between items-start xl:items-center">
+							<div className="lg:w-3/4 flex gap-4 items-start">
+								<div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center text-primary shadow-sm border border-primary/10">
+									<AiOutlineBarChart size={28} />
+								</div>
 								<div>
-									<p className=" text-foreground-900 font-bold text-xl">
+									<h3 className="text-primary-dark font-bold text-2xl font-display leading-tight">
 										{primaryTitle}
-									</p>
-									<p className="w-full mt-2 font-normal text-sm">
-										{secondaryTitle}
-									</p>
+									</h3>
+									{secondaryTitle && (
+										<p className="w-full mt-1 font-medium text-slate-500 text-sm">
+											{secondaryTitle}
+										</p>
+									)}
 								</div>
 							</div>
 							<div className="w-fit flex flex-row flex-nowrap gap-4 pr-5 pl-6 lg:pl-0">

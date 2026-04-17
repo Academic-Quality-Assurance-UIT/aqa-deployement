@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 import Providers from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const beVietnamPro = Be_Vietnam_Pro({ 
+	subsets: ["vietnamese", "latin"],
+	weight: ["300", "400", "500", "600", "700"]
+});
 
 export const metadata: Metadata = {
 	title: "AQA app",
@@ -20,7 +23,7 @@ export default async function RootLayout({
 	try {
 		return (
 			<html lang="en" suppressHydrationWarning>
-				<body className={inter.className}>
+				<body className={beVietnamPro.className}>
 					<Providers>
 						<div className=" light flex flex-row">
 							{children}
@@ -33,7 +36,7 @@ export default async function RootLayout({
 	} catch (error) {
 		return (
 			<html lang="en" suppressHydrationWarning>
-				<body className={inter.className}>
+				<body className={beVietnamPro.className}>
 					<div className=" w-screen h-screen grid place-items-center">
 						Trang web đang bảo trì
 					</div>

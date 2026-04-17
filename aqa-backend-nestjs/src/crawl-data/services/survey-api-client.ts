@@ -76,6 +76,40 @@ export class SurveyApiClient {
     }
   }
 
+  async getSurveyQuestions(
+    sid: string,
+    retries = 3,
+    jobId?: string,
+  ): Promise<any> {
+    const startTime = Date.now();
+    const action = 'getSurveyQuestions';
+    const params = { sid };
+
+    try {
+      const response = await this.client.get('', {
+        params: { action, ...params },
+      });
+
+      if (jobId) {
+        await this.logActivity(jobId, response, Date.now() - startTime);
+      }
+
+      if (response.data) return response.data;
+      throw new Error(`API returned no questions for SID: ${sid}`);
+    } catch (error: any) {
+      if (jobId) {
+        await this.logActivity(jobId, null, Date.now() - startTime, error);
+      }
+
+      if (error.response?.status === 429 && retries > 0) {
+        const delay = (4 - retries) * 2000;
+        await new Promise((r) => setTimeout(r, delay));
+        return this.getSurveyQuestions(sid, retries - 1, jobId);
+      }
+      throw error;
+    }
+  }
+
   async getAllSurveyAnswers(
     sid: string,
     jobId?: string,

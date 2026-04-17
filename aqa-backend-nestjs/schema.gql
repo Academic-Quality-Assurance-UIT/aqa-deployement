@@ -296,7 +296,7 @@ type Mutation {
   runCrawlLecturerSurvey(semester: String, surveyConfigIds: [String!]): CrawlJob!
 
   """Chạy thu thập KS CBNV"""
-  runCrawlStaffSurvey(year: String): CrawlJob!
+  runCrawlStaffSurvey(surveyConfigIds: [String!], year: String): CrawlJob!
 
   """Chạy thu thập KS Môn học"""
   runCrawlSubjectSurvey(semester: String, surveyConfigIds: [String!]): CrawlJob!
@@ -428,8 +428,8 @@ type Query {
   """Get detail information of a faculty and its lecturer list"""
   faculty(id: String!): Faculty
   getAdditionalComments(semester: String): [StaffSurveyAdditionalCommentDTO!]!
-  getAllComments(filter: FilterArgs = {}, keyword: String, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}): StaffSurveyPointResponseDTO!
-  getAllCommentsCount(keyword: String, semester: String): Int!
+  getAllComments(filter: FilterArgs = {}, keyword: String, pagination: PaginationArgs = {page: 0, size: 10}, semester: String, sort: SortArgs = {}, topic: [String!], type: [String!]): StaffSurveyPointResponseDTO!
+  getAllCommentsCount(keyword: String, semester: String, topic: [String!], type: [String!]): Int!
   getAutoMappingSuggestions: [AutoMappingSuggestion!]!
   getBatchList: [StaffSurveyBatch!]!
   getCriteriaList: [StaffSurveyCriteria!]!
@@ -466,6 +466,8 @@ type Query {
 
   """List all semester"""
   semesters: [Semester!]
+  staffSurveyCommentQuantity(semester: String, topic: String, type: String): CommentQuantity!
+  staffSurveyCommentStatistics(semester: String, topic: [String!], type: [String!]): [CommentStatisticData!]!
   subject(id: String!): Subject
   subjects(filter: FilterArgs = {}, pagination: PaginationArgs = {page: 0, size: 10}, sort: SortArgs = {}): PaginatedSubject!
 
@@ -509,6 +511,8 @@ type StaffSurveyAdditionalCommentDTO {
   additional_comment: String
   display_name: String
   faculty: String
+  sentiment: String
+  topic: String
 }
 
 type StaffSurveyBatch {
@@ -548,6 +552,8 @@ input StaffSurveyPointDTO {
   criteria_name: String
   max_point: Int!
   point: Int!
+  sentiment: String
+  topic: String
 }
 
 type StaffSurveyPointResponseDTO {
@@ -560,6 +566,8 @@ type StaffSurveyPointResponseItemDTO {
   criteria: String!
   index: Float!
   point: Int!
+  sentiment: String
+  topic: String
 }
 
 type StaffSurveySheet {
@@ -572,7 +580,10 @@ type StaffSurveySheet {
   faculty: String
   gender: Boolean
   mscb: String
+  sentiment: String
   staff_survey_sheet_id: String!
+  topic: String
+  working_year: String
 }
 
 input StaffSurveySheetDTO {
@@ -586,7 +597,10 @@ input StaffSurveySheetDTO {
   mscb: String
   points: [StaffSurveyPointDTO!]!
   semester: String
+  sentiment: String
   survey_name: String
+  topic: String
+  working_year: String
 }
 
 type StagingDataTypeCount {

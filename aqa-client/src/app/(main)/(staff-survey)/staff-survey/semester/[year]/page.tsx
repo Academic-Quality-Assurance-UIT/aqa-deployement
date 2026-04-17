@@ -204,6 +204,9 @@ export default function SemesterStaffSurveyPage() {
 											index="name"
 											enableBiaxial={false}
 											showLegend={false}
+											interval={0}
+											tickGap={0}
+											xAxisTickAngle={10}
 											barSeries={{
 												categories: ["Điểm đánh giá"],
 												yAxisLabel: "",
@@ -348,6 +351,9 @@ export default function SemesterStaffSurveyPage() {
 									index="name"
 									enableBiaxial={false}
 									showLegend={false}
+									interval={0}
+									tickGap={0}
+									xAxisTickAngle={10}
 									barSeries={{
 										categories: ["Điểm đánh giá"],
 										yAxisLabel: "",

@@ -57,6 +57,7 @@ export const CrawlManager = () => {
   }, [isAnyJobRunning, startPolling, stopPolling]);
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedCrawlType, setSelectedCrawlType] = useState<CrawlJobType>(CrawlJobType.SubjectSurvey);
   const { isOpen: isMonitorOpen, onOpen: onMonitorOpen, onOpenChange: onMonitorOpenChange } = useDisclosure();
   const { isOpen: isTopicOpen, onOpen: onTopicOpen, onOpenChange: onTopicOpenChange } = useDisclosure();
   const { isOpen: isSelectOpen, onOpen: onSelectOpen, onClose: onSelectClose } = useDisclosure();
@@ -77,25 +78,23 @@ export const CrawlManager = () => {
   };
 
   const handleStartNew = async (type: CrawlJobType) => {
-    if (type === CrawlJobType.SubjectSurvey) {
+    if (type === CrawlJobType.SubjectSurvey || type === CrawlJobType.StaffSurvey) {
+      setSelectedCrawlType(type);
       onSelectOpen();
-    } else if (type === CrawlJobType.StaffSurvey) {
-      try {
-        await runStaffSurvey();
-        refetch();
-      } catch (err) {
-        console.error("Failed to run staff survey:", err);
-      }
     }
   };
 
   const submitSurveyCrawl = async (surveyConfigIds: string[]) => {
     try {
-      await runSubjectSurvey({ variables: { surveyConfigIds: surveyConfigIds.length > 0 ? surveyConfigIds : undefined } });
+      if (selectedCrawlType === CrawlJobType.SubjectSurvey) {
+        await runSubjectSurvey({ variables: { surveyConfigIds: surveyConfigIds.length > 0 ? surveyConfigIds : undefined } });
+      } else if (selectedCrawlType === CrawlJobType.StaffSurvey) {
+        await runStaffSurvey({ variables: { surveyConfigIds: surveyConfigIds.length > 0 ? surveyConfigIds : undefined } });
+      }
       refetch();
       onSelectClose();
     } catch (err) {
-      console.error(`Failed to run subject survey:`, err);
+      console.error(`Failed to run ${selectedCrawlType}:`, err);
     }
   };
 
@@ -231,9 +230,9 @@ export const CrawlManager = () => {
       <LecturerSurveySelectModal
           isOpen={isSelectOpen}
           onClose={onSelectClose}
-          type={CrawlJobType.SubjectSurvey}
+          type={selectedCrawlType}
           onRun={submitSurveyCrawl}
-          isLoading={subjectLoading}
+          isLoading={selectedCrawlType === CrawlJobType.SubjectSurvey ? subjectLoading : staffLoading}
       />
     </div>
   );

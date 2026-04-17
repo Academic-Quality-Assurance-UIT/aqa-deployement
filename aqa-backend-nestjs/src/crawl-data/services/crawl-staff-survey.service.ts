@@ -24,15 +24,18 @@ export class CrawlStaffSurveyService {
   async crawl(
     crawlJobId: string,
     year?: string,
+    surveyConfigIds?: string[],
   ): Promise<{ total: number; success: number; failed: number }> {
-    const surveyList = await this.getSurveyList(year);
+    const surveyList = await this.getSurveyList(year, surveyConfigIds);
     this.logger.log(`Found ${surveyList.length} staff surveys to crawl`);
 
     let successCount = 0;
     let errorCount = 0;
-
     let globalTotalData = 0;
     let globalProgress = 0;
+
+    const processedSids = new Set<string>();
+    const processedCriteria = new Set<string>();
 
     for (const surveyInfo of surveyList) {
       if (!(await this.isJobRunning(crawlJobId))) {
@@ -45,121 +48,350 @@ export class CrawlStaffSurveyService {
       }
       try {
         this.logger.log(`Processing staff survey SID: ${surveyInfo.sid}`);
+        await this.crawlJobRepo.update(crawlJobId, { last_activity_at: new Date() });
 
-        // Step 1: Fetch first page
-        const firstPage = await this.apiClient.getSurveyResponses(
+        // Step 1: Fetch question structure
+        const questionsResponse = await this.apiClient.getSurveyQuestions(
           surveyInfo.sid,
-          1,
-          10,
           3,
           crawlJobId,
         );
-        if (
-          !firstPage.success ||
-          !firstPage.data ||
-          firstPage.data.length === 0
-        ) {
+        if (!questionsResponse.success || !questionsResponse.data) {
+          throw new Error(`Failed to fetch questions for SID: ${surveyInfo.sid}`);
+        }
+        const questionMapping = this.buildQuestionMapping(questionsResponse.data);
+
+        // Step 1.5: Fetch survey detail to get attribute mapping
+        let hocViKey = 'attribute_5';
+        let donViKey = 'attribute_6';
+        try {
+          const detailResponse = await this.apiClient.getSurveyDetail(surveyInfo.sid, { page: 1, limit: 1 }, 3, crawlJobId);
+          if (detailResponse?.attributes) {
+            const attrMap = detailResponse.attributes;
+            hocViKey = Object.keys(attrMap).find(k => attrMap[k] === 'hocvi') || hocViKey;
+            donViKey = Object.keys(attrMap).find(k => attrMap[k] === 'donvi') || donViKey;
+            this.logger.log(`Mapped attributes for SID ${surveyInfo.sid}: hocvi -> ${hocViKey}, donvi -> ${donViKey}`);
+          }
+        } catch (e: any) {
+          this.logger.warn(`Failed to fetch survey detail for SID ${surveyInfo.sid}, using default attribute mapping: ${e.message}`);
+        }
+
+        const attributeMapping = { hocViKey, donViKey };
+
+        // Save Batch to staging if not done
+        if (!processedSids.has(surveyInfo.sid)) {
+          await this.stagingRepo.save({
+            crawl_job_id: crawlJobId,
+            data_type: 'staff_survey_batch',
+            data: {
+              display_name: surveyInfo.sid,
+              semester: surveyInfo.year || year,
+            },
+          });
+          processedSids.add(surveyInfo.sid);
+        }
+
+        // Save Criteria to staging if not done
+        for (const index in questionMapping.groups) {
+          const group = questionMapping.groups[index];
+          for (const crit of group.criteria) {
+            const critKey = `${crit.display_name}:${group.category}`;
+            if (!processedCriteria.has(critKey)) {
+              await this.stagingRepo.save({
+                crawl_job_id: crawlJobId,
+                data_type: 'staff_survey_criteria',
+                data: {
+                  display_name: crit.display_name,
+                  category: group.category,
+                  index: crit.index,
+                  semester: surveyInfo.year || year,
+                },
+              });
+              processedCriteria.add(critKey);
+            }
+          }
+        }
+
+        // Step 2: Fetch first page of responses
+        const firstPage = await this.apiClient.getSurveyResponses(
+          surveyInfo.sid,
+          1,
+          50,
+          3,
+          crawlJobId,
+        );
+
+        if (!firstPage.success || !firstPage.data || firstPage.data.length === 0) {
           this.logger.warn(`No responses for SID: ${surveyInfo.sid}`);
           continue;
         }
 
-        const sampleId = firstPage.data[0].id;
+        const totalItems = firstPage.meta?.pagination?.total || firstPage.data.length;
         const totalPages = firstPage.meta?.pagination?.pageCount || 1;
-        const totalItems = firstPage.meta?.pagination?.total || 0;
 
         globalTotalData += totalItems;
-        await this.crawlJobRepo.update(crawlJobId, {
-          total_data: globalTotalData,
-        });
+        await this.crawlJobRepo.update(crawlJobId, { total_data: globalTotalData });
 
-        // Step 2: Fetch question list
-        const questionListResponse = await this.apiClient.getSurveyAnswerDetail(
-          surveyInfo.sid,
-          sampleId,
-          3,
-          crawlJobId,
-        );
-        if (!questionListResponse.success || !questionListResponse.data) {
-          throw new Error(
-            `Failed to fetch question list for SID: ${surveyInfo.sid}`,
-          );
-        }
-        const questionInfo = this.processQuestionList(
-          questionListResponse.data,
-        );
-
-        // Step 3: Process first page
-        for (const responseData of firstPage.data) {
-          const processed = this.processResponse(
-            responseData,
-            questionInfo,
-            surveyInfo.year || year,
-            surveyInfo.sid,
-          );
-          for (const item of processed) {
-            await this.stagingRepo.save({
-              crawl_job_id: crawlJobId,
-              data_type: item.type,
-              data: item.data,
-            });
+        // Helper to process a batch of responses
+        const processBatch = async (responses: any[]) => {
+          for (const response of responses) {
+            const processed = this.processResponse(
+              response,
+              questionMapping,
+              surveyInfo.year || year,
+              surveyInfo.sid,
+              attributeMapping,
+            );
+            
+            // Save to staging
+            for (const item of processed) {
+              await this.stagingRepo.save({
+                crawl_job_id: crawlJobId,
+                data_type: item.type,
+                data: item.data,
+              });
+            }
           }
-        }
+        };
 
+        // Process first page
+        await processBatch(firstPage.data);
         globalProgress += firstPage.data.length;
-        await this.crawlJobRepo.update(crawlJobId, {
-          progress: globalProgress,
-        });
+        await this.crawlJobRepo.update(crawlJobId, { progress: globalProgress });
 
-        // Step 4: Process remaining pages
+        // Step 3: Fetch and process remaining pages
         for (let page = 2; page <= totalPages; page++) {
+          if (!(await this.isJobRunning(crawlJobId))) break;
+
           const pageData = await this.apiClient.getSurveyResponses(
             surveyInfo.sid,
             page,
-            10,
+            50,
             3,
             crawlJobId,
           );
+
           if (pageData.data?.length > 0) {
-            for (const responseData of pageData.data) {
-              const processed = this.processResponse(
-                responseData,
-                questionInfo,
-                surveyInfo.year || year,
-                surveyInfo.sid,
-              );
-              for (const item of processed) {
-                await this.stagingRepo.save({
-                  crawl_job_id: crawlJobId,
-                  data_type: item.type,
-                  data: item.data,
-                });
-              }
-            }
+            await processBatch(pageData.data);
             globalProgress += pageData.data.length;
-            await this.crawlJobRepo.update(crawlJobId, {
-              progress: globalProgress,
-            });
+            await this.crawlJobRepo.update(crawlJobId, { progress: globalProgress });
           }
-          if (page < totalPages) {
-            await new Promise((r) => setTimeout(r, 500));
-          }
+          await new Promise((r) => setTimeout(r, 300));
         }
 
         successCount++;
-        await new Promise((r) => setTimeout(r, 2000));
       } catch (error: any) {
         errorCount++;
-        this.logger.error(
-          `Error crawling staff survey SID ${surveyInfo.sid}: ${error.message}`,
-        );
+        this.logger.error(`Error crawling staff survey SID ${surveyInfo.sid}: ${error.message}`);
       }
     }
 
-    return {
-      total: surveyList.length,
-      success: successCount,
-      failed: errorCount,
+    return { total: surveyList.length, success: successCount, failed: errorCount };
+  }
+
+  private buildQuestionMapping(questions: any[]): any {
+    const mapping: any = {
+      groups: {},  // keyed by unique ID (group_order:fieldname) to handle duplicate A1/M1 across groups
     };
+
+    const parents = questions.filter(q => q.parent_qid === 0 || q.parent_qid === '0');
+    const children = questions.filter(q => q.parent_qid !== 0 && q.parent_qid !== '0');
+
+    // Group parents by group_order so we can pair Ax with Mx within the same group
+    const parentsByGroup = new Map<number, any[]>();
+    parents.forEach(p => {
+      const go = p.group_order ?? 0;
+      if (!parentsByGroup.has(go)) parentsByGroup.set(go, []);
+      parentsByGroup.get(go)!.push(p);
+    });
+
+    // Build child lookup by parent_qid
+    const childMap = new Map<string, any[]>();
+    children.forEach(c => {
+      const pqid = String(c.parent_qid);
+      if (!childMap.has(pqid)) childMap.set(pqid, []);
+      childMap.get(pqid)!.push(c);
+    });
+
+    let groupCounter = 0;
+    for (const [groupOrder, groupParents] of parentsByGroup.entries()) {
+      // Separate Ax (point) and Mx (comment) parents within this group
+      const axParents = groupParents
+        .filter(p => {
+          const fn = p.fieldname || p.title;
+          return fn.startsWith('A') && !isNaN(Number(fn.substring(1)));
+        })
+        .sort((a, b) => a.question_order - b.question_order);
+
+      const mxParents = groupParents
+        .filter(p => {
+          const fn = p.fieldname || p.title;
+          return fn.startsWith('M') && !isNaN(Number(fn.substring(1)));
+        })
+        .sort((a, b) => a.question_order - b.question_order);
+
+      // Pair Ax with Mx by position (A1<->M1, A2<->M2, etc. within the same group)
+      for (let i = 0; i < axParents.length; i++) {
+        const ax = axParents[i];
+        const mx = mxParents[i] || null; // Mx might not exist
+
+        const pointQid = ax.qid;
+        const commentQid = mx ? mx.qid : null;
+
+        // Get children for point and comment parents
+        const pointChildren = (childMap.get(String(pointQid)) || []).sort((a, b) => a.question_order - b.question_order);
+        const commentChildren = commentQid
+          ? (childMap.get(String(commentQid)) || []).sort((a, b) => a.question_order - b.question_order)
+          : [];
+
+        const criteria = pointChildren.map((pc, idx) => {
+          const cc = commentChildren[idx] || null;
+          return {
+            display_name: this.normalizeQuestion(pc.question),
+            point_fieldname: pc.fieldname,
+            comment_fieldname: cc ? cc.fieldname : null,
+          };
+        });
+
+        const uniqueKey = `g${groupCounter++}`;
+        mapping.groups[uniqueKey] = {
+          category: this.normalizeQuestion(ax.question),
+          point_qid: pointQid,
+          comment_qid: commentQid,
+          group_name: ax.group_name,
+          criteria,
+        };
+      }
+
+      // Handle Y1 (in any group)
+      const y1 = groupParents.find(p => (p.fieldname || p.title) === 'Y1');
+      if (y1) {
+        mapping.y1_qid = y1.qid;
+      }
+    }
+
+    return mapping;
+  }
+
+  private processResponse(
+    response: any,
+    mapping: any,
+    year: string,
+    sid: string,
+    attributeMapping: { hocViKey: string, donViKey: string },
+  ): any[] {
+    const results: any[] = [];
+    const tokenInfo = response.token_info || {};
+    const responseId = response.id;
+
+    // 1. Sheet Metadata
+    const faculty = tokenInfo[attributeMapping.donViKey] || "N/A";
+    const academicDegree = tokenInfo[attributeMapping.hocViKey] || "N/A";
+    const displayName = [tokenInfo.lastname, tokenInfo.firstname].filter(Boolean).join(' ').trim() || "N/A";
+
+    // Extract additional comment (Y1) - find a response key ending with X${qid}
+    let additionalComment = null;
+    if (mapping.y1_qid) {
+      const suffix = `X${mapping.y1_qid}`;
+      const y1Key = Object.keys(response).find(k => k.endsWith(suffix));
+      if (y1Key) {
+        additionalComment = response[y1Key] || null;
+      }
+    }
+
+    results.push({
+      type: 'staff_survey_sheet',
+      data: {
+        sid,
+        response_id: responseId,
+        working_year: year,
+        semester: year, 
+        display_name: displayName,
+        academic_degree: academicDegree,
+        faculty: faculty,
+        additional_comment: additionalComment,
+      }
+    });
+
+    // 2. Points and Comments
+    // Response keys have the format: ${SID}X${GID}X${PARENT_QID}${CHILD_FIELDNAME}
+    // Since we don't know GID, we search for keys ending with X${PARENT_QID}${CHILD_FIELDNAME}
+    const responseKeys = Object.keys(response);
+
+    for (const groupKey in mapping.groups) {
+      const group = mapping.groups[groupKey];
+      const pointQid = Number(group.point_qid);
+      const commentQid = group.comment_qid ? Number(group.comment_qid) : pointQid + 1;
+
+      for (const crit of group.criteria) {
+        // Find point value: look for key ending with X${pointQid}${fieldname}
+        const pointSuffix = `X${pointQid}${crit.point_fieldname}`;
+        const pointKey = responseKeys.find(k => k.endsWith(pointSuffix));
+        const pointValue = pointKey ? this.extractPoint(response[pointKey]) : null;
+
+        // Only save if we have a valid point
+        if (pointValue === null) continue;
+
+        // Find comment value using paired comment question
+        // Comment fieldname is either from mapping (e.g., "A1") or fallback to "A" + point_fieldname
+        let commentValue = null;
+        const commentFieldname = crit.comment_fieldname || `A${crit.point_fieldname}`;
+        const commentSuffix = `X${commentQid}${commentFieldname}`;
+        const commentKey = responseKeys.find(k => k.endsWith(commentSuffix));
+        if (commentKey) {
+          commentValue = response[commentKey] || null;
+        }
+
+        results.push({
+          type: 'staff_survey_point',
+          data: {
+            response_id: responseId,
+            sid,
+            criteria_name: crit.display_name,
+            criteria_category: group.category,
+            point: pointValue,
+            comment: commentValue ? String(commentValue).trim() : null,
+            max_point: 5,
+          }
+        });
+      }
+    }
+
+    return results;
+  }
+
+  private extractPoint(value: any): number | null {
+    if (!value) return null;
+    if (typeof value === 'number') return value;
+    const str = String(value).replace(/^A/, '');
+    const num = parseInt(str, 10);
+    return isNaN(num) ? null : num;
+  }
+
+  private normalizeQuestion(text: string): string {
+    if (!text) return '';
+    
+    // 1. First Pass: Truncate at the first occurrence of suspicious delimiters (scripts/code usually follow these)
+    // We look for: \n, \r, double spaces, or start of a tag (<)
+    // Also handle escaped versions like \\n and \\r which might come from the API JSON
+    const delimiters = ['  ', '\n', '\r', '<', '\\n', '\\r'];
+    let minIndex = text.length;
+    
+    for (const delim of delimiters) {
+      const idx = text.indexOf(delim);
+      if (idx !== -1 && idx < minIndex) {
+        minIndex = idx;
+      }
+    }
+    
+    let cleanText = text.substring(0, minIndex);
+    
+    // 2. Second Pass: Standard cleanup
+    return cleanText
+      .trim()
+      .replace(/^\d+\.\s*/, '') // Remove leading numbers (e.g., "1. ")
+      .replace(/:\s*$/, '')     // Remove trailing colon
+      .trim();
   }
 
   private async isJobRunning(jobId: string): Promise<boolean> {
@@ -170,7 +402,7 @@ export class CrawlStaffSurveyService {
     return job?.status === 'RUNNING';
   }
 
-  private async getSurveyList(year?: string): Promise<any[]> {
+  private async getSurveyList(year?: string, surveyConfigIds?: string[]): Promise<any[]> {
     const query = this.surveyListRepo
       .createQueryBuilder('s')
       .where('s.survey_type = :type', {
@@ -182,278 +414,9 @@ export class CrawlStaffSurveyService {
       query.andWhere('s.year = :year', { year });
     }
 
+    if (surveyConfigIds && surveyConfigIds.length > 0) {
+      query.andWhere('s.id IN (:...surveyConfigIds)', { surveyConfigIds });
+    }
     return query.getMany();
-  }
-
-  private normalizeQuestion(text: string): string {
-    if (!text) return '';
-    return text
-      .trim()
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/\\r/g, '')
-      .replace(/\\n/g, '')
-      .replace(/\r/g, '')
-      .replace(/\n/g, '')
-      .replace(/\t/g, '')
-      .replace(/^\d+\.\s*/, '')
-      .replace(/:\s*$/, '')
-      .trim();
-  }
-
-  private processQuestionList(questionData: any): any {
-    const parentQuestions: Record<string, any> = {};
-    const subQuestionsByParent: Record<string, any[]> = {};
-    const knownParentQids = new Set<string>();
-    const parentQidToFullKey: Record<string, string> = {};
-
-    for (const [fullKey, q] of Object.entries(questionData)) {
-      const qObj = q as any;
-      const normalized = this.normalizeQuestion(qObj.question);
-
-      if (qObj.parent_qid === '0') {
-        parentQuestions[fullKey] = {
-          qid: qObj.qid,
-          question: normalized,
-          code: qObj.code,
-          type: qObj.type,
-          groupName: qObj.group_name,
-        };
-        knownParentQids.add(qObj.qid);
-        parentQidToFullKey[qObj.qid] = fullKey;
-      } else {
-        if (!subQuestionsByParent[qObj.parent_qid]) {
-          subQuestionsByParent[qObj.parent_qid] = [];
-        }
-        subQuestionsByParent[qObj.parent_qid].push({
-          qid: qObj.qid,
-          code: qObj.code,
-          question: normalized,
-          type: qObj.type,
-        });
-      }
-    }
-
-    for (const parentQid of Object.keys(subQuestionsByParent)) {
-      subQuestionsByParent[parentQid].sort((a, b) => {
-        const aNum = parseInt(a.code.replace(/^A/, ''), 10);
-        const bNum = parseInt(b.code.replace(/^A/, ''), 10);
-        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-        return a.code.localeCompare(b.code);
-      });
-    }
-
-    return {
-      parentQuestions,
-      subQuestionsByParent,
-      knownParentQids,
-      parentQidToFullKey,
-    };
-  }
-
-  private parseLastPart(
-    lastPart: string,
-    knownParentQids: Set<string>,
-  ): { parentQid: string; suffix: string } | null {
-    const aMatch = lastPart.match(/^(\d+)(A\d+)$/);
-    if (aMatch && knownParentQids.has(aMatch[1])) {
-      return { parentQid: aMatch[1], suffix: aMatch[2] };
-    }
-
-    const sortedQids = [...knownParentQids].sort((a, b) => b.length - a.length);
-    for (const qid of sortedQids) {
-      if (lastPart === qid) return { parentQid: qid, suffix: '' };
-      if (lastPart.startsWith(qid) && lastPart.length > qid.length) {
-        return { parentQid: qid, suffix: lastPart.substring(qid.length) };
-      }
-    }
-    return null;
-  }
-
-  private extractPoint(value: any): number | null {
-    if (!value || typeof value !== 'string') return null;
-    const cleaned = value.replace(/^A/, '');
-    const num = parseInt(cleaned, 10);
-    return isNaN(num) ? null : num;
-  }
-
-  private getSuffixOrder(suffix: string): number {
-    const cleaned = suffix.replace(/^A/, '');
-    return parseInt(cleaned, 10);
-  }
-
-  private processResponse(
-    responseData: any,
-    questionInfo: any,
-    year: string,
-    sid: string,
-  ): Array<{ type: string; data: any }> {
-    const results: Array<{ type: string; data: any }> = [];
-    const METADATA_KEYS = new Set([
-      'id',
-      'token',
-      'submitdate',
-      'lastpage',
-      'startlanguage',
-      'startdate',
-      'datestamp',
-      'token_info',
-    ]);
-
-    const tokenInfo = responseData.token_info;
-    if (!tokenInfo) return results;
-
-    const allGroups: any[] = [];
-    let currentPointGroup: any = null;
-
-    const answerKeys = Object.keys(responseData).filter(
-      (k) => !METADATA_KEYS.has(k),
-    );
-
-    for (const key of answerKeys) {
-      const value = responseData[key];
-      const parts = key.split('X');
-      if (parts.length !== 3) continue;
-
-      const lastPart = parts[2];
-      const parsed = this.parseLastPart(lastPart, questionInfo.knownParentQids);
-      if (!parsed) continue;
-
-      const { parentQid, suffix } = parsed;
-      const parentFullKey = `${parts[0]}X${parts[1]}X${parentQid}`;
-      const parentQuestion = questionInfo.parentQuestions[parentFullKey];
-      if (!parentQuestion) continue;
-
-      if (suffix === '') {
-        if (currentPointGroup) {
-          allGroups.push(currentPointGroup);
-          currentPointGroup = null;
-        }
-
-        const category = parentQuestion.groupName || parentQuestion.question;
-        const displayName = parentQuestion.question;
-
-        allGroups.push({
-          category,
-          pointParentQid: parentQid,
-          isStandalone: true,
-          type: parentQuestion.type,
-          points: [
-            {
-              displayName,
-              index: 1,
-              pointValue: this.extractPoint(value),
-              comment:
-                typeof value === 'string' && !/^A\d+$/.test(value)
-                  ? value
-                  : null,
-              raw_value: value,
-            },
-          ],
-        });
-        continue;
-      }
-
-      if (parentQuestion.type === 'F') {
-        if (
-          !currentPointGroup ||
-          currentPointGroup.pointParentQid !== parentQid
-        ) {
-          if (currentPointGroup) allGroups.push(currentPointGroup);
-
-          const subQuestions =
-            questionInfo.subQuestionsByParent[parentQid] || [];
-
-          currentPointGroup = {
-            category: parentQuestion.question,
-            pointParentQid: parentQid,
-            subQuestions,
-            isStandalone: false,
-            type: parentQuestion.type,
-            points: [],
-          };
-        }
-
-        const subQuestion = currentPointGroup.subQuestions.find(
-          (sq: any) => sq.code === suffix,
-        );
-        const displayName = subQuestion
-          ? subQuestion.question
-          : `Question ${suffix}`;
-        const pointIndex = currentPointGroup.points.length + 1;
-        const pointValue = this.extractPoint(value);
-
-        currentPointGroup.points.push({
-          displayName,
-          index: pointIndex,
-          pointValue,
-          comment: null,
-          raw_value: value,
-        });
-      } else if (parentQuestion.type === 'Q') {
-        if (!currentPointGroup) continue;
-        const suffixOrder = this.getSuffixOrder(suffix);
-        const commentIndex = suffixOrder - 1;
-        if (
-          commentIndex >= 0 &&
-          commentIndex < currentPointGroup.points.length
-        ) {
-          currentPointGroup.points[commentIndex].comment =
-            value?.trim() || null;
-        }
-      }
-    }
-
-    if (currentPointGroup) allGroups.push(currentPointGroup);
-
-    // Store as staging data
-    results.push({
-      type: 'staff_survey_response',
-      data: {
-        sid,
-        year,
-        response_id: responseData.id,
-        token_info: tokenInfo,
-        groups: allGroups,
-      },
-    });
-
-    // Extract text data
-    for (const group of allGroups) {
-      for (const point of group.points) {
-        const textValue = point.comment || point.raw_value;
-        let isText = false;
-
-        if (group.type === 'T') isText = true;
-        else if (point.comment) isText = true;
-        else if (group.category?.toUpperCase().includes('ĐƠN VỊ'))
-          isText = true;
-
-        if (
-          isText &&
-          textValue &&
-          typeof textValue === 'string' &&
-          textValue.trim()
-        ) {
-          const trimmed = textValue.trim();
-          const isCode = /^A\d+$/.test(trimmed);
-          const isNumber = !isNaN(Number(trimmed));
-
-          if (point.comment || (!isCode && !isNumber)) {
-            results.push({
-              type: 'staff_survey_text',
-              data: {
-                sid,
-                year,
-                unit: group.category,
-                question: point.displayName,
-                answer: trimmed,
-              },
-            });
-          }
-        }
-      }
-    }
-
-    return results;
   }
 }

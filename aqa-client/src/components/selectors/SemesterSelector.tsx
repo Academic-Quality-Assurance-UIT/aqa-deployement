@@ -197,7 +197,7 @@ function SemesterSelector_({
 															radius="sm"
 															classNames={{ wrapper: "border-2 border-default-300 bg-default-100 rounded-md" }}
 														/>
-														<span className="font-medium text-black">
+														<span className="font-medium text-black normal-font">
 															Năm {year}
 														</span>
 													</div>
@@ -224,7 +224,7 @@ function SemesterSelector_({
 																	isSelected ? "font-medium text-primary" : ""
 																}
 															>
-																{sem.display_name}
+																<span className="">{sem.display_name}</span>
 															</Checkbox>
 														);
 													})}

@@ -72,6 +72,8 @@ query GetPointWithCommentByCriteria($category: String, $page: Int, $semester: St
 			index
 			point
 			comment
+			topic
+			sentiment
 		}
 		meta {
 			hasNext
@@ -88,13 +90,15 @@ query GetStaffSurveyCommentCount($category: String, $semester: String, $displayN
 	getStaffSurveyCommentCount(category: $category, semester: $semester, displayName: $displayName)
 }
 
-query GetAllComments($page: Int, $semester: String, $keyword: String) {
-	getAllComments(pagination: { page: $page }, semester: $semester, keyword: $keyword) {
+query GetAllComments($page: Int, $semester: String, $keyword: String, $type: [String!], $topic: [String!]) {
+	getAllComments(pagination: { page: $page }, semester: $semester, keyword: $keyword, type: $type, topic: $topic) {
 		data {
 			criteria
 			index
 			point
 			comment
+			topic
+			sentiment
 		}
 		meta {
 			hasNext
@@ -107,8 +111,8 @@ query GetAllComments($page: Int, $semester: String, $keyword: String) {
 	}
 }
 
-query GetAllCommentsCount($semester: String, $keyword: String) {
-	getAllCommentsCount(semester: $semester, keyword: $keyword)
+query GetAllCommentsCount($semester: String, $keyword: String, $type: [String!], $topic: [String!]) {
+	getAllCommentsCount(semester: $semester, keyword: $keyword, type: $type, topic: $topic)
 }
 
 query GetStaffSurveyPointsByYear {
@@ -132,4 +136,74 @@ mutation UpdateStaffSurveyCriteria($id: String!, $is_shown: Boolean!) {
 		staff_survey_criteria_id
 		is_shown
 	}
+}
+
+query StaffSurveyCommentQuantity($semester: String, $type: String, $topic: String) {
+    staffSurveyCommentQuantity(semester: $semester, type: $type, topic: $topic) {
+        quantity
+        type
+    }
+}
+
+query StaffSurveyCommentQuantityEachTopic($semester: String, $type: String!) {
+    it_infrastructure: staffSurveyCommentQuantity(type: $type, topic: "hạ tầng CNTT", semester: $semester) {
+        quantity
+        type
+    }
+    facilities: staffSurveyCommentQuantity(type: $type, topic: "cơ sở vật chất", semester: $semester) {
+        quantity
+        type
+    }
+    working_environment: staffSurveyCommentQuantity(type: $type, topic: "môi trường/điều kiện làm việc", semester: $semester) {
+        quantity
+        type
+    }
+    training_program: staffSurveyCommentQuantity(type: $type, topic: "CTĐT", semester: $semester) {
+        quantity
+        type
+    }
+    training_fostering: staffSurveyCommentQuantity(type: $type, topic: "đào tạo, bồi dưỡng", semester: $semester) {
+        quantity
+        type
+    }
+    unknown: staffSurveyCommentQuantity(type: $type, topic: "không xác định/không liên quan", semester: $semester) {
+        quantity
+        type
+    }
+    unit: staffSurveyCommentQuantity(type: $type, topic: "ĐƠN VỊ", semester: $semester) {
+        quantity
+        type
+    }
+    all: staffSurveyCommentQuantity(semester: $semester) {
+        quantity
+        type
+    }
+}
+
+query StaffSurveyCommentSummary($semester: String) {
+    positive: staffSurveyCommentQuantity(type: "positive", semester: $semester) {
+        quantity
+        type
+    }
+    negative: staffSurveyCommentQuantity(type: "negative", semester: $semester) {
+        quantity
+        type
+    }
+    neutral: staffSurveyCommentQuantity(type: "neutral", semester: $semester) {
+        quantity
+        type
+    }
+    all: staffSurveyCommentQuantity(semester: $semester) {
+        quantity
+        type
+    }
+}
+
+query StaffSurveyCommentStatistics($semester: String, $type: [String!], $topic: [String!]) {
+    staffSurveyCommentStatistics(semester: $semester, type: $type, topic: $topic) {
+        label
+        total
+        sentiments
+        topics
+    }
 }

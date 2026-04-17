@@ -15,6 +15,10 @@ export class StaffSurveySheet {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
+  working_year: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   mscb: string;
 
   @Field({ nullable: true })
@@ -40,6 +44,14 @@ export class StaffSurveySheet {
   @Field({ nullable: true })
   @Column({ nullable: true })
   additional_comment: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  topic: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  sentiment: string;
 
   @ManyToOne(() => StaffSurveyBatch)
   @JoinColumn({ name: 'staff_survey_batch_id' })

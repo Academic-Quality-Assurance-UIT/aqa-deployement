@@ -10,4 +10,10 @@ export class StaffSurveyAdditionalCommentDTO {
 
   @Field({ nullable: true })
   additional_comment: string;
+
+  @Field({ nullable: true })
+  topic: string;
+
+  @Field({ nullable: true })
+  sentiment: string;
 }
