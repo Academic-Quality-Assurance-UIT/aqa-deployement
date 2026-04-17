@@ -23,5 +23,33 @@ Thumbs.db
 
 # Logs & Coverage
 logs/
+**/logs/
 *.log
 coverage/
+
+# Build outputs
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+tsconfig.tsbuildinfo
+
+# Virtual environments
+.venv/
+**/.venv/
+venv/
+env/
+__pycache__/
+**/__pycache__/
+
+# Data & Large files (submodules)
+aqa-crawl-data/output/
+aqa-crawl-data/exports/
+aqa-crawl-data/raw_data/
+aqa-crawl-data/data/
+**/fold_01/
+**/vncorenlp/

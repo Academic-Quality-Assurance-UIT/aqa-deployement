@@ -16,10 +16,12 @@ ARG BACKEND_URL=http://host.docker.internal:8000/graphql
 ENV BACKEND_URL=$BACKEND_URL
 ARG BACKEND_API_URL=http://host.docker.internal:8000
 ENV BACKEND_API_URL=$BACKEND_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_NO_WARNINGS=1
 
 # Use pnpm to build the application
 WORKDIR /app/aqa-client
-RUN pnpm build
+RUN pnpm build --no-lint
 
 # 2. Production image, copy all the files and run next
 FROM base AS runner

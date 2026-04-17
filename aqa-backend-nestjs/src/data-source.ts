@@ -16,4 +16,9 @@ export const AppDataSource = new DataSource({
   entities: [join(__dirname, '/**/*.entity{.ts,.js}')],
   migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
   subscribers: [],
+  extra: {
+    connectionTimeoutMillis: 60000,
+    query_timeout: 60000,
+    statement_timeout: 60000,
+  },
 });

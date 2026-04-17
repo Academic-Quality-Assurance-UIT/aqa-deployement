@@ -8,7 +8,9 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
-    "format": "turbo format"
+    "format": "turbo format",
+    "docker:build": "docker compose build",
+    "docker:push": "docker compose push"
   },
   "devDependencies": {
     "turbo": "^2.4.4"
